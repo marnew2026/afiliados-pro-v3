@@ -1,0 +1,14 @@
+export const campaigns = [
+  {
+    id: 1,
+    title: "Panela de Pressão Premium",
+    description: "Oferta especial afiliado",
+    link: "https://seulinkdeafiliado.com",
+  },
+  {
+    id: 2,
+    title: "Fone Bluetooth Pro",
+    description: "Alta conversão",
+    link: "https://seulinkdeafiliado.com",
+  }
+]
