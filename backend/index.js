@@ -2,13 +2,10 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import Stripe from "stripe";
-import mercadopago from "mercadopago";
+
 
 dotenv.config();
 
-mercadopago.configure({
-  access_token: process.env.MP_ACCESS_TOKEN,
-});
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -57,24 +54,20 @@ app.post("/checkout", express.json(), async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
-// saque pix
 app.post("/withdraw", express.json(), async (req, res) => {
   try {
     const { email, pixKey, amount } = req.body;
 
-    console.log("💸 SAQUE:", email, amount);
+    console.log("💸 SAQUE:", email, pixKey, amount);
 
     res.json({
       success: true,
-      message: "Solicitação recebida",
+      message: "Solicitação registrada",
     });
   } catch (error) {
-    console.log("❌ SAQUE:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
-
 // clique
 app.post("/click", express.json(), async (req, res) => {
   const { ref } = req.body;
