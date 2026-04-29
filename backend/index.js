@@ -1,85 +1,40 @@
-import mercadopago from "mercadopago";
-mercadopago.configure({
-  access_token: process.env.MP_ACCESS_TOKEN,
-});
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import Stripe from "stripe";
+import mercadopago from "mercadopago";
 
 dotenv.config();
 
+mercadopago.configure({
+  access_token: process.env.MP_ACCESS_TOKEN,
+});
+
 const app = express();
-
-app.use(cors());
-
-// ⚠️ IMPORTANTE: webhook precisa disso separado
-app.use(express.json());
-
-console.log("🔥 BACKEND INICIANDO");
+const PORT = process.env.PORT || 3001;
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// 
-// TESTE
-// 
+console.log("🔥 BACKEND INICIANDO");
+
+app.use(cors());
+
+// rota teste
 app.get("/", (req, res) => {
   res.send("🚀 Backend OK");
 });
 
-// 
-// CHECKOUT
-// 
-app.post("/withdraw", async (req, res) => {
-  try {
-    const { email, pixKey, amount } = req.body;
-
-    console.log("💸 PEDIDO DE SAQUE:", email, amount);
-
-    const payout = await mercadopago.payouts.create({
-      amount: Number(amount),
-      description: "Saque Afiliados Pro",
-      payment_method_id: "pix",
-      external_reference: email,
-      payer: {
-        email: email,
-      },
-      bank_info: {
-        pix: {
-          key: pixKey,
-        },
-      },
-    });
-
-    console.log("✅ PIX ENVIADO:", payout);
-
-    return res.json({
-      success: true,
-      payout,
-    });
-
-  } catch (error) {
-    console.log("❌ ERRO PIX:", error.message);
-
-    return res.status(500).json({
-      error: error.message,
-    });
-  }
-});
-app.post("/checkout", async (req, res) => {
+// checkout
+app.post("/checkout", express.json(), async (req, res) => {
   try {
     const { ref } = req.body;
-
-    console.log("➡️ CHECKOUT CHAMADO | REF:", ref);
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
-
       metadata: {
-        ref: ref || null,
+        ref: ref || "",
       },
-
       line_items: [
         {
           price_data: {
@@ -92,99 +47,64 @@ app.post("/checkout", async (req, res) => {
           quantity: 1,
         },
       ],
-
-      success_url: "http://localhost:5173/sucesso",
-      cancel_url: "http://localhost:5173/cancelado",
+      success_url: "https://afiliados-pro-v3-l3ht.vercel.app/sucesso",
+      cancel_url: "https://afiliados-pro-v3-l3ht.vercel.app/cancelado",
     });
 
-    return res.json({ url: session.url });
-
+    res.json({ url: session.url });
   } catch (error) {
-    console.log("❌ ERRO CHECKOUT:", error.message);
-    return res.status(500).json({ error: error.message });
+    console.log("❌ CHECKOUT:", error.message);
+    res.status(500).json({ error: error.message });
   }
 });
 
-// 
-// WEBHOOK STRIPE
-// 
-app.post(
-  "/webhook",
-  express.raw({ type: "application/json" }),
-  async (req, res) => {
-    let event;
+// saque pix
+app.post("/withdraw", express.json(), async (req, res) => {
+  try {
+    const { email, pixKey, amount } = req.body;
 
-    try {
-      event = stripe.webhooks.constructEvent(
-        req.body,
-        req.headers["stripe-signature"],
-        process.env.STRIPE_WEBHOOK_SECRET
-      );
-    } catch (err) {
-      console.log("❌ ERRO WEBHOOK:", err.message);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
+    console.log("💸 SAQUE:", email, amount);
 
-    console.log("🔥 EVENTO RECEBIDO:", event.type);
-
-    // 
-    // PAGAMENTO CONFIRMADO
-    // 
-    if (event.type === "checkout.session.completed") {
-  const session = event.data.object;
-
-  const email =
-    session.customer_details?.email ||
-    session.customer_email;
-
-  const ref = session.metadata?.ref;
-
-  console.log("💰 CONVERSÃO:", email);
-  console.log("🤝 AFILIADO:", ref);
-
-  // 🔥 SALVAR CONVERSÃO (Hotmart style)
-  // se tiver Firebase, descomenta isso:
-  /*
-  await db.collection("conversions").add({
-    ref,
-    email,
-    value: 29,
-    createdAt: new Date().toISOString(),
-  });
-  */
-
-  // 💸 COMISSÃO GERADA
-  if (ref) {
-    console.log("💸 COMISSÃO GERADA PARA:", ref);
-
-    // aqui depois entra Stripe Connect payout
+    res.json({
+      success: true,
+      message: "Solicitação recebida",
+    });
+  } catch (error) {
+    console.log("❌ SAQUE:", error.message);
+    res.status(500).json({ error: error.message });
   }
-}
-      } catch (e) {
-        console.log("❌ ERRO PROCESSAMENTO:", e.message);
-      }
+});
+
+// clique
+app.post("/click", express.json(), async (req, res) => {
+  const { ref } = req.body;
+  console.log("👆 CLIQUE:", ref);
+  res.json({ ok: true });
+});
+
+// webhook
+app.post("/webhook", express.raw({ type: "application/json" }), (req, res) => {
+  try {
+    const event = stripe.webhooks.constructEvent(
+      req.body,
+      req.headers["stripe-signature"],
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+
+    console.log("🔥 EVENTO:", event.type);
+
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
+      console.log("💰 PAGAMENTO:", session.customer_email);
     }
 
     res.json({ received: true });
+  } catch (err) {
+    console.log("❌ WEBHOOK:", err.message);
+    res.status(400).send(`Webhook Error: ${err.message}`);
   }
-);
-
-// 
-// START SERVER
-// 
-app.listen(3001, () => {
-  console.log("🚀 BACKEND RODANDO NA 3001");
 });
-app.post("/click", async (req, res) => {
-  const { ref } = req.body;
 
-  console.log("👆 CLIQUE AFILIADO:", ref);
-
-  // 🔥 salva clique (Firestore opcional)
-  // await db.collection("clicks").add({
-  //   ref,
-  //   createdAt: new Date().toISOString(),
-  // });
-
-  res.json({ ok: true });
+app.listen(PORT, () => {
+  console.log(`🚀 BACKEND RODANDO NA ${PORT}`);
 });
