@@ -20,14 +20,14 @@ console.log("🔥 BACKEND INICIANDO");
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// -------------------------
+// 
 // TESTE
-// -------------------------
+// 
 app.get("/", (req, res) => {
   res.send("🚀 Backend OK");
 });
 
-// -------------------------
+// 
 // CHECKOUT
 // 
 app.post("/withdraw", async (req, res) => {
@@ -65,7 +65,7 @@ app.post("/withdraw", async (req, res) => {
       error: error.message,
     });
   }
-});-------------------------
+});
 app.post("/checkout", async (req, res) => {
   try {
     const { ref } = req.body;
@@ -105,9 +105,9 @@ app.post("/checkout", async (req, res) => {
   }
 });
 
-// -------------------------
+// 
 // WEBHOOK STRIPE
-// -------------------------
+// 
 app.post(
   "/webhook",
   express.raw({ type: "application/json" }),
@@ -127,9 +127,9 @@ app.post(
 
     console.log("🔥 EVENTO RECEBIDO:", event.type);
 
-    // -------------------------
+    // 
     // PAGAMENTO CONFIRMADO
-    // -------------------------
+    // 
     if (event.type === "checkout.session.completed") {
   const session = event.data.object;
 
@@ -169,9 +169,9 @@ app.post(
   }
 );
 
-// -------------------------
+// 
 // START SERVER
-// -------------------------
+// 
 app.listen(3001, () => {
   console.log("🚀 BACKEND RODANDO NA 3001");
 });
