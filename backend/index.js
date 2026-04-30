@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3001;
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-console.log("🔥 BACKEND INICIANDO");
+console.log("🔥 BACKEND INICIANDO V2");
 
 app.use(cors());
 
