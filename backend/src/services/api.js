@@ -1,3 +1,4 @@
+import API_URL from "./services/api";
 import axios from "axios";
 
 export const api = axios.create({

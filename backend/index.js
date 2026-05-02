@@ -7,43 +7,45 @@ dns.setServers(["8.8.8.8", "1.1.1.1"]);
 import express from "express";
 import cors from "cors";
 import Stripe from "stripe";
+
 import { connectDB } from "./src/config/db.js";
 import authRoutes from "./src/routes/auth.routes.js";
 
-connectDB();
-
 const app = express();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
 const PORT = process.env.PORT || 8081;
 
-app.use(cors({
-  origin: "*"
-}));
+// Stripe (só inicia se existir chave)
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY)
+  : null;
 
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
-// ROTAS AUTH
+// ROTAS
 app.use("/auth", authRoutes);
 
-console.log("🔥 BACKEND HOTMART SAAS");
-
-// rota teste
 app.get("/", (req, res) => {
   res.send("🚀 Backend OK");
 });
+
 app.get("/ping", (req, res) => {
   res.json({ status: "ok", auth: true });
 });
-// checkout
+
+// CHECKOUT (seguro)
 app.post("/checkout", async (req, res) => {
   try {
+    if (!stripe) {
+      return res.status(500).json({ error: "Stripe não configurado" });
+    }
+
     const { ref } = req.body;
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
-      metadata: { ref },
+      metadata: { ref: ref || "" },
 
       line_items: [
         {
@@ -64,11 +66,24 @@ app.post("/checkout", async (req, res) => {
 
     res.json({ url: session.url });
   } catch (err) {
-    console.error("Erro checkout:", err.message);
+    console.error("Checkout error:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 BACKEND RODANDO NA ${PORT}`);
-});
+// START SERVER (CORRIGIDO)
+const startServer = async () => {
+  try {
+    await connectDB();
+
+    app.listen(PORT, () => {
+      console.log("🔥 BACKEND HOTMART SAAS");
+      console.log(`🚀 BACKEND RODANDO NA ${PORT}`);
+    });
+
+  } catch (err) {
+    console.error("❌ Erro ao iniciar servidor:", err);
+  }
+};
+
+startServer();

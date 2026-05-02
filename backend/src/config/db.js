@@ -1,19 +1,16 @@
 import mongoose from "mongoose";
 
 export const connectDB = async () => {
-
-
   try {
-    const uri = process.env.MONGO_URL;
-
-        if (!uri) {
+    if (!process.env.MONGO_URL) {
       throw new Error("MONGO_URL não definida");
     }
 
-    await mongoose.connect(uri);
+    await mongoose.connect(process.env.MONGO_URL);
 
     console.log("🔥 MongoDB conectado");
   } catch (error) {
-    
+    console.log("❌ erro Mongo:", error.message);
+    process.exit(1);
   }
 };
