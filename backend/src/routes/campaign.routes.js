@@ -24,4 +24,4 @@ router.get("/r/:id", async (req, res) => {
     return res.status(500).send("Erro no rastreamento");
   }
 });
-module.exports = router;
+export default router;
