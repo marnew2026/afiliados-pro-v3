@@ -1,59 +1,52 @@
 import { useState } from "react";
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-} from "firebase/auth";
-import { auth } from "../services/firebase";
+import { useNavigate } from "react-router-dom";
+import { loginUser } from "../services/api";
 
 export default function Login() {
   const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
+  const [password, setPassword] = useState("");
+  const [erro, setErro] = useState("");
+  const navigate = useNavigate();
 
-  const entrar = async () => {
-    try {
-      await signInWithEmailAndPassword(auth, email, senha);
-      alert("Login realizado!");
-    } catch (error) {
-      alert(error.message);
-    }
-  };
+  async function handleLogin(e) {
+    e.preventDefault();
 
-  const cadastrar = async () => {
-    try {
-      await createUserWithEmailAndPassword(auth, email, senha);
-      alert("Conta criada!");
-    } catch (error) {
-      alert(error.message);
+    const data = await loginUser(email, password);
+
+    if (data.token) {
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("userEmail", data.user.email);
+      navigate("/dashboard");
+    } else {
+      setErro(data.message || "Erro no login");
     }
-  };
+  }
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>🚀 SaaS Afiliados - Login</h1>
+    <div style={{ padding: 40 }}>
+      <h1>Login</h1>
 
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        style={{ display: "block", marginBottom: 10, width: 300 }}
-      />
+      <form onSubmit={handleLogin}>
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <br /><br />
 
-      <input
-        type="password"
-        placeholder="Senha"
-        value={senha}
-        onChange={(e) => setSenha(e.target.value)}
-        style={{ display: "block", marginBottom: 10, width: 300 }}
-      />
+        <input
+          type="password"
+          placeholder="Senha"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <br /><br />
 
-      <button onClick={entrar} style={{ marginRight: 10 }}>
-        Entrar
-      </button>
+        <button type="submit">Entrar</button>
+      </form>
 
-      <button onClick={cadastrar}>
-        Criar conta
-      </button>
+      {erro && <p>{erro}</p>}
     </div>
   );
 }
