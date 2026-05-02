@@ -96,12 +96,36 @@ export default function Dashboard() {
             {campaigns.map((c) => (
               <div key={c._id} className="bg-white p-6 rounded-2xl shadow">
                 <h3 className="text-xl font-bold">{c.name}</h3>
-                <p className="text-sm text-gray-500 break-all">{c.link}</p>
-                <div className="mt-4 space-y-1">
-                  <p>Cliques: {c.clicks}</p>
-                  <p>Vendas: {c.sales}</p>
-                  <p>Receita: R$ {c.revenue}</p>
-                </div>
+
+<p className="text-sm text-gray-500 break-all">
+  Link original:{" "}
+  <a
+    href={c.link}
+    target="_blank"
+    rel="noreferrer"
+    className="text-blue-600 underline"
+  >
+    Abrir oferta
+  </a>
+</p>
+
+<p className="text-sm text-gray-500 break-all mt-2">
+  Link rastreável:{" "}
+  <a
+    href={`https://afiliados-pro-v3.onrender.com/campaigns/r/${c._id}`}
+    target="_blank"
+    rel="noreferrer"
+    className="text-green-600 underline"
+  >
+    Testar rastreamento
+  </a>
+</p>
+
+<div className="mt-4 space-y-1">
+  <p>Cliques: {c.clicks}</p>
+  <p>Vendas: {c.sales}</p>
+  <p>Receita: R$ {c.revenue}</p>
+</div>
               </div>
             ))}
           </div>
