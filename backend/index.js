@@ -1,3 +1,4 @@
+import campaignRoutes from "./src/routes/campaign.routes.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -21,7 +22,7 @@ const stripe = process.env.STRIPE_SECRET_KEY
 
 app.use(cors({ origin: "*" }));
 app.use(express.json());
-
+app.use("/campaigns", campaignRoutes);
 // ROTAS
 app.use("/auth", authRoutes);
 
