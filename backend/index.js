@@ -1,6 +1,9 @@
 import dotenv from "dotenv";
 dotenv.config();
-
+console.log("URL carregada?", !!process.env.MONGO_URL);
+console.log("Começo:", process.env.MONGO_URL?.slice(0, 25));
+console.log("MONGO_URL:", process.env.MONGO_URL);
+console.log("ENV MONGO:", process.env.MONGO_URL ? "OK" : "UNDEFINED");
 import dns from "dns";
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
