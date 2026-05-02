@@ -94,39 +94,26 @@ export default function Dashboard() {
           <h2 className="text-2xl font-bold mb-4">Minhas Campanhas</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {campaigns.map((c) => (
-              <div key={c._id} className="bg-white p-6 rounded-2xl shadow">
-                <h3 className="text-xl font-bold">{c.name}</h3>
+<div key={c._id} className="bg-white p-6 rounded-2xl shadow">
+  <h3 className="text-xl font-bold">{c.name}</h3>
 
-<p className="text-sm text-gray-500 break-all">
-  Link original:{" "}
+  <p className="text-sm text-gray-500 break-all">{c.link}</p>
+
   <a
-    href={c.link}
+    href={`https://afiliados-pro-v3-2.onrender.com/campaigns/r/${c._id}`}
     target="_blank"
     rel="noreferrer"
-    className="text-blue-600 underline"
+    className="inline-block mt-3 bg-green-600 text-white px-4 py-2 rounded-xl"
   >
-    Abrir oferta
+    Testar Rastreamento
   </a>
-</p>
 
-<p className="text-sm text-gray-500 break-all mt-2">
-  Link rastreável:{" "}
-  <a
-    href={`https://afiliados-pro-v3.onrender.com/campaigns/r/${c._id}`}
-    target="_blank"
-    rel="noreferrer"
-    className="text-green-600 underline"
-  >
-    Testar rastreamento
-  </a>
-</p>
-
-<div className="mt-4 space-y-1">
-  <p>Cliques: {c.clicks}</p>
-  <p>Vendas: {c.sales}</p>
-  <p>Receita: R$ {c.revenue}</p>
+  <div className="mt-4 space-y-1">
+    <p>Cliques: {c.clicks}</p>
+    <p>Vendas: {c.sales}</p>
+    <p>Receita: R$ {c.revenue}</p>
+  </div>
 </div>
-              </div>
             ))}
           </div>
         </div>
