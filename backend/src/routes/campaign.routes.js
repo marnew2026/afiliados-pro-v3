@@ -1,13 +1,12 @@
-import express from "express";
-import {
-  createCampaign,
-  getCampaigns,
-} from "../controllers/campaign.controller.js";
-import { protect } from "../middlewares/auth.middleware.js";
-
+const express = require("express");
 const router = express.Router();
 
-router.post("/", protect, createCampaign);
-router.get("/", protect, getCampaigns);
+const authMiddleware = require("../middlewares/auth.middleware");
+const controller = require("../controllers/campaign.controller");
 
-export default router;
+router.post("/", authMiddleware, controller.createCampaign);
+router.get("/", authMiddleware, controller.getCampaigns);
+
+router.get("/r/:id", controller.redirectCampaign);
+
+module.exports = router;
