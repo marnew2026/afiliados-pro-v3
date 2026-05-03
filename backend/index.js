@@ -29,7 +29,9 @@ app.use("/auth", authRoutes);
 app.get("/", (req, res) => {
   res.send("🚀 Backend OK");
 });
-
+app.get("/debug-routes", (req, res) => {
+  res.json({ campaignsMounted: true });
+});
 app.get("/ping", (req, res) => {
   res.json({ status: "ok", auth: true });
 });
