@@ -1,116 +1,200 @@
 import React, { useEffect, useState } from "react";
-import CampaignCard from "../components/CampaignCard";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  Linking,
+  Alert,
+  StyleSheet,
+  Image,
+} from "react-native";
+import { router } from "expo-router";
+import Stripe from "stripe";
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+app.post("/create-checkout", async (req, res) => {
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      mode: "payment",
+      line_items: [
+        {
+          price_data: {
+            currency: "brl",
+            product_data: {
+              name: "Plano PRO"
+            },
+            unit_amount: 2900
+          },
+          quantity: 1
+        }
+      ],
+      success_url: "https://seusite.com/sucesso",
+      cancel_url: "https://seusite.com/cancelado"
+    });
+
+    res.json({ url: session.url });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+const API_URL = "https://afiliados-pro-v3-2.onrender.com/campaigns"; // troque pelo seu IP
 
 export default function Dashboard() {
   const [campaigns, setCampaigns] = useState([]);
-  const [nome, setNome] = useState("");
-  const [link, setLink] = useState("");
 
-  // carregar campanhas
-  const fetchCampaigns = async () => {
+  const loadCampaigns = async () => {
     try {
-      const res = await fetch("http://localhost:3001/campaigns");
-      const data = await res.json();
+      const response = await fetch(API_URL);
+      const data = await response.json();
       setCampaigns(data);
     } catch (error) {
-      console.error("Erro ao carregar campanhas:", error);
+      console.log(error);
+      Alert.alert("Erro", "Não foi possível carregar campanhas");
+    }
+  };
+
+  const deleteCampaign = async (id) => {
+    try {
+      await fetch(`${API_URL}/${id}`, {
+        method: "DELETE",
+      });
+
+      loadCampaigns();
+    } catch (error) {
+      Alert.alert("Erro", "Não foi possível apagar campanha");
     }
   };
 
   useEffect(() => {
-    fetchCampaigns();
+    loadCampaigns();
   }, []);
 
-  // criar campanha
-  const handleCreate = async () => {
-    if (!nome || !link) {
-      alert("Preencha todos os campos");
-      return;
-    }
+  const renderItem = ({ item }) => {
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(item.link)}`;
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(item.link)}`;
+    const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(item.link)}`;
 
-    try {
-      const response = await fetch("http://localhost:3001/campaigns", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          nome: nome.trim(),
-          link: link.trim(),
-        }),
-      });
+    return (
+      <View style={styles.card}>
+        {item.image ? (
+          <Image source={{ uri: item.image }} style={styles.image} />
+        ) : null}
 
-      const data = await response.json();
+        <Text style={styles.title}>{item.name}</Text>
+        <Text style={styles.link}>{item.link}</Text>
+        <Text>Cliques: {item.clicks}</Text>
+        <Text>Receita: R$ {item.revenue}</Text>
 
-      if (!response.ok) {
-        alert("Erro ao criar campanha");
-        return;
-      }
+        <View style={styles.buttons}>
+          <TouchableOpacity
+            style={styles.shareBtn}
+            onPress={() => Linking.openURL(whatsappUrl)}
+          >
+            <Text>WhatsApp</Text>
+          </TouchableOpacity>
 
-      setCampaigns((prev) => [...prev, data]);
+          <TouchableOpacity
+            style={styles.shareBtn}
+            onPress={() => Linking.openURL(facebookUrl)}
+          >
+            <Text>Facebook</Text>
+          </TouchableOpacity>
 
-      setNome("");
-      setLink("");
-    } catch (error) {
-      console.error("Erro:", error);
-      alert("Falha ao conectar com backend");
-    }
+          <TouchableOpacity
+            style={styles.shareBtn}
+            onPress={() => Linking.openURL(twitterUrl)}
+          >
+            <Text>X</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity
+          style={styles.deleteBtn}
+          onPress={() => deleteCampaign(item._id)}
+        >
+          <Text style={{ color: "#fff" }}>Apagar</Text>
+        </TouchableOpacity>
+      </View>
+    );
   };
 
   return (
-    <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
-      <h1>🚀 SaaS Afiliados Pro V3</h1>
+    <View style={styles.container}>
+      <Text style={styles.header}>🚀 Dashboard SaaS</Text>
 
-      <h2>Criar campanha</h2>
-
-      <input
-        type="text"
-        placeholder="Nome da campanha"
-        value={nome}
-        onChange={(e) => setNome(e.target.value)}
-        style={{
-          width: "100%",
-          padding: "10px",
-          marginBottom: "10px",
-        }}
-      />
-
-      <input
-        type="text"
-        placeholder="Link de afiliado"
-        value={link}
-        onChange={(e) => setLink(e.target.value)}
-        style={{
-          width: "100%",
-          padding: "10px",
-          marginBottom: "10px",
-        }}
-      />
-
-      <button
-        onClick={handleCreate}
-        style={{
-          background: "#2563eb",
-          color: "#fff",
-          border: "none",
-          padding: "10px 15px",
-          borderRadius: "8px",
-          cursor: "pointer",
-          marginBottom: "20px",
-        }}
+      <TouchableOpacity
+        style={styles.newBtn}
+        onPress={() => router.push("/create")}
       >
-        Criar campanha
-      </button>
+        <Text style={{ color: "#fff" }}>Nova Campanha</Text>
+      </TouchableOpacity>
 
-      <h2>Minhas campanhas</h2>
-
-      {campaigns.length === 0 ? (
-        <p>Nenhuma campanha ainda</p>
-      ) : (
-        campaigns.map((campaign) => (
-          <CampaignCard key={campaign.id} campaign={campaign} />
-        ))
-      )}
-    </div>
+      <FlatList
+        data={campaigns}
+        keyExtractor={(item) => item._id}
+        renderItem={renderItem}
+      />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: "#f5f5f5",
+  },
+  header: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 20,
+  },
+  newBtn: {
+    backgroundColor: "#007bff",
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 20,
+    alignItems: "center",
+  },
+  card: {
+    backgroundColor: "#fff",
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 15,
+  },
+  image: {
+    width: "100%",
+    height: 180,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  link: {
+    color: "blue",
+    marginBottom: 8,
+  },
+  buttons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  shareBtn: {
+    backgroundColor: "#ddd",
+    padding: 8,
+    borderRadius: 8,
+  },
+  deleteBtn: {
+    backgroundColor: "red",
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 12,
+    alignItems: "center",
+  },
+});
