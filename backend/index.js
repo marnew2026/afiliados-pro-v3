@@ -1,258 +1,101 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import Stripe from "stripe";
-import mongoose from "mongoose";
 
-require("dotenv").config();
+import connectDB from "./config/db.js";
 
-const express = require("express");
-const cors = require("cors");
-const mongoose = require("mongoose");
+import authRoutes from "./routes/auth.js";
+import campaignRoutes from "./routes/campaigns.js";
+import stripeRoutes from "./routes/stripe.js";
+import trackingRoutes from "./routes/tracking.js";
+import dashboardRoutes from "./routes/dashboard.js";
+import checkoutRoutes from "./routes/checkout.js";
+import stripeConnectRoutes from "./routes/stripeConnect.js";
+import debugRoutes from "./routes/debug.js";
+import affiliateRoutes from "./routes/affiliate.js";
+import offersRoutes from "./routes/offers.js";
+import salesRoutes from "./routes/sales.js";
+import webhookRoutes from "./routes/webhook.js";
 
-const Stripe = require("stripe");
-
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+dotenv.config();
+connectDB();
 
 const app = express();
 
+/* =========================
+   WEBHOOK STRIPE
+========================= */
+
+// ⚠️ IMPORTANTE:
+// webhook precisa vir ANTES do express.json()
+
+app.use(
+  "/webhook",
+  express.raw({ type: "application/json" })
+);
+
+app.use("/webhook", webhookRoutes);
+
+/* =========================
+   MIDDLEWARES
+========================= */
+app.use(express.json());
 app.use(cors());
 
-app.use(express.json());
+
 
 /* =========================
-   MONGODB
+   ROTAS
 ========================= */
-mongoose
-  .connect(process.env.MONGO_URL)
-  .then(() => {
-    console.log("🔥 MongoDB conectado");
-  })
-  .catch((err) => {
-    console.log("Erro MongoDB:", err);
-  });
+
+app.use("/auth", authRoutes);
+
+app.use("/campaigns", campaignRoutes);
+
+app.use("/stripe", stripeRoutes);
+
+app.use("/track", trackingRoutes);
+
+app.use("/stripe-connect", stripeConnectRoutes);
+
+app.use("/dashboard", dashboardRoutes);
+
+app.use("/offers", offersRoutes);
+
+app.use("/checkout", checkoutRoutes);
+
+app.use("/sales", salesRoutes);
+
+app.use("/affiliate", affiliateRoutes);
+
+app.use("/", debugRoutes);
 
 /* =========================
-   MODELS
+   PAGAMENTO
 ========================= */
-const UserSchema = new mongoose.Schema({
-  email: String,
-  isPro: {
-    type: Boolean,
-    default: false,
-  },
+
+app.get("/success", (req, res) => {
+  res.send("🎉 PAGAMENTO APROVADO");
 });
 
-const CampaignSchema = new mongoose.Schema({
-  name: String,
-  link: String,
-  clicks: {
-    type: Number,
-    default: 0,
-  },
-  ownerId: String,
-  email: String,
+app.get("/cancel", (req, res) => {
+  res.send("❌ PAGAMENTO CANCELADO");
 });
-
-const User = mongoose.model("User", UserSchema);
-
-const Campaign = mongoose.model(
-  "Campaign",
-  CampaignSchema
-);
 
 /* =========================
    HOME
 ========================= */
+
 app.get("/", (req, res) => {
-  res.send("🚀 Backend OK");
-});
-
-/* =========================
-   USER
-========================= */
-app.get("/user/:email", async (req, res) => {
-  try {
-    const user = await User.findOne({
-      email: req.params.email,
-    });
-
-    if (!user) {
-      return res.json({
-        isPro: false,
-      });
-    }
-
-    res.json(user);
-
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      error: "Erro user",
-    });
-  }
-});
-
-/* =========================
-   LISTAR CAMPANHAS
-========================= */
-app.get("/campaigns", async (req, res) => {
-  try {
-    const campaigns = await Campaign.find({
-      ownerId: req.query.ownerId,
-    });
-
-    res.json(campaigns);
-
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      error: "Erro campanhas",
-    });
-  }
-});
-
-/* =========================
-   CRIAR CAMPANHA
-========================= */
-app.post("/campaigns", async (req, res) => {
-  try {
-    const {
-      name,
-      link,
-      ownerId,
-      email,
-    } = req.body;
-
-    const user = await User.findOne({
-      email,
-    });
-
-    if (!user?.isPro) {
-      return res.status(403).json({
-        error: "PRO necessário",
-      });
-    }
-
-    const campaign = await Campaign.create({
-      name,
-      link,
-      ownerId,
-      email,
-    });
-
-    res.json(campaign);
-
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      error: "Erro criar campanha",
-    });
-  }
-});
-
-/* =========================
-   STRIPE CHECKOUT
-========================= */
-app.post("/create-checkout", async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    if (!email) {
-      return res.status(400).json({
-        error: "Email obrigatório",
-      });
-    }
-
-    let user = await User.findOne({
-      email,
-    });
-
-    if (!user) {
-      user = await User.create({
-        email,
-        isPro: false,
-      });
-    }
-
-    const session =
-      await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
-
-        mode: "payment",
-
-        customer_email: email,
-
-        line_items: [
-          {
-            price:
-              process.env.STRIPE_PRICE_ID,
-            quantity: 1,
-          },
-        ],
-
-        success_url:
-          "https://afiliados-pro-v3-2.onrender.com/success",
-
-        cancel_url:
-          "https://afiliados-pro-v3-2.onrender.com/cancel",
-      });
-
-    res.json({
-      url: session.url,
-    });
-
-  } catch (err) {
-    console.log("ERRO STRIPE:", err);
-
-    res.status(500).json({
-      error: err.message,
-    });
-  }
-});
-
-/* =========================
-   SUCCESS
-========================= */
-app.get("/success", async (req, res) => {
-  try {
-    const email = req.query.email;
-
-    if (email) {
-      await User.findOneAndUpdate(
-        { email },
-        {
-          isPro: true,
-        }
-      );
-    }
-
-    res.send("Pagamento aprovado");
-
-  } catch (err) {
-    console.log(err);
-
-    res.send("Erro success");
-  }
-});
-
-/* =========================
-   CANCEL
-========================= */
-app.get("/cancel", (req, res) => {
-  res.send("Pagamento cancelado");
+  res.send("🚀 SaaS Afiliados PRO ONLINE");
 });
 
 /* =========================
    SERVER
 ========================= */
+
 const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
-  console.log(
-    `🚀 BACKEND RODANDO NA ${PORT}`
-  );
+  console.log("🔥 Server rodando na porta", PORT);
 });

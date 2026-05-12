@@ -2,17 +2,22 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "SaaS Afiliados Pro V3 Backend",
+  "type": "module",
   "main": "index.js",
   "scripts": {
-    "dev": "node index.js",
+    "dev": "nodemon index.js",
     "start": "node index.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
     "express": "^4.18.2",
-    "mongoose": "^8.0.0",
-    "stripe": "^14.0.0",
+    "firebase-admin": "^13.9.0",
     "jsonwebtoken": "^9.0.2",
-    "dotenv": "^16.3.1"
+    "mongoose": "^8.0.0",
+    "stripe": "^14.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
   }
 }
