@@ -1,32 +1,19 @@
 import admin from "firebase-admin";
 
-/**
- * Firebase Admin inicializado via ENV (PRODUÇÃO)
- * Não usa arquivo serviceAccountKey.json
- */
+const base64 = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
 
-let firebaseApp;
+if (!base64) {
+  throw new Error("FIREBASE_SERVICE_ACCOUNT_B64 não configurado no ambiente");
+}
 
-const initFirebaseAdmin = () => {
-  if (firebaseApp) return firebaseApp;
+const serviceAccount = JSON.parse(
+  Buffer.from(base64, "base64").toString("utf8")
+);
 
-  if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
-    throw new Error("FIREBASE_SERVICE_ACCOUNT não configurado no ambiente");
-  }
-
-  const serviceAccount = JSON.parse(
-    process.env.FIREBASE_SERVICE_ACCOUNT
-  );
-
-  firebaseApp = admin.initializeApp({
+if (!admin.apps.length) {
+  admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
-
-  console.log("🔥 Firebase Admin inicializado");
-
-  return firebaseApp;
-};
-
-initFirebaseAdmin();
+}
 
 export default admin;
