@@ -1,15 +1,32 @@
 import admin from "firebase-admin";
-import fs from "fs";
-import dotenv from "dotenv";
 
-dotenv.config();
+/**
+ * Firebase Admin inicializado via ENV (PRODUÇÃO)
+ * Não usa arquivo serviceAccountKey.json
+ */
 
-const serviceAccount = JSON.parse(
-  fs.readFileSync("./serviceAccountKey.json", "utf-8")
-);
+let firebaseApp;
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
+const initFirebaseAdmin = () => {
+  if (firebaseApp) return firebaseApp;
+
+  if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
+    throw new Error("FIREBASE_SERVICE_ACCOUNT não configurado no ambiente");
+  }
+
+  const serviceAccount = JSON.parse(
+    process.env.FIREBASE_SERVICE_ACCOUNT
+  );
+
+  firebaseApp = admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+
+  console.log("🔥 Firebase Admin inicializado");
+
+  return firebaseApp;
+};
+
+initFirebaseAdmin();
 
 export default admin;
