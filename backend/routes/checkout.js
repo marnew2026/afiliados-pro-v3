@@ -1,10 +1,18 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import Stripe from "stripe";
 import Sale from "../models/Sale.js";
 import User from "../models/User.js";
 
 const router = express.Router();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+console.log("💳 STRIPE KEY:", process.env.STRIPE_SECRET_KEY?.slice(0, 12));
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2025-02-24.acacia",
+});
 
 /* =========================
    LINK DE AFILIADO (HOTMART STYLE)

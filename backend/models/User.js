@@ -3,7 +3,10 @@ import mongoose from "mongoose";
 const UserSchema = new mongoose.Schema({
   email: String,
   isPro: { type: Boolean, default: false },
-
+affiliateId: {
+  type: String,
+  unique: true,
+},
   // 🧠 SCORE DE CONFIANÇA
   riskScore: { type: Number, default: 50 }, // 0–100
   trustLevel: { type: String, default: "MEDIUM" },

@@ -10,7 +10,7 @@ import connectDB from "./config/db.js";
 // Routes
 import authRoutes from "./routes/authRoutes.js";
 import campaignRoutes from "./routes/campaigns.js";
-import stripeRoutes from "./routes/stripe.js";
+import stripeRoutes from "./routes/stripeRoutes.js";
 import trackingRoutes from "./routes/tracking.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import checkoutRoutes from "./routes/checkout.js";
@@ -22,12 +22,12 @@ import salesRoutes from "./routes/sales.js";
 import webhookRoutes from "./routes/webhook.js";
 
 // =========================
-// INIT APP
+// APP
 // =========================
 const app = express();
 
 // =========================
-// GLOBAL HANDLERS (CRASH DEBUG)
+// ERROR HANDLERS
 // =========================
 process.on("uncaughtException", (err) => {
   console.error("🔥 UNCAUGHT EXCEPTION:", err);
@@ -38,7 +38,7 @@ process.on("unhandledRejection", (err) => {
 });
 
 // =========================
-// DB CONNECTION
+// DB
 // =========================
 connectDB();
 
@@ -49,7 +49,7 @@ app.use(cors());
 app.use(express.json());
 
 // =========================
-// WEBHOOK (RAW BODY OBRIGATÓRIO)
+// WEBHOOK (RAW BODY)
 // =========================
 app.use("/webhook", express.raw({ type: "application/json" }));
 app.use("/webhook", webhookRoutes);
@@ -60,6 +60,7 @@ app.use("/webhook", webhookRoutes);
 app.use("/auth", authRoutes);
 app.use("/campaigns", campaignRoutes);
 app.use("/stripe", stripeRoutes);
+app.use("/r", trackingRoutes);
 app.use("/track", trackingRoutes);
 app.use("/stripe-connect", stripeConnectRoutes);
 app.use("/dashboard", dashboardRoutes);
@@ -85,7 +86,7 @@ app.get("/cancel", (req, res) => {
 });
 
 // =========================
-// START SERVER
+// SERVER START
 // =========================
 const PORT = process.env.PORT || 3001;
 

@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-
+import { v4 as uuidv4 } from "uuid";
 export const register = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -16,7 +16,7 @@ export const register = async (req, res) => {
       email,
       password: hashedPassword,
     });
-
+     user.affiliateId = uuidv4();    
     res.status(201).json({
       message: "Usuário criado com sucesso",
       user: {

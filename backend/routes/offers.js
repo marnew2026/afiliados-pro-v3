@@ -20,9 +20,14 @@ router.get("/", async (req, res) => {
   }
 });
 
-/* =========================
-   CREATE TEST OFFER
-========================= */
+router.post("/create", async (req, res) => {
+  try {
+    const offer = await Offer.create(req.body);
+    res.json(offer);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 router.get("/create-test", async (req, res) => {
   try {
     const offer = await Offer.create({
