@@ -2,13 +2,13 @@ import express from "express";
 import Stripe from "stripe";
 import Sale from "../models/Sale.js";
 import User from "../models/User.js";
-import Offer from "../models/Offer.js";
 
 const router = express.Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// IMPORTANTE: como no index.js você já usa app.use("/webhook", express.raw(...))
-// aqui NÃO precisa repetir express.raw()
+/* =========================
+   WEBHOOK STRIPE
+========================= */
 router.post("/", async (req, res) => {
   let event;
 
@@ -25,34 +25,27 @@ router.post("/", async (req, res) => {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  try {
-    if (event.type === "checkout.session.completed") {
-      const session = event.data.object;
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object;
 
-      console.log("🔥 PAGAMENTO CONFIRMADO:", session.id);
+    console.log("🔥 PAGAMENTO CONFIRMADO:", session.id);
 
-      const offerId = session.metadata?.offerId || null;
-      const affiliateId = session.metadata?.affiliateId || null;
-      const email = session.customer_email || null;
+    try {
+      const offerId = session.metadata?.offerId;
+      const affiliateId = session.metadata?.affiliateId;
+      const commission = Number(session.metadata?.commission || 0);
+      const email =
+        session.customer_details?.email ||
+        session.customer_email ||
+        null;
 
-      let commission = 0;
-
-      if (offerId) {
-        const offer = await Offer.findById(offerId);
-
-        if (offer) {
-          commission =
-            (session.amount_total * (offer.commissionPercent || 0)) / 100;
-        }
-      }
-
-      await Sale.create({
+      const sale = await Sale.create({
         productId: offerId,
-        productName: "Produto",
-        producerId: "produtor123",
+        productName: session.metadata?.productName || "Produto",
+        producerId: session.metadata?.producerId || "produtor123",
         affiliateId,
         buyerEmail: email,
-        amount: session.amount_total,
+        amount: session.amount_total / 100,
         commission,
         stripeSessionId: session.id,
         status: "approved",
@@ -64,16 +57,16 @@ router.post("/", async (req, res) => {
           { isPro: true },
           { new: true }
         );
+        console.log("✅ USUÁRIO PRO:", email);
       }
 
-      console.log("✅ Venda registrada");
+      console.log("✅ SALE SALVA:", sale._id);
+    } catch (err) {
+      console.log("❌ ERRO SALVANDO VENDA:", err.message);
     }
-
-    return res.json({ received: true });
-  } catch (err) {
-    console.log("❌ Webhook processamento:", err.message);
-    return res.status(500).json({ error: err.message });
   }
+
+  return res.json({ received: true });
 });
 
 export default router;
