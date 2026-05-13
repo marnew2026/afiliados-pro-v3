@@ -4,12 +4,20 @@ import Click from "../models/Click.js";
 
 const router = express.Router();
 
+/* NORMALIZAÇÃO (MUITO IMPORTANTE) */
+const normalize = (v) => (v || "").toLowerCase().trim();
+
 router.get("/:affiliateId", async (req, res) => {
   try {
-    const { affiliateId } = req.params;
+    const affiliateId = normalize(req.params.affiliateId);
 
-    const clicks = await Click.countDocuments({ affiliateId });
-    const sales = await Sale.find({ affiliateId });
+    const clicks = await Click.countDocuments({
+      affiliateId: new RegExp(`^${affiliateId}$`, "i"),
+    });
+
+    const sales = await Sale.find({
+      affiliateId: new RegExp(`^${affiliateId}$`, "i"),
+    });
 
     const totalCommission = sales.reduce(
       (sum, sale) => sum + (sale.commission || 0),
@@ -22,9 +30,7 @@ router.get("/:affiliateId", async (req, res) => {
       totalCommission,
     });
   } catch (err) {
-    res.status(500).json({
-      error: err.message,
-    });
+    res.status(500).json({ error: err.message });
   }
 });
 
