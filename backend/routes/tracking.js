@@ -17,11 +17,9 @@ router.get("/:affiliateId/:offerId", async (req, res) => {
     }
 
     await Click.create({
-      affiliateId,
-      offerId,
-      ip: req.ip,
-      createdAt: new Date(),
-    });
+  affiliateId: req.params.affiliateCode,
+  offerId: req.params.offerId,
+});
 
     const redirectUrl = offer.checkoutUrl || "https://google.com";
 

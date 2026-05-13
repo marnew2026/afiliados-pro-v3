@@ -1,64 +1,80 @@
 import express from "express";
-import admin from "../firebaseAdmin.js";
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
+import User from "../models/User.js";
 
 const router = express.Router();
 
 /* =========================
-   VERIFY TOKEN
+   REGISTER
 ========================= */
-router.post("/verify", async (req, res) => {
+router.post("/register", async (req, res) => {
   try {
-    const { token } = req.body;
+    const { name, email, password } = req.body;
 
-    if (!token) {
-      return res.status(401).json({
-        error: "Token obrigatório",
-      });
+    // verifica se já existe
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ error: "Usuário já existe" });
     }
 
-    const decoded = await admin.auth().verifyIdToken(token);
+    // gera affiliate code
+    const affiliateCode = crypto.randomBytes(4).toString("hex");
 
-    res.json({
-      uid: decoded.uid,
-      email: decoded.email,
-      success: true,
+    // hash senha
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role: "affiliate",
+      affiliateCode,
+    });
+
+    return res.json({
+      message: "Usuário criado com sucesso",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        affiliateCode: user.affiliateCode,
+      },
     });
   } catch (err) {
-    console.log(err);
-
-    res.status(401).json({
-      error: "Token inválido",
-    });
+    return res.status(500).json({ error: err.message });
   }
 });
 
 /* =========================
-   ME
+   LOGIN
 ========================= */
-router.get("/me", async (req, res) => {
+router.post("/login", async (req, res) => {
   try {
-    const header = req.headers.authorization;
+    const { email, password } = req.body;
 
-    if (!header || !header.startsWith("Bearer ")) {
-      return res.status(401).json({
-        error: "No token",
-      });
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ error: "Usuário não encontrado" });
     }
 
-    const token = header.split(" ")[1];
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      return res.status(400).json({ error: "Senha inválida" });
+    }
 
-    const decoded = await admin.auth().verifyIdToken(token);
-
-    res.json({
-      uid: decoded.uid,
-      email: decoded.email,
+    return res.json({
+      message: "Login OK",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        affiliateCode: user.affiliateCode,
+      },
     });
   } catch (err) {
-    console.log(err);
-
-    res.status(401).json({
-      error: "Unauthorized",
-    });
+    return res.status(500).json({ error: err.message });
   }
 });
 

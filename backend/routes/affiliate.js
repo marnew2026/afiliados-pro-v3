@@ -1,29 +1,26 @@
 import express from "express";
-import Sale from "../models/Sale.js";
+import User from "../models/User.js";
+import Click from "../models/Click.js";
 
 const router = express.Router();
 
-router.get("/:affiliateId", async (req, res) => {
+/* GERAR LINK */
+router.get("/link/:affiliateCode/:offerId", async (req, res) => {
   try {
-    const { affiliateId } = req.params;
+    const { affiliateCode, offerId } = req.params;
 
-    const sales = await Sale.find({ affiliateId });
+    const affiliate = await User.findOne({ affiliateCode });
 
-    const totalSales = sales.length;
+    if (!affiliate) {
+      return res.status(404).json({ error: "Afiliado não encontrado" });
+    }
 
-    const totalEarnings = sales.reduce((sum, sale) => {
-      return sum + (sale.commission || 0);
-    }, 0);
+    const baseUrl = process.env.BASE_URL || "http://localhost:3001";
 
-    res.json({
-      affiliateId,
-      totalSales,
-      totalEarnings,
-      sales
-    });
+    const link = `${baseUrl}/checkout/a/${affiliateCode}/${offerId}`;
 
+    res.json({ link });
   } catch (err) {
-    console.log(err);
     res.status(500).json({ error: err.message });
   }
 });
