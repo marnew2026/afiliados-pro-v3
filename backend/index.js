@@ -34,6 +34,11 @@ connectDB();
 app.get("/ping", (req, res) => {
   res.json({ ok: true });
 });
+app.use(
+  "/webhook",
+  express.raw({ type: "application/json" }),
+  webhookRoutes
+);
 app.use(express.json());
 app.use(cors());
 app.use("/checkout", checkoutRoutes);
@@ -53,8 +58,7 @@ app.use("/", goRoutes);
 app.get("/", (req, res) => res.send("🚀 SaaS Afiliados PRO ONLINE"));
 app.get("/success", (req, res) => res.send("🎉 PAGAMENTO APROVADO"));
 app.get("/cancel", (req, res) => res.send("❌ PAGAMENTO CANCELADO"));
-app.use("/webhook", express.raw({ type: "application/json" }));
-app.use("/webhook", webhookRoutes);
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log("STRIPE:", process.env.STRIPE_SECRET_KEY);
