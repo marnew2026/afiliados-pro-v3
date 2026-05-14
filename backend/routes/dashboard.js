@@ -8,25 +8,37 @@ router.get("/:affiliateCode", async (req, res) => {
   try {
     const { affiliateCode } = req.params;
 
-    const clicks = await Click.countDocuments({ affiliateId: affiliateCode });
-    const sales = await Sale.find({ affiliateId: affiliateCode });
+    const clicks = await Click.countDocuments({
+      affiliateId: affiliateCode,
+    });
 
-    const totalCommission = sales.reduce(
-      (sum, s) => sum + (s.commission || 0),
+    const sales = await Sale.find({
+      affiliateId: affiliateCode,
+    });
+
+    const totalEarnings = sales.reduce(
+      (sum, sale) => sum + Number(sale.commission || 0),
       0
     );
 
+    const conversionRate =
+      clicks > 0 ? (sales.length / clicks) * 100 : 0;
+
+    const pendingBalance = totalEarnings;
+    const paidBalance = 0;
+    const epc = clicks > 0 ? totalEarnings / clicks : 0;
+
     res.json({
-      clicks,  conversionRate,
-  totalEarnings,
-  pendingBalance,
-  paidBalance,
-  epc: earnings / clicks,
+      clicks,
       sales: sales.length,
-      totalCommission,
-      conversionRate: clicks ? (sales.length / clicks) * 100 : 0,
+      totalEarnings,
+      pendingBalance,
+      paidBalance,
+      conversionRate,
+      epc,
     });
   } catch (err) {
+    console.log("❌ DASHBOARD ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
