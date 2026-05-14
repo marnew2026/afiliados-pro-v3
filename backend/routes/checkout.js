@@ -29,15 +29,9 @@ router.get("/a/:affiliateCode/:offerId", async (req, res) => {
       mode: "payment",
       payment_method_types: ["card"],
 
-      line_items: [
+ line_items: [
   {
-    price_data: {
-      currency: "brl",
-      unit_amount: Math.round(Number(offer.price) * 100),
-      product_data: {
-        name: String(offer.name || "Produto"),
-      },
-    },
+    price: "price_1TWnfgCGmSfVpF1BUQ0agwf9",
     quantity: 1,
   },
 ],
