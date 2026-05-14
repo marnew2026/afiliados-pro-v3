@@ -20,27 +20,28 @@ import salesRoutes from "./routes/sales.js";
 import webhookRoutes from "./routes/webhook.js";
 
 const app = express();
-app.get("/ping", (req, res) => {
-  res.send("OK");
-});
+
 process.on("uncaughtException", (err) => console.error("UNCAUGHT:", err));
 process.on("unhandledRejection", (err) => console.error("REJECTION:", err));
 
 connectDB();
 
-/* IMPORTANTE: webhook ANTES do express.json */
-
-
+/* rota teste */
 app.get("/ping", (req, res) => {
   res.json({ ok: true });
 });
+
+/* webhook stripe - ANTES do json */
 app.use(
   "/webhook",
   express.raw({ type: "application/json" }),
   webhookRoutes
 );
-app.use(express.json());
+
+/* resto */
 app.use(cors());
+app.use(express.json());
+
 app.use("/checkout", checkoutRoutes);
 app.use("/campaigns", campaignRoutes);
 app.use("/stripe", stripeRoutes);
@@ -51,10 +52,10 @@ app.use("/dashboard", dashboardRoutes);
 app.use("/offers", offersRoutes);
 app.use("/sales", salesRoutes);
 app.use("/affiliate", affiliateRoutes);
-app.use("/", debugRoutes);
 app.use("/auth", authRoutes);
 app.use("/", goRoutes);
-/* webhook POR ÚLTIMO */
+app.use("/", debugRoutes);
+
 app.get("/", (req, res) => res.send("🚀 SaaS Afiliados PRO ONLINE"));
 app.get("/success", (req, res) => res.send("🎉 PAGAMENTO APROVADO"));
 app.get("/cancel", (req, res) => res.send("❌ PAGAMENTO CANCELADO"));
