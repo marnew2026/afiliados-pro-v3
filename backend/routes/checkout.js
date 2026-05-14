@@ -6,7 +6,7 @@ import Offer from "../models/Offer.js";
 const router = express.Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-console.log("🔥 CHECKOUT REAL LOADED");
+console.log("🔥 CHECKOUT V2 LINEITEM FIX");
 
 router.get("/a/:affiliateCode/:offerId", async (req, res) => {
   try {
