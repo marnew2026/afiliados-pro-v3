@@ -24,23 +24,23 @@ router.get("/a/:affiliateCode/:offerId", async (req, res) => {
     if (!offer) {
       return res.status(404).json({ error: "Oferta não encontrada" });
     }
-
+    console.log("OFFER:", offer);
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
 
       line_items: [
-        {
-          price_data: {
-            currency: "brl",
-            product_data: {
-              name: offer.name,
-            },
-            unit_amount: offer.price * 100,
-          },
-          quantity: 1,
-        },
-      ],
+  {
+    price_data: {
+      currency: "brl",
+      unit_amount: Math.round(Number(offer.price) * 100),
+      product_data: {
+        name: String(offer.name || "Produto"),
+      },
+    },
+    quantity: 1,
+  },
+],
 
       success_url: `${process.env.BASE_URL}/success`,
       cancel_url: `${process.env.BASE_URL}/cancel`,
