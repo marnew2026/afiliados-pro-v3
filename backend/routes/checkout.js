@@ -31,11 +31,10 @@ router.get("/a/:affiliateCode/:offerId", async (req, res) => {
 
  line_items: [
   {
-    price: "price_1TWnfgCGmSfVpF1BUQ0agwf9",
+    price: "price_1TWo7ZCGmSfVpF1Bw1itJ45G",
     quantity: 1,
   },
 ],
-
       success_url: `${process.env.BASE_URL}/success`,
       cancel_url: `${process.env.BASE_URL}/cancel`,
 
