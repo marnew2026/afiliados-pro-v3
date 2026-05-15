@@ -1,0 +1,6 @@
+import cron from "node-cron";
+import { webhookQueue } from "./queues/webhookQueue.js";
+
+cron.schedule("* * * * *", async () => {
+  console.log("🔄 verificando fila...");
+});

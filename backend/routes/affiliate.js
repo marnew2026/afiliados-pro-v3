@@ -15,7 +15,7 @@ router.get("/link/:affiliateCode/:offerId", async (req, res) => {
       return res.status(404).json({ error: "Afiliado não encontrado" });
     }
 
-    const baseUrl = process.env.BASE_URL || "http://localhost:3001";
+    const baseUrl = "http://192.168.0.9:3001";
 
     const link = `${baseUrl}/checkout/a/${affiliateCode}/${offerId}`;
 

@@ -1,0 +1,24 @@
+import express from "express";
+import { Queue } from "bullmq";
+import { redis } from "../config/redis.js";
+
+const router = express.Router();
+
+const queue = new Queue("webhookQueue", {
+  connection: redis,
+});
+
+router.post("/", async (req, res) => {
+  try {
+    await queue.add("stripe-event", req.body, {
+      removeOnComplete: true,
+      removeOnFail: true,
+    });
+
+    return res.json({ received: true });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+export default router;
