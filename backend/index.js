@@ -5,7 +5,8 @@ import express from "express";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import stripeRoutes from "./routes/stripeRoutes.js";
-
+import webhookRoutes from "./routes/webhook.js";
+import productRoutes from "./routes/products.js";
 const app = express();
 
 app.use(cors());
@@ -26,7 +27,7 @@ app.use("/stripe", stripeRoutes);
 app.get("/success", (req, res) => {
   res.send("🎉 PAGAMENTO APROVADO");
 });
-
+app.use("/webhook", webhookRoutes);
 app.get("/cancel", (req, res) => {
   res.send("❌ PAGAMENTO CANCELADO");
 });
