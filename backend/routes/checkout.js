@@ -1,7 +1,9 @@
 import express from "express";
-import stripe from "../config/stripe.js";
+import Stripe from "stripe";
 
 const router = express.Router();
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 router.post("/create-checkout", async (req, res) => {
   try {
@@ -22,7 +24,6 @@ router.post("/create-checkout", async (req, res) => {
     });
 
     return res.json({ url: session.url });
-
   } catch (err) {
     console.log(err);
     return res.status(500).json({ error: err.message });

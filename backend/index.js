@@ -4,32 +4,31 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 import connectDB from "./config/db.js";
-
-import checkoutRoutes from "./routes/checkout.js";
+import stripeRoutes from "./routes/stripeRoutes.js";
 
 const app = express();
 
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 connectDB();
 
-app.use(express.json());
-app.use(cors())
-
-// 🔥 ROTAS
-app.use("/checkout", checkoutRoutes);
-
-app.get("/test", (req, res) => {
-  res.json({ ok: true });
-}); 
-app.get("", (req, res) => {
+// teste rota
+app.get("/", (req, res) => {
   res.send("🚀 SaaS Afiliados PRO ONLINE");
 });
-app.use(express.urlencoded({ extended: true }));
+
+// stripe
+app.use("/stripe", stripeRoutes);
+
+// páginas stripe
 app.get("/success", (req, res) => {
-  res.send("🎉 PAGAMENTO OK");
+  res.send("🎉 PAGAMENTO APROVADO");
 });
 
 app.get("/cancel", (req, res) => {
-  res.send("❌ CANCELADO");
+  res.send("❌ PAGAMENTO CANCELADO");
 });
 
 const PORT = process.env.PORT || 3001;
@@ -37,4 +36,5 @@ const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log("🔥 SERVER INICIADO");
   console.log("🚀 PORTA:", PORT);
+  console.log("💳 STRIPE ATIVO");
 });
