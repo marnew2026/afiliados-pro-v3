@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
-
+import productsRoutes from "./routes/products.js";
 import express from "express";
 import cors from "cors";
 import connectDB from "./config/db.js";
