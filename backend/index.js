@@ -14,7 +14,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 connectDB();
-
+app.use("/products", productsRoutes);
 // teste rota
 app.get("/", (req, res) => {
   res.send("🚀 SaaS Afiliados PRO ONLINE");
