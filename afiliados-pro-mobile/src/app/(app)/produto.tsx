@@ -1,27 +1,8 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView } from "react-native";
 import { useState } from "react";
 import { auth } from "../../firebase";
 import { useRouter } from "expo-router";
-import express from "express";
 
-const router = express.Router();
-
-router.post("/create", async (req, res) => {
-  try {
-    const { nome, preco, link, imagem, userEmail } = req.body;
-
-    console.log("📦 PRODUTO RECEBIDO:", req.body);
-
-    return res.json({
-      ok: true,
-      produto: { nome, preco, link, imagem, userEmail },
-    });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({ error: "erro salvar" });
-  }
-});
-export default router;
 export default function Produto() {
   const router = useRouter();
 
@@ -31,16 +12,19 @@ export default function Produto() {
   const [imagem, setImagem] = useState("");
 
   const salvarProduto = async () => {
-    try {
-      Alert.alert("Teste", "clicou");
+    if (!nome || !preco || !link) {
+      Alert.alert("Preencha nome, preço e link");
+      return;
+    }
 
+    try {
       const res = await fetch(
         "https://afiliados-pro-v3-2.onrender.com/products/create",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            userEmail: auth.currentUser?.email || "teste@teste.com",
+            userEmail: auth.currentUser?.email,
             nome,
             preco,
             link,
@@ -49,67 +33,76 @@ export default function Produto() {
         }
       );
 
-      const txt = await res.text();
-      Alert.alert("Resposta", txt);
-    } catch (e) {
-      Alert.alert("Erro", "erro fetch");
+      const data = await res.json();
+      console.log("PRODUTO SALVO:", data);
+
+      Alert.alert("Sucesso", "Produto cadastrado");
+      router.push("/campanhas");
+    } catch (err) {
+      console.log(err);
+      Alert.alert("Erro ao salvar");
     }
   };
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: "#fff", padding: 20 }}>
-      <TouchableOpacity onPress={() => router.back()} style={{ marginBottom: 15 }}>
-        <Text style={{ color: "#2563eb", fontSize: 16 }}>← Voltar</Text>
-      </TouchableOpacity>
-
-      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20, color: "#000" }}>
+    <ScrollView style={{ flex: 1, backgroundColor: "#007ACC", padding: 20 }}>
+      <Text style={{ color: "#fff", fontSize: 26, fontWeight: "bold", marginBottom: 20 }}>
         Cadastrar Produto
       </Text>
 
+      <Text style={{ color: "#fff", marginBottom: 5 }}>Nome do produto</Text>
       <TextInput
-        placeholder="Nome"
-        placeholderTextColor="#666"
         value={nome}
         onChangeText={setNome}
-        style={{ borderWidth: 1, borderColor: "#ccc", padding: 12, borderRadius: 8, marginBottom: 12, color: "#000" }}
+        placeholder="Ex: Capa de chuva"
+        placeholderTextColor="#666"
+        style={{ backgroundColor: "#fff", padding: 12, borderRadius: 8, marginBottom: 15 }}
       />
 
+      <Text style={{ color: "#fff", marginBottom: 5 }}>Preço</Text>
       <TextInput
-        placeholder="Preço"
-        placeholderTextColor="#666"
         value={preco}
         onChangeText={setPreco}
-        style={{ borderWidth: 1, borderColor: "#ccc", padding: 12, borderRadius: 8, marginBottom: 12, color: "#000" }}
+        placeholder="Ex: 65"
+        placeholderTextColor="#666"
+        style={{ backgroundColor: "#fff", padding: 12, borderRadius: 8, marginBottom: 15 }}
       />
 
+      <Text style={{ color: "#fff", marginBottom: 5 }}>Link do produto</Text>
       <TextInput
-        placeholder="Link"
-        placeholderTextColor="#666"
         value={link}
         onChangeText={setLink}
-        style={{ borderWidth: 1, borderColor: "#ccc", padding: 12, borderRadius: 8, marginBottom: 12, color: "#000" }}
+        placeholder="https://..."
+        placeholderTextColor="#666"
+        style={{ backgroundColor: "#fff", padding: 12, borderRadius: 8, marginBottom: 15 }}
       />
 
+      <Text style={{ color: "#fff", marginBottom: 5 }}>Link da imagem</Text>
       <TextInput
-        placeholder="Imagem"
-        placeholderTextColor="#666"
         value={imagem}
         onChangeText={setImagem}
-        style={{ borderWidth: 1, borderColor: "#ccc", padding: 12, borderRadius: 8, marginBottom: 20, color: "#000" }}
+        placeholder="https://imagem.jpg"
+        placeholderTextColor="#666"
+        style={{ backgroundColor: "#fff", padding: 12, borderRadius: 8, marginBottom: 20 }}
       />
 
       <TouchableOpacity
         onPress={salvarProduto}
-        style={{ backgroundColor: "#000", padding: 16, borderRadius: 10 }}
+        style={{ backgroundColor: "#111827", padding: 15, borderRadius: 10 }}
       >
-        <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold" }}>
+        <Text style={{ color: "#fff", textAlign: "center", fontSize: 16 }}>
           Salvar Produto
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={() => router.back()}
+        style={{ marginTop: 15 }}
+      >
+        <Text style={{ color: "#fff", textAlign: "center" }}>
+          ← Voltar
         </Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
-
-
-
-

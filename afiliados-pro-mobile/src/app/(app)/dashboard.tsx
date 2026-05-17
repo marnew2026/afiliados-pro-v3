@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, Linking } from "react-native";
+import { View, Text, TouchableOpacity, Linking, Alert } from "react-native";
 import { useState } from "react";
 import { auth } from "../../firebase";
 import { useRouter } from "expo-router";
@@ -15,9 +15,7 @@ export default function Dashboard() {
         "https://afiliados-pro-v3-2.onrender.com/stripe/create-checkout-session",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: auth.currentUser?.email || "teste@teste.com",
           }),
@@ -26,30 +24,47 @@ export default function Dashboard() {
 
       const data = await res.json();
 
-      console.log("CHECKOUT:", data);
-
       if (data.url) {
         Linking.openURL(data.url);
+      } else {
+        Alert.alert("Erro", "Não foi possível abrir pagamento");
       }
     } catch (err) {
-      console.log("ERRO:", err);
+      console.log(err);
+      Alert.alert("Erro", "Falha checkout");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={{ flex: 1, justifyContent: "center", padding: 20 }}>
-      <Text style={{ fontSize: 22, marginBottom: 20 }}>
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        padding: 20,
+        backgroundColor: "#007ACC",
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 26,
+          marginBottom: 30,
+          color: "#fff",
+          fontWeight: "bold",
+          textAlign: "center",
+        }}
+      >
         Dashboard PRO
       </Text>
 
       <TouchableOpacity
         onPress={comprarPro}
         style={{
-          backgroundColor: "black",
-          padding: 15,
-          borderRadius: 10,
+          backgroundColor: "#1E1E1E",
+          padding: 16,
+          borderRadius: 12,
+          marginBottom: 15,
         }}
       >
         <Text style={{ color: "#fff", textAlign: "center" }}>
@@ -60,14 +75,27 @@ export default function Dashboard() {
       <TouchableOpacity
         onPress={() => router.push("/produto")}
         style={{
-          backgroundColor: "#2563eb",
-          padding: 15,
-          borderRadius: 10,
-          marginTop: 15,
+          backgroundColor: "#1E1E1E",
+          padding: 16,
+          borderRadius: 12,
+          marginBottom: 15,
         }}
       >
         <Text style={{ color: "#fff", textAlign: "center" }}>
           Cadastrar Produto
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={() => router.push("/campanhas")}
+        style={{
+          backgroundColor: "#1E1E1E",
+          padding: 16,
+          borderRadius: 12,
+        }}
+      >
+        <Text style={{ color: "#fff", textAlign: "center" }}>
+          Minhas Campanhas
         </Text>
       </TouchableOpacity>
     </View>
