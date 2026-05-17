@@ -21,6 +21,26 @@ router.post("/", async (req, res) => {
     return res.status(403).json({ error: "PRO necessário" });
   }
 
+router.post("/:id/click", async (req, res) => {
+  try {
+    const campaign = await Campaign.findById(req.params.id);
+
+    if (!campaign) {
+      return res.status(404).json({ error: "Campanha não encontrada" });
+    }
+
+    campaign.clicks = (campaign.clicks || 0) + 1;
+    await campaign.save();
+
+    res.json({ success: true, clicks: campaign.clicks });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+
+
   const campaign = await Campaign.create({
     name,
     link,
@@ -30,5 +50,10 @@ router.post("/", async (req, res) => {
 
   res.json(campaign);
 });
+
+
+
+
+
 
 export default router;
