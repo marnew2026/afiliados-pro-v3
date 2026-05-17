@@ -82,7 +82,7 @@ router.get("/go/:id", async (req, res) => {
 
 router.post("/:id/click", async (req, res) => {
   try {
-    console.log("CLICK RECEBIDO:", req.params.id);
+    console.log("🔥 CLICK RECEBIDO:", req.params.id);
 
     const result = await Product.findOneAndUpdate(
       { _id: req.params.id },
@@ -90,17 +90,21 @@ router.post("/:id/click", async (req, res) => {
       { new: true }
     );
 
-    console.log("RESULTADO:", result);
+    console.log("🔥 RESULTADO BANCO:", result);
+
+    if (!result) {
+      return res.status(404).json({ error: "não encontrou produto" });
+    }
 
     return res.json({
-      success: true,
-      clicks: result?.clicks || 0,
+      clicks: result.clicks,
     });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: error.message });
+  } catch (err) {
+    console.log("ERRO CLICK:", err);
+    return res.status(500).json({ error: err.message });
   }
 });
+
 router.post("/", async (req, res) => {
   try {
     const novoProduto = new Product(req.body);
