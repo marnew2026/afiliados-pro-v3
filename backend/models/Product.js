@@ -8,7 +8,7 @@ const productSchema = new mongoose.Schema(
     link: String,
     imagem: String,affiliateLink: {
   type: String,
-  default: "",
+  default: "",clicks: { type: Number, default: 0 },
 },
   },
   { timestamps: true }
