@@ -15,7 +15,6 @@ const productSchema = new mongoose.Schema(
 );
 const codigo = Math.random().toString(36).substring(2, 10);
 
-novoProduto.affiliateLink =
   `https://afiliados-pro-v3-2.onrender.com/r/${codigo}`;
 
 
@@ -26,5 +25,5 @@ novoProduto.affiliateLink =
 
 
 
-  
+
 export default mongoose.model("Product", productSchema);

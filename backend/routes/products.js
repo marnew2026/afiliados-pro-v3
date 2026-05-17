@@ -80,7 +80,20 @@ router.get("/go/:id", async (req, res) => {
   }
 });
 
+router.post("/", async (req, res) => {
+  try {
+    const novoProduto = new Product(req.body);
 
+    novoProduto.affiliateLink =
+      `https://afiliados-pro-v3-2.onrender.com/r/${Date.now()}`;
 
+    await novoProduto.save();
+
+    res.json(novoProduto);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ erro: "Erro ao salvar produto" });
+  }
+});
 
 export default router;
