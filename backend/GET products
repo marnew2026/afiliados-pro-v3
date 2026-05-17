@@ -1,0 +1,4 @@
+router.get("/", async (req, res) => {
+  const produtos = await Produto.find();
+  res.json(produtos);
+});

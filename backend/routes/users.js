@@ -3,14 +3,12 @@ import User from "../models/User.js";
 
 const router = express.Router();
 
-/* =========================
-   LISTAR USERS (DEBUG HOTMART)
-========================= */
+
 router.get("/", async (req, res) => {
   try {
     const users = await User.find(
       {},
-      "name email role affiliateCode"
+      "name email role affiliateCode" 
     );
 
     res.json(users);
