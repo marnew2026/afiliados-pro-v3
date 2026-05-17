@@ -75,4 +75,6 @@ app.listen(PORT, () => {
   console.log("🔥 SERVER INICIADO");
   console.log("🚀 PORTA:", PORT);
   console.log("💳 STRIPE ATIVO");
+  console.log("ROUTES:", productsRoutes);
+  console.log("DB:", process.env.MONGO_URL);
 });

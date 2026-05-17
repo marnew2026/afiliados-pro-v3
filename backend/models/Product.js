@@ -4,19 +4,13 @@ const productSchema = new mongoose.Schema(
   {
     userEmail: String,
     nome: String,
-    preco: String,
+    preco: Number,
     link: String,
     imagem: String,
 
-    affiliateLink: {
-      type: String,
-      default: "",
-    },
-
-    clicks: {
-      type: Number,
-      default: 0,
-    },
+    commission: { type: Number, default: 0.1 },
+    clicks: { type: Number, default: 0 },
+    earnings: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

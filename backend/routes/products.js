@@ -1,29 +1,36 @@
 import express from "express";
 import Product from "../models/Product.js";
 
-const router = express.Router();
-
-router.post("/create", async (req, res) => {
+export const registerClick = async (req, res) => {
   try {
-    const produto = await Product.create(req.body);
-    res.json(produto);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const { id } = req.params;
+
+    const product = await Product.findById(id);
+
+    if (!product) {
+      return res.status(404).json({ message: "Produto não encontrado" });
+    }
+
+    // aumenta clique
+    product.clicks += 1;
+
+    // calcula ganho por clique
+    const gain = product.preco * product.commission;
+
+    // soma no total
+    product.earnings += gain;
+
+    await product.save();
+
+    return res.json({
+      clicks: product.clicks,
+      earnings: product.earnings,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Erro ao registrar clique" });
   }
-});
-
-router.get("/:email", async (req, res) => {
-  try {
-    const produtos = await Product.find({
-      userEmail: req.params.email,
-    }).sort({ createdAt: -1 });
-
-    res.json(produtos);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
+};
 router.delete("/:id", async (req, res) => {
   try {
     await Product.findByIdAndDelete(req.params.id);
@@ -102,6 +109,15 @@ router.post("/:id/click", async (req, res) => {
   } catch (err) {
     console.log("ERRO CLICK:", err);
     return res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/", async (req, res) => {
+  try {
+    const produtos = await Product.find();
+    res.json(produtos);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
