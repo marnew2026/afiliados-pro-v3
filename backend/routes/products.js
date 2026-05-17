@@ -82,23 +82,25 @@ router.get("/go/:id", async (req, res) => {
 
 router.post("/:id/click", async (req, res) => {
   try {
-    const produto = await Product.findById(req.params.id);
+    console.log("CLICK RECEBIDO:", req.params.id);
 
-    if (!produto) {
-      return res.status(404).json({ error: "Produto não encontrado" });
-    }
+    const result = await Product.findOneAndUpdate(
+      { _id: req.params.id },
+      { $inc: { clicks: 1 } },
+      { new: true }
+    );
 
-    produto.clicks = (produto.clicks || 0) + 1;
-    await produto.save();
+    console.log("RESULTADO:", result);
 
-    res.json(produto);
+    return res.json({
+      success: true,
+      clicks: result?.clicks || 0,
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.log(error);
+    return res.status(500).json({ error: error.message });
   }
 });
-
-
-
 router.post("/", async (req, res) => {
   try {
     const novoProduto = new Product(req.body);
