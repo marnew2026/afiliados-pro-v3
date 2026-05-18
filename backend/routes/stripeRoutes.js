@@ -3,40 +3,29 @@ import Stripe from "stripe";
 
 const router = express.Router();
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-06-20",
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-router.post("/create-checkout-session", async (req, res) => {
+router.get("/create-checkout-session", async (req, res) => {
   try {
-    const { email } = req.body;
-
-    if (!email) {
-      return res.status(400).json({ error: "Email obrigatório" });
-    }
-
     const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-
       payment_method_types: ["card"],
-
+      mode: "payment",
       line_items: [
         {
           price: process.env.STRIPE_PRICE_ID,
           quantity: 1,
         },
       ],
-
-      customer_email: email,
-
-      success_url: `${process.env.BASE_URL}/success`,
-      cancel_url: `${process.env.BASE_URL}/cancel`,
+      success_url:
+        "https://afiliados-pro-v3-2.onrender.com/success",
+      cancel_url:
+        "https://afiliados-pro-v3-2.onrender.com/cancel",
     });
 
-    return res.json({ url: session.url });
-  } catch (err) {
-    console.log("STRIPE ERROR:", err);
-    return res.status(500).json({ error: err.message });
+    return res.redirect(session.url);
+  } catch (error) {
+    console.log("ERRO STRIPE:", error.message);
+    return res.status(500).send(error.message);
   }
 });
 
