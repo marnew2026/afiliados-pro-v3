@@ -6,30 +6,23 @@ import cors from "cors";
 import connectDB from "./config/db.js";
 
 import stripeRoutes from "./routes/stripeRoutes.js";
-import productsRoutes from "./routes/products.js";
+import campaignsRoutes from "./routes/campaigns.js";
 
 const app = express();
 
+/* MIDDLEWARE */
 app.use(cors());
-
 connectDB();
 
-/* =========================
-   STRIPE WEBHOOK (IMPORTANTE)
-========================= */
-app.use(
-  "/stripe/webhook",
-  express.raw({ type: "application/json" })
-);
+/* Stripe webhook */
+app.use("/stripe/webhook", express.raw({ type: "application/json" }));
 
-/* =========================
-   JSON NORMAL PARA RESTO
-========================= */
+/* JSON */
 app.use(express.json());
 
 /* ROUTES */
 app.use("/stripe", stripeRoutes);
-app.use("/products", productsRoutes);
+app.use("/campaigns", campaignsRoutes);
 
 /* TEST */
 app.get("/", (req, res) => {
@@ -44,37 +37,40 @@ app.get("/cancel", (req, res) => {
   res.send("Pagamento cancelado");
 });
 
-/* PORT */
-const PORT = process.env.PORT || 3001;
-import Product from "./models/Product.js";
-
+/* REDIRECT + CLICK */
 app.get("/r/:id", async (req, res) => {
   try {
-    const Product = (await import("./models/Product.js")).default;
+    const Campaign = (await import("./models/Campaign.js")).default;
 
-    const produto = await Product.findOne({
-      affiliateLink: `https://afiliados-pro-v3-2.onrender.com/r/${req.params.id}`,
+    const campaign = await Campaign.findOne({
+      affiliateLink: {
+        $regex: req.params.id,
+      },
     });
 
-    if (!produto) {
-      return res.send("Link inválido");
+    if (!campaign) {
+      return res.status(404).send("Link inválido");
     }
 
-    produto.clicks += 1;
-    await produto.save();
+    campaign.clicks = (campaign.clicks || 0) + 1;
 
-    res.redirect(produto.link);
+    const commission = campaign.commission ?? 0.1;
+    campaign.earnings = campaign.clicks * commission;
+
+    await campaign.save();
+
+    return res.redirect(campaign.link);
   } catch (err) {
     console.log(err);
-    res.send("Erro");
+    return res.status(500).send("Erro");
   }
 });
 
+const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
   console.log("🔥 SERVER INICIADO");
   console.log("🚀 PORTA:", PORT);
   console.log("💳 STRIPE ATIVO");
-  console.log("ROUTES:", productsRoutes);
-  console.log("DB:", process.env.MONGO_URL);
+  console.log("📦 CAMPAIGNS ROUTES OK");
 });

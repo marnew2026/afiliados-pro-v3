@@ -1,36 +1,78 @@
 import express from "express";
 import Product from "../models/Product.js";
 
-export const registerClick = async (req, res) => {
+const router = express.Router();
+
+/**
+ * CLICK (atualização segura)
+ */
+router.post("/:id/click", async (req, res) => {
   try {
-    const { id } = req.params;
+    console.log("🔥 CLICK RECEBIDO:", req.params.id);
 
-    const product = await Product.findById(id);
+    const result = await Product.findByIdAndUpdate(
+      req.params.id,
+      {
+        $inc: {
+          clicks: 1,
+          earnings: 0, // mantemos compatível
+        },
+      },
+      { new: true }
+    );
 
-    if (!product) {
-      return res.status(404).json({ message: "Produto não encontrado" });
+    if (!result) {
+      return res.status(404).json({ error: "Produto não encontrado" });
     }
 
-    // aumenta clique
-    product.clicks += 1;
-
-    // calcula ganho por clique
-    const gain = product.preco * product.commission;
-
-    // soma no total
-    product.earnings += gain;
-
-    await product.save();
+    console.log("🔥 RESULTADO:", result);
 
     return res.json({
-      clicks: product.clicks,
-      earnings: product.earnings,
+      clicks: result.clicks,
+      earnings: result.earnings,
     });
+  } catch (err) {
+    console.log("ERRO CLICK:", err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * LISTAR PRODUTOS
+ */
+router.get("/", async (req, res) => {
+  try {
+    const produtos = await Product.find();
+    res.json(produtos);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * CRIAR PRODUTO
+ */
+router.post("/", async (req, res) => {
+  try {
+    const novoProduto = new Product(req.body);
+
+    novoProduto.clicks = 0;
+    novoProduto.earnings = 0;
+
+    novoProduto.affiliateLink = `https://afiliados-pro-v3-2.onrender.com/r/${Date.now()}`;
+
+    await novoProduto.save();
+
+    res.json(novoProduto);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Erro ao registrar clique" });
+    res.status(500).json({ erro: "Erro ao salvar produto" });
   }
-};
+});
+
+/**
+ * DELETAR
+ */
 router.delete("/:id", async (req, res) => {
   try {
     await Product.findByIdAndDelete(req.params.id);
@@ -40,6 +82,9 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+/**
+ * ATUALIZAR
+ */
 router.put("/:id", async (req, res) => {
   try {
     const atualizado = await Product.findByIdAndUpdate(
@@ -54,24 +99,9 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-router.get("/r/:codigo", async (req, res) => {
-  try {
-    const produto = await Product.findOne({
-      affiliateLink: {
-        $regex: req.params.codigo,
-      },
-    });
-
-    if (!produto) {
-      return res.status(404).send("Produto não encontrado");
-    }
-
-    res.redirect(produto.link);
-  } catch {
-    res.status(500).send("Erro");
-  }
-});
-
+/**
+ * REDIRECT POR LINK
+ */
 router.get("/go/:id", async (req, res) => {
   try {
     const produto = await Product.findById(req.params.id);
@@ -82,58 +112,26 @@ router.get("/go/:id", async (req, res) => {
 
     return res.redirect(produto.link);
   } catch (err) {
-    console.log(err);
     return res.status(500).send("Erro");
   }
 });
 
-router.post("/:id/click", async (req, res) => {
+/**
+ * REDIRECT POR CÓDIGO
+ */
+router.get("/r/:codigo", async (req, res) => {
   try {
-    console.log("🔥 CLICK RECEBIDO:", req.params.id);
+    const produto = await Product.findOne({
+      affiliateLink: { $regex: req.params.codigo },
+    });
 
-    const result = await Product.findOneAndUpdate(
-      { _id: req.params.id },
-      { $inc: { clicks: 1 } },
-      { new: true }
-    );
-
-    console.log("🔥 RESULTADO BANCO:", result);
-
-    if (!result) {
-      return res.status(404).json({ error: "não encontrou produto" });
+    if (!produto) {
+      return res.status(404).send("Produto não encontrado");
     }
 
-    return res.json({
-      clicks: result.clicks,
-    });
-  } catch (err) {
-    console.log("ERRO CLICK:", err);
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-router.get("/", async (req, res) => {
-  try {
-    const produtos = await Product.find();
-    res.json(produtos);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-router.post("/", async (req, res) => {
-  try {
-    const novoProduto = new Product(req.body);
-
-    novoProduto.affiliateLink =
-      `https://afiliados-pro-v3-2.onrender.com/r/${Date.now()}`;
-
-    await novoProduto.save();
-
-    res.json(novoProduto);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ erro: "Erro ao salvar produto" });
+    return res.redirect(produto.link);
+  } catch {
+    return res.status(500).send("Erro");
   }
 });
 

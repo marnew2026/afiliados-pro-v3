@@ -4,18 +4,12 @@ import User from "../models/User.js";
 
 const router = express.Router();
 
-/**
- * LISTAR CAMPANHAS
- */
-router.get("/", async (req, res) => {
+// LISTAR CAMPANHAS DO USUÁRIO
+router.get("/:email", async (req, res) => {
   try {
-    const { ownerId } = req.query;
-
-    if (!ownerId) {
-      return res.status(400).json({ error: "ownerId é obrigatório" });
-    }
-
-    const campaigns = await Campaign.find({ ownerId });
+    const campaigns = await Campaign.find({
+      userEmail: req.params.email,
+    }).sort({ createdAt: -1 });
 
     res.json(campaigns);
   } catch (error) {
@@ -23,46 +17,38 @@ router.get("/", async (req, res) => {
   }
 });
 
-/**
- * CRIAR CAMPANHA (APENAS PRO)
- */
-router.post("/", async (req, res) => {
+// CRIAR CAMPANHA
+router.post("/create", async (req, res) => {
   try {
-    const { name, link, ownerId, email } = req.body;
+    const { userEmail, nome, preco, link, imagem } = req.body;
 
-    if (!name || !link || !ownerId || !email) {
-      return res.status(400).json({ error: "Campos obrigatórios faltando" });
-    }
+    const user = await User.findOne({ email: userEmail });
 
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return res.status(404).json({ error: "Usuário não encontrado" });
-    }
-
-    if (!user.isPro) {
+    if (user && !user.isPro) {
       return res.status(403).json({ error: "PRO necessário" });
     }
 
+    const codigo = Math.random().toString(36).substring(2, 10);
+
     const campaign = await Campaign.create({
-      name,
+      userEmail,
+      nome,
+      preco,
       link,
-      ownerId,
-      email,
+      imagem,
+      affiliateLink: `https://afiliados-pro-v3-2.onrender.com/r/${codigo}`,
+      commission: 0.1,
       clicks: 0,
       earnings: 0,
-      commission: 0.1, // garante padrão
     });
 
-    return res.status(201).json(campaign);
+    res.json(campaign);
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
-/**
- * CLICK NA CAMPANHA
- */
+// REGISTRAR CLICK
 router.post("/:id/click", async (req, res) => {
   try {
     const campaign = await Campaign.findById(req.params.id);
@@ -73,19 +59,27 @@ router.post("/:id/click", async (req, res) => {
 
     campaign.clicks = (campaign.clicks || 0) + 1;
 
-    const commission = campaign.commission || 0.1;
-
+    const commission = campaign.commission ?? 0.1;
     campaign.earnings = campaign.clicks * commission;
 
     await campaign.save();
 
-    return res.json({
-      success: true,
+    res.json({
       clicks: campaign.clicks,
       earnings: campaign.earnings,
     });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// EXCLUIR
+router.delete("/:id", async (req, res) => {
+  try {
+    await Campaign.findByIdAndDelete(req.params.id);
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
