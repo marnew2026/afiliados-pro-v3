@@ -1,10 +1,9 @@
 import express from "express";
 import Campaign from "../models/Campaign.js";
-import User from "../models/User.js";
 
 const router = express.Router();
 
-// LISTAR CAMPANHAS DO USUÁRIO
+/* LISTAR CAMPANHAS */
 router.get("/:email", async (req, res) => {
   try {
     const campaigns = await Campaign.find({
@@ -17,25 +16,17 @@ router.get("/:email", async (req, res) => {
   }
 });
 
-// CRIAR CAMPANHA
+/* CRIAR CAMPANHA */
 router.post("/create", async (req, res) => {
   try {
-    const { userEmail, nome, preco, link, imagem } = req.body;
-
-    const user = await User.findOne({ email: userEmail });
-
-    if (user && !user.isPro) {
-      return res.status(403).json({ error: "PRO necessário" });
-    }
+    const { userEmail, nome, link } = req.body;
 
     const codigo = Math.random().toString(36).substring(2, 10);
 
     const campaign = await Campaign.create({
       userEmail,
       nome,
-      preco,
       link,
-      imagem,
       affiliateLink: `https://afiliados-pro-v3-2.onrender.com/r/${codigo}`,
       commission: 0.1,
       clicks: 0,
@@ -48,7 +39,7 @@ router.post("/create", async (req, res) => {
   }
 });
 
-// REGISTRAR CLICK
+/* REGISTRAR CLIQUE */
 router.post("/:id/click", async (req, res) => {
   try {
     const campaign = await Campaign.findById(req.params.id);
@@ -58,9 +49,7 @@ router.post("/:id/click", async (req, res) => {
     }
 
     campaign.clicks = (campaign.clicks || 0) + 1;
-
-    const commission = campaign.commission ?? 0.1;
-    campaign.earnings = campaign.clicks * commission;
+    campaign.earnings = campaign.clicks * (campaign.commission || 0.1);
 
     await campaign.save();
 
@@ -73,7 +62,7 @@ router.post("/:id/click", async (req, res) => {
   }
 });
 
-// EXCLUIR
+/* EXCLUIR */
 router.delete("/:id", async (req, res) => {
   try {
     await Campaign.findByIdAndDelete(req.params.id);
