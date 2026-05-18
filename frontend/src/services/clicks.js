@@ -1,36 +1,37 @@
-import { db } from "./firebase";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  addDoc,
-  serverTimestamp,
-} from "firebase/firestore";
+const API_URL = "https://afiliados-pro-v3-2.onrender.com";
 
-// registrar clique
+// 👆 registrar clique (BACKEND)
 export async function registerClick(campaignId) {
   try {
-    await addDoc(collection(db, "clicks"), {
-      campaignId,
-      createdAt: serverTimestamp(),
+    const res = await fetch(`${API_URL}/clicks`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        campaignId,
+      }),
     });
 
-    return { success: true };
+    const data = await res.json();
+    return data;
   } catch (error) {
     console.error("Erro ao registrar clique:", error);
     return { success: false };
   }
 }
 
-// pegar cliques de uma campanha
+// 📊 pegar cliques de uma campanha
 export async function getClicksByCampaign(campaignId) {
-  const q = query(
-    collection(db, "clicks"),
-    where("campaignId", "==", campaignId)
-  );
+  try {
+    const res = await fetch(
+      `${API_URL}/clicks?campaignId=${campaignId}`
+    );
 
-  const snapshot = await getDocs(q);
-
-  return snapshot.docs.map((doc) => doc.data());
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.error("Erro ao buscar cliques:", error);
+    return [];
+  }
 }

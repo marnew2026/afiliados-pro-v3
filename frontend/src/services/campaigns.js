@@ -1,76 +1,62 @@
-import { db, auth } from "./firebase";
-import {
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  where
-} from "firebase/firestore";
-const criarCheckout = async () => {
-  const ref = localStorage.getItem("ref");
+const API_URL = "https://afiliados-pro-v3-2.onrender.com";
 
-  const res = await fetch("https://SEU-BACKEND.onrender.com/checkout", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ ref }),
-  });
-
-  const data = await res.json();
-
-  window.location.href = data.url;
-};
-const criarCampanha = async () => {
-  const ref = localStorage.getItem("ref");
-
+// 💳 CHECKOUT / VIRAR PRO
+export const criarCheckout = async (user) => {
   try {
-    const res = await fetch("https://SEU-BACKEND.onrender.com/checkout", {
+    const res = await fetch(`${API_URL}/checkout/create-checkout`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        ref: ref || null,
+        email: user.email,
       }),
     });
 
     const data = await res.json();
 
-    window.location.href = data.url;
+    if (!data.url) {
+      throw new Error("URL do checkout não retornada");
+    }
 
+    return data.url;
   } catch (error) {
     console.log("Erro checkout:", error.message);
+    throw error;
   }
 };
-export async function createCampaign(data) {
-  const user = auth.currentUser;
 
+// 🚀 CRIAR CAMPANHA (BACKEND NODE)
+export const createCampaign = async (data, user) => {
   if (!user) throw new Error("Usuário não logado");
 
-  return await addDoc(collection(db, "campaigns"), {
-    titulo: data.titulo,
-    linkAfiliado: data.linkAfiliado,
-    userId: user.uid,
-    createdAt: Date.now()
+  const res = await fetch(`${API_URL}/campaigns`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: data.name,
+      link: data.link,
+      ownerId: user.uid,
+      email: user.email,
+    }),
   });
-}
 
-// 🟢 LISTAR CAMPANHAS DO USUÁRIO
-export async function getCampaigns() {
-  const user = auth.currentUser;
+  const response = await res.json();
 
+  if (res.status === 403) {
+    throw new Error("PRO necessário");
+  }
+
+  return response;
+};
+
+// 📦 LISTAR CAMPANHAS (BACKEND NODE)
+export const getCampaigns = async (user) => {
   if (!user) return [];
 
-  const q = query(
-    collection(db, "campaigns"),
-    where("userId", "==", user.uid)
+  const res = await fetch(
+    `${API_URL}/campaigns?ownerId=${user.uid}`
   );
 
-  const snapshot = await getDocs(q);
+  const data = await res.json();
 
-  return snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  }));
-}
+  return data;
+};

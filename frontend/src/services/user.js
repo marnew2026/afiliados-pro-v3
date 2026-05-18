@@ -1,5 +1,5 @@
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "./firebase";
+import { db } from "../../../afiliados-pro-mobile/src/services/firebase";
 
 export const isUserPro = async (email) => {
   const userRef = doc(db, "users", email);

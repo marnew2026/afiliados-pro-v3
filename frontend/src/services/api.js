@@ -1,44 +1,46 @@
-import API_URL from "../services/api";
+const API_URL = "https://afiliados-pro-v3-2.onrender.com";
 
+/* ==============================
+   📦 LISTAR CAMPANHAS
+============================== */
+export async function getCampaigns(userId) {
+  try {
+    const res = await fetch(
+      `${API_URL}/campaigns?ownerId=${userId}`
+    );
 
+    if (!res.ok) {
+      throw new Error("Erro ao buscar campanhas");
+    }
 
-const API_URL = import.meta.env.VITE_API_URL;
-
-export default API_URL;
-const 
-API_URL = "https://afiliados-pro-v3-2.onrender.com";
-
-export async function loginUser(email, password) {
-  const res = await fetch(`${API_URL}/auth/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ email, password }),
-  });
-
-  return await res.json();
-}
-export const API_URL = "https://afiliados-pro-v3-2.onrender.com";
-export async function getCampaigns(token) {
-  const res = await fetch(`${API_URL}/campaigns`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-fetch(`${API_URL}/campaigns`)
-  return await res.json();
+    return await res.json();
+  } catch (err) {
+    console.log("Erro getCampaigns:", err);
+    return [];
+  }
 }
 
-export async function createCampaign(token, data) {
-  const res = await fetch(`${API_URL}/campaigns`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(data),
-  });
-console.log("API_URL:", API_URL);
-  return await res.json();
+/* ==============================
+   ➕ CRIAR CAMPANHA
+============================== */
+export async function createCampaign(data) {
+  try {
+    const res = await fetch(`${API_URL}/campaigns`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error?.error || "Erro ao criar campanha");
+    }
+
+    return await res.json();
+  } catch (err) {
+    console.log("Erro createCampaign:", err);
+    return null;
+  }
 }

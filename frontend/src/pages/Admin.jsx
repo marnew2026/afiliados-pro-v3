@@ -1,62 +1,74 @@
 import { useEffect, useState } from "react";
-import { db } from "../services/firebase";
-import { collection, getDocs } from "firebase/firestore";
+
+const API = "https://afiliados-pro-v3-2.onrender.com";
 
 export default function Admin() {
-  const [users, setUsers] = useState([]);
-  const [sales, setSales] = useState([]);
+  const [ranking, setRanking] = useState([]);
+  const [metrics, setMetrics] = useState(null);
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const usersSnap = await getDocs(collection(db, "users"));
-        const usersList = usersSnap.docs.map((d) => d.data());
-
-        const salesSnap = await getDocs(collection(db, "referrals"));
-        const salesList = salesSnap.docs.map((d) => d.data());
-
-        setUsers(usersList);
-        setSales(salesList);
-      } catch (error) {
-        console.error("Erro ao carregar dados:", error);
-      }
-    };
-
     load();
   }, []);
 
-  const totalPro = users.filter((u) => u.isPro).length;
-  const totalSales = sales.length;
-  const totalRevenue = sales.reduce(
-    (acc, s) => acc + (s.commission || 0),
-    0
-  );
+  async function load() {
+    const r1 = await fetch(`${API}/admin/users-ranking`);
+    const r2 = await fetch(`${API}/admin/metrics`);
+
+    setRanking(await r1.json());
+    setMetrics(await r2.json());
+  }
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>Admin Dashboard</h1>
+    <div style={{ padding: 20, fontFamily: "Arial" }}>
+      <h1>📊 Admin Dashboard (Stripe Style)</h1>
 
-      <div style={{ marginBottom: 20 }}>
-        <h3>Resumo</h3>
-        <p>Usuários: {users.length}</p>
-        <p>PRO: {totalPro}</p>
-        <p>Vendas: {totalSales}</p>
-        <p>Receita afiliados: R$ {totalRevenue}</p>
-      </div>
-
-      <h3>Usuários</h3>
-      {users.map((u, i) => (
-        <div key={i} style={{ marginBottom: 5 }}>
-          {u.email} - {u.isPro ? "PRO" : "FREE"}
+      {/* MÉTRICAS */}
+      {metrics && (
+        <div style={{ display: "flex", gap: 20 }}>
+          <Card title="Usuários" value={metrics.users} />
+          <Card title="Vendas" value={metrics.sales} />
+          <Card title="Receita" value={`R$ ${metrics.revenue}`} />
         </div>
-      ))}
+      )}
 
-      <h3>Vendas recentes</h3>
-      {sales.map((s, i) => (
-        <div key={i} style={{ marginBottom: 5 }}>
-          {s.buyerEmail} → R$ {s.commission}
-        </div>
-      ))}
+      {/* RANKING */}
+      <h2 style={{ marginTop: 30 }}>🏆 Ranking de Usuários</h2>
+
+      <table border="1" cellPadding="10">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Email</th>
+            <th>Score</th>
+            <th>Nível</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {ranking.map((u) => (
+            <tr key={u.email}>
+              <td>{u.position}</td>
+              <td>{u.email}</td>
+              <td>{u.riskScore}</td>
+              <td>{u.trustLevel}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function Card({ title, value }) {
+  return (
+    <div style={{
+      padding: 15,
+      background: "#111",
+      color: "#fff",
+      borderRadius: 8
+    }}>
+      <h4>{title}</h4>
+      <h2>{value}</h2>
     </div>
   );
 }
