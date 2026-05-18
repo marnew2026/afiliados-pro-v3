@@ -6,64 +6,57 @@ import { useRouter } from "expo-router";
 export default function Produto() {
   const router = useRouter();
 
-  const [nome, setNome] = useState("");
-  const [preco, setPreco] = useState("");
+  const [name, setName] = useState("");
   const [link, setLink] = useState("");
-  const [imagem, setImagem] = useState("");
 
-  const salvarProduto = async () => {
-    if (!nome || !preco || !link) {
-      Alert.alert("Preencha nome, preço e link");
+  const salvarCampanha = async () => {
+    if (!name || !link) {
+      Alert.alert("Erro", "Preencha nome e link");
       return;
     }
 
     try {
       const res = await fetch(
-        "https://afiliados-pro-v3-2.onrender.com/products/create",
+        "https://afiliados-pro-v3-2.onrender.com/campaigns",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            userEmail: auth.currentUser?.email,
-            nome,
-            preco,
+            name,
             link,
-            imagem,
+            ownerId: auth.currentUser?.uid,
+            email: auth.currentUser?.email,
           }),
         }
       );
 
       const data = await res.json();
-      console.log("PRODUTO SALVO:", data);
+      console.log("CAMPANHA SALVA:", data);
 
-      Alert.alert("Sucesso", "Produto cadastrado");
+      if (!res.ok) {
+        Alert.alert("Erro", data.error || "Falha ao criar campanha");
+        return;
+      }
+
+      Alert.alert("Sucesso", "Campanha criada");
       router.push("/campanhas");
     } catch (err) {
       console.log(err);
-      Alert.alert("Erro ao salvar");
+      Alert.alert("Erro", "Falha ao salvar campanha");
     }
   };
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: "#007ACC", padding: 20 }}>
       <Text style={{ color: "#fff", fontSize: 26, fontWeight: "bold", marginBottom: 20 }}>
-        Cadastrar Produto
+        Criar Campanha
       </Text>
 
-      <Text style={{ color: "#fff", marginBottom: 5 }}>Nome do produto</Text>
+      <Text style={{ color: "#fff", marginBottom: 5 }}>Nome da campanha</Text>
       <TextInput
-        value={nome}
-        onChangeText={setNome}
-        placeholder="Ex: Capa de chuva"
-        placeholderTextColor="#666"
-        style={{ backgroundColor: "#fff", padding: 12, borderRadius: 8, marginBottom: 15 }}
-      />
-
-      <Text style={{ color: "#fff", marginBottom: 5 }}>Preço</Text>
-      <TextInput
-        value={preco}
-        onChangeText={setPreco}
-        placeholder="Ex: 65"
+        value={name}
+        onChangeText={setName}
+        placeholder="Ex: Promoção verão"
         placeholderTextColor="#666"
         style={{ backgroundColor: "#fff", padding: 12, borderRadius: 8, marginBottom: 15 }}
       />
@@ -74,31 +67,19 @@ export default function Produto() {
         onChangeText={setLink}
         placeholder="https://..."
         placeholderTextColor="#666"
-        style={{ backgroundColor: "#fff", padding: 12, borderRadius: 8, marginBottom: 15 }}
-      />
-
-      <Text style={{ color: "#fff", marginBottom: 5 }}>Link da imagem</Text>
-      <TextInput
-        value={imagem}
-        onChangeText={setImagem}
-        placeholder="https://imagem.jpg"
-        placeholderTextColor="#666"
         style={{ backgroundColor: "#fff", padding: 12, borderRadius: 8, marginBottom: 20 }}
       />
 
       <TouchableOpacity
-        onPress={salvarProduto}
+        onPress={salvarCampanha}
         style={{ backgroundColor: "#111827", padding: 15, borderRadius: 10 }}
       >
         <Text style={{ color: "#fff", textAlign: "center", fontSize: 16 }}>
-          Salvar Produto
+          Salvar Campanha
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        onPress={() => router.back()}
-        style={{ marginTop: 15 }}
-      >
+      <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 15 }}>
         <Text style={{ color: "#fff", textAlign: "center" }}>
           ← Voltar
         </Text>
