@@ -9,7 +9,7 @@ router.get("/create-checkout-session", async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
-      mode: "payment",
+     mode: "subscription",
       line_items: [
         {
           price: process.env.STRIPE_PRICE_ID,
