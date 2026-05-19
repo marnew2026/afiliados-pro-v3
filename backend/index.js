@@ -7,7 +7,7 @@ import connectDB from "./config/db.js";
 
 import stripeRoutes from "./routes/stripeRoutes.js";
 import campaignsRoutes from "./routes/campaigns.js";
-
+import userRoutes from "./routes/userRoutes.js";
 const app = express();
 
 /* MIDDLEWARE */
@@ -23,7 +23,7 @@ app.use(express.json());
 /* ROUTES */
 app.use("/stripe", stripeRoutes);
 app.use("/campaigns", campaignsRoutes);
-
+app.use("/user", userRoutes);
 /* TEST */
 app.get("/", (req, res) => {
   res.send("🚀 SaaS Afiliados PRO ONLINE");
