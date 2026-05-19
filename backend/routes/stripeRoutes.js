@@ -3,10 +3,8 @@ import Stripe from "stripe";
 import User from "../models/User.js";
 
 const router = express.Router();
-
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-/* CHECKOUT */
 router.get("/create-checkout-session", async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.create({
@@ -18,10 +16,8 @@ router.get("/create-checkout-session", async (req, res) => {
           quantity: 1,
         },
       ],
-      success_url:
-        "https://afiliados-pro-v3-2.onrender.com/success",
-      cancel_url:
-        "https://afiliados-pro-v3-2.onrender.com/cancel",
+      success_url: "https://afiliados-pro-v3-2.onrender.com/success",
+      cancel_url: "https://afiliados-pro-v3-2.onrender.com/cancel",
     });
 
     res.redirect(session.url);
@@ -31,7 +27,6 @@ router.get("/create-checkout-session", async (req, res) => {
   }
 });
 
-/* WEBHOOK */
 router.post("/webhook", async (req, res) => {
   try {
     console.log("🔥 WEBHOOK RECEBIDO");
@@ -47,6 +42,26 @@ router.post("/webhook", async (req, res) => {
 
     console.log("EVENTO:", event.type);
 
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
+      const email = session.customer_details?.email;
 
-    
+      if (email) {
+        await User.findOneAndUpdate(
+          { email },
+          { isPro: true },
+          { new: true }
+        );
+
+        console.log("✅ USUÁRIO VIRou PRO:", email);
+      }
+    }
+
+    res.json({ received: true });
+  } catch (err) {
+    console.log("WEBHOOK ERROR:", err.message);
+    res.status(400).send("Webhook Error");
+  }
+});
+
 export default router;
