@@ -43,20 +43,28 @@ router.post("/webhook", async (req, res) => {
     console.log("EVENTO:", event.type);
 
     if (event.type === "checkout.session.completed") {
-      const session = event.data.object;
-      const email = session.customer_details?.email;
+  const session = event.data.object;
 
-      if (email) {
-        await User.findOneAndUpdate(
-          { email },
-          { isPro: true },
-          { new: true }
-        );
+  const email =
+    session.customer_details?.email ||
+    session.customer_email;
 
-        console.log("✅ USUÁRIO VIRou PRO:", email);
-      }
-    }
+  console.log("EMAIL RECEBIDO:", email);
 
+  const usuario = await User.findOne({ email });
+
+  console.log("USUÁRIO ENCONTRADO:", usuario);
+
+  if (email) {
+    await User.findOneAndUpdate(
+      { email },
+      { isPro: true },
+      { new: true }
+    );
+
+    console.log("✅ USUÁRIO VIRou PRO:", email);
+  }
+}
     res.json({ received: true });
   } catch (err) {
     console.log("WEBHOOK ERROR:", err.message);
