@@ -71,7 +71,9 @@ router.delete("/:id", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-router.post("/:id/sale", async (req, res) => {
+router.post("/:id/sale", async (req, res) => {  
+  console.log("SALE RECEBIDA:", req.params.id);
+  console.log("BODY:", req.body);
   try {
     const campaign = await Campaign.findById(req.params.id);
 
