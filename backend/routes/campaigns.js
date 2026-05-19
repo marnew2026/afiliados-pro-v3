@@ -95,4 +95,28 @@ router.post("/:id/sale", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+router.post("/:id/sale", async (req, res) => {
+  try {
+    const Campaign = (await import("../models/Campaign.js")).default;
+
+    const campaign = await Campaign.findById(req.params.id);
+
+    if (!campaign) {
+      return res.status(404).json({ error: "Campanha não encontrada" });
+    }
+
+    const valor = Number(req.body.valor || 100);
+
+    campaign.sales = (campaign.sales || 0) + 1;
+    campaign.earnings = (campaign.earnings || 0) + valor * 0.1;
+
+    await campaign.save();
+
+    res.json(campaign);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Erro ao registrar venda" });
+  }
+});
+
 export default router;
