@@ -37,6 +37,22 @@ app.get("/cancel", (req, res) => {
   res.send("Pagamento cancelado");
 });
 
+/* CONSULTAR USUÁRIO */
+app.get("/user/:email", async (req, res) => {
+  try {
+    const User = (await import("./models/User.js")).default;
+
+    const user = await User.findOne({
+      email: req.params.email,
+    });
+
+    res.json(user || {});
+  } catch (err) {
+    console.log(err);
+    res.json({});
+  }
+});
+
 /* REDIRECT + CLICK */
 app.get("/r/:id", async (req, res) => {
   try {
