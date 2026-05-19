@@ -34,7 +34,10 @@ router.get("/create-checkout-session", async (req, res) => {
 /* WEBHOOK */
 router.post("/webhook", async (req, res) => {
   try {
+    console.log("🔥 WEBHOOK RECEBIDO");
+
     const sig = req.headers["stripe-signature"];
+    console.log("SIGNATURE:", !!sig);
 
     const event = stripe.webhooks.constructEvent(
       req.body,
@@ -42,27 +45,8 @@ router.post("/webhook", async (req, res) => {
       process.env.STRIPE_WEBHOOK_SECRET
     );
 
-    if (event.type === "checkout.session.completed") {
-      const session = event.data.object;
+    console.log("EVENTO:", event.type);
 
-      const email = session.customer_details?.email;
 
-      if (email) {
-        await User.findOneAndUpdate(
-          { email },
-          { isPro: true },
-          { new: true }
-        );
-
-        console.log("✅ USUÁRIO VIRou PRO:", email);
-      }
-    }
-
-    res.json({ received: true });
-  } catch (err) {
-    console.log("WEBHOOK ERROR:", err.message);
-    res.status(400).send(`Webhook Error`);
-  }
-});
-
+    
 export default router;
