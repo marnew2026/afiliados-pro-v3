@@ -81,8 +81,11 @@ router.post("/:id/sale", async (req, res) => {
 
     const ganho = Number(valor) * Number(campaign.commission || 0.1);
 
-    campaign.sales = (campaign.sales || 0) + 1;
-    campaign.earnings = (campaign.earnings || 0) + ganho;
+    if (!campaign.sales) campaign.sales = 0;
+if (!campaign.earnings) campaign.earnings = 0;
+
+campaign.sales += 1;
+campaign.earnings += ganho;
 
     await campaign.save();
 
