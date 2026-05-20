@@ -1,13 +1,26 @@
 import mongoose from "mongoose";
 
-const CampaignSchema = new mongoose.Schema(
+const campaignSchema = new mongoose.Schema(
   {
-    userEmail: String,
-    nome: String,
-    preco: String,
-    link: String,
-    imagem: String,
-    affiliateLink: String,
+    userEmail: {
+      type: String,
+      required: true,
+    },
+
+    nome: {
+      type: String,
+      required: true,
+    },
+
+    link: {
+      type: String,
+      required: true,
+    },
+
+    affiliateLink: {
+      type: String,
+      required: true,
+    },
 
     commission: {
       type: Number,
@@ -23,8 +36,15 @@ const CampaignSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+
+    sales: {
+      type: Number,
+      default: 0,
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-export default mongoose.model("Campaign", CampaignSchema);
+export default mongoose.model("Campaign", campaignSchema);
