@@ -81,18 +81,17 @@ router.post("/:id/sale", async (req, res) => {
 
     const ganho = Number(valor) * Number(campaign.commission || 0.1);
 
-    if (!campaign.sales) campaign.sales = 0;
-if (!campaign.earnings) campaign.earnings = 0;
+    campaign.sales = Number(campaign.sales || 0) + 1;
+    campaign.earnings = Number(campaign.earnings || 0) + ganho;
 
-campaign.sales += 1;
-campaign.earnings += ganho;
+    campaign.markModified("sales");
+    campaign.markModified("earnings");
 
     await campaign.save();
 
-    res.json(campaign);
+    res.json(await Campaign.findById(req.params.id));
   } catch (error) {
     console.log(error);
     res.status(500).json({ msg: "Erro" });
   }
-});
-export default router;
+});export default router;
