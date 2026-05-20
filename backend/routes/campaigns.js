@@ -71,27 +71,33 @@ router.delete("/:id", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
 router.post("/:id/sale", async (req, res) => {
   try {
     const { valor } = req.body;
 
     const campaign = await Campaign.findById(req.params.id);
-    if (!campaign) return res.status(404).json({ msg: "Não encontrada" });
+    if (!campaign) {
+      return res.status(404).json({ msg: "Não encontrada" });
+    }
 
-    const ganho = Number(valor) * Number(campaign.commission || 0.1);
+    // força campo existir
+    if (campaign.sales == null) campaign.sales = 0;
+    if (campaign.earnings == null) campaign.earnings = 0;
+    if (campaign.commission == null) campaign.commission = 0.1;
 
-    campaign.sales = Number(campaign.sales || 0) + 1;
-    campaign.earnings = Number(campaign.earnings || 0) + ganho;
+    const ganho = Number(valor) * Number(campaign.commission);
 
-    campaign.markModified("sales");
-    campaign.markModified("earnings");
+    campaign.sales += 1;
+    campaign.earnings += ganho;
 
     await campaign.save();
-    console.log("SALE BACKEND:", campaign.sales);
-    res.json(await Campaign.findById(req.params.id));
+
+    const atualizado = await Campaign.findById(req.params.id);
+
+    res.json(atualizado);
   } catch (error) {
     console.log(error);
     res.status(500).json({ msg: "Erro" });
   }
-});export default router;
+});
+;export default router;
