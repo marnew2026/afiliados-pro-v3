@@ -74,26 +74,22 @@ router.delete("/:id", async (req, res) => {
 
 router.post("/:id/sale", async (req, res) => {
   try {
-    const Campaign = (await import("../models/Campaign.js")).default;
+    const { valor } = req.body;
 
     const campaign = await Campaign.findById(req.params.id);
+    if (!campaign) return res.status(404).json({ msg: "Não encontrada" });
 
-    if (!campaign) {
-      return res.status(404).json({ error: "Campanha não encontrada" });
-    }
-
-    const valor = Number(req.body.valor || 100);
+    const ganho = Number(valor) * Number(campaign.commission || 0.1);
 
     campaign.sales = (campaign.sales || 0) + 1;
-    campaign.earnings = (campaign.earnings || 0) + valor * 0.1;
+    campaign.earnings = (campaign.earnings || 0) + ganho;
 
     await campaign.save();
 
     res.json(campaign);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "Erro ao registrar venda" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ msg: "Erro" });
   }
 });
-
 export default router;
