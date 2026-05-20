@@ -5,44 +5,52 @@ import Campaign from "../models/Campaign.js";
 
 const router = express.Router();
 
-/**
- * 📊 Ranking de usuários por score
- */
+/* MÉTRICAS */
+router.get("/metrics", async (req, res) => {
+  try {
+    const users = await User.countDocuments();
+    const sales = await Sale.countDocuments();
+
+    const revenue = await Sale.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" },
+        },
+      },
+    ]);
+
+    res.json({
+      users,
+      sales,
+      revenue: revenue[0]?.total || 0,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/* RANKING */
 router.get("/users-ranking", async (req, res) => {
   try {
     const users = await User.find()
-      .sort({ riskScore: -1 }) // maior score primeiro
+      .sort({ riskScore: -1 })
       .limit(100);
-router.get("/metrics", async (req, res) => {
-  const users = await User.countDocuments();
-  const sales = await Sale.countDocuments();
 
-  const revenue = await Sale.aggregate([
-    { $group: { _id: null, total: { $sum: "$amount" } } }
-  ]);
-
-  res.json({
-    users,
-    sales,
-    revenue: revenue[0]?.total || 0
-  });
-});
     const ranking = users.map((u, index) => ({
       position: index + 1,
       email: u.email,
       riskScore: u.riskScore,
-      trustLevel: u.trustLevel
+      trustLevel: u.trustLevel,
     }));
 
     res.json(ranking);
-  } catch (err) {
-    res.status(500).json({ error: "Erro ranking" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
-
-
-/* DASHBOARD ADMIN */
+/* STATS */
 router.get("/stats", async (req, res) => {
   try {
     const totalUsuarios = await User.countDocuments();
@@ -77,7 +85,7 @@ router.get("/stats", async (req, res) => {
   }
 });
 
-/* LISTAR USUÁRIOS */
+/* LISTAR USERS */
 router.get("/users", async (req, res) => {
   try {
     const users = await User.find().sort({ createdAt: -1 });
@@ -97,7 +105,6 @@ router.post("/pro/:id", async (req, res) => {
     }
 
     user.isPro = true;
-
     await user.save();
 
     res.json(user);
@@ -105,4 +112,5 @@ router.post("/pro/:id", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
 export default router;
