@@ -1,6 +1,8 @@
 import express from "express";
 import User from "../models/User.js";
 import Sale from "../models/Sale.js";
+import Campaign from "../models/Campaign.js";
+
 const router = express.Router();
 
 /**
@@ -38,4 +40,69 @@ router.get("/metrics", async (req, res) => {
   }
 });
 
+
+
+/* DASHBOARD ADMIN */
+router.get("/stats", async (req, res) => {
+  try {
+    const totalUsuarios = await User.countDocuments();
+    const totalCampanhas = await Campaign.countDocuments();
+
+    const campanhas = await Campaign.find();
+
+    const totalCliques = campanhas.reduce(
+      (acc, item) => acc + (item.clicks || 0),
+      0
+    );
+
+    const totalVendas = campanhas.reduce(
+      (acc, item) => acc + (item.sales || 0),
+      0
+    );
+
+    const totalGanhos = campanhas.reduce(
+      (acc, item) => acc + (item.earnings || 0),
+      0
+    );
+
+    res.json({
+      totalUsuarios,
+      totalCampanhas,
+      totalCliques,
+      totalVendas,
+      totalGanhos,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/* LISTAR USUÁRIOS */
+router.get("/users", async (req, res) => {
+  try {
+    const users = await User.find().sort({ createdAt: -1 });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/* LIBERAR PRO */
+router.post("/pro/:id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ msg: "Usuário não encontrado" });
+    }
+
+    user.isPro = true;
+
+    await user.save();
+
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 export default router;
