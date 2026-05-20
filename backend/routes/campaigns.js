@@ -88,7 +88,7 @@ router.post("/:id/sale", async (req, res) => {
     campaign.markModified("earnings");
 
     await campaign.save();
-
+    console.log("SALE BACKEND:", campaign.sales);
     res.json(await Campaign.findById(req.params.id));
   } catch (error) {
     console.log(error);
