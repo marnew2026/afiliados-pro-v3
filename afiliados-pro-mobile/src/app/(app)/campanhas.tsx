@@ -44,12 +44,14 @@ export default function Campanhas() {
       }
     );
 
-    const texto = await res.text();
-    console.log("RESPOSTA VENDA:", texto);
+    const data = await res.json();
 
-    carregar();
+    console.log("SALES:", data.sales);
+    console.log("OBJ:", data);
+
+    await carregar(); // força atualizar tela
   } catch (e) {
-    console.log("ERRO VENDA:", e);
+    console.log(e);
   }
 };
     
@@ -91,7 +93,10 @@ export default function Campanhas() {
           <Text style={{ color: "#fff", marginTop: 5 }}>
             Vendas: {item.sales || 0}
           </Text>
-
+          <Text style={{ color: "#FACC15", marginTop: 5 }}>
+            Conversão: {item.clicks ? ((item.sales || 0) / item.clicks * 100).toFixed(2) : 0}%
+          </Text>
+          
           <TouchableOpacity
             onPress={() => registrarClique(item._id)}
             style={{
