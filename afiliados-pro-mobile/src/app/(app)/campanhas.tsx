@@ -1,13 +1,10 @@
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import { auth } from "../../firebase";
 
 export default function Campanhas() {
   const router = useRouter();
-
-  const [nome, setNome] = useState("");
-  const [link, setLink] = useState("");
   const [campanhas, setCampanhas] = useState<any[]>([]);
 
   const carregar = async () => {
@@ -25,46 +22,41 @@ export default function Campanhas() {
     carregar();
   }, []);
 
-  const salvar = async () => {
-    try {
-      const email = auth.currentUser?.email;
-
-      await fetch("https://afiliados-pro-v3-2.onrender.com/campaigns/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userEmail: email,
-          nome,
-          link,
-        }),
-      });
-
-      setNome("");
-      setLink("");
-      carregar();
-      Alert.alert("OK", "Campanha criada");
-    } catch {
-      Alert.alert("Erro");
-    }
-  };
-
   const registrarClique = async (id: string) => {
     try {
       await fetch(`https://afiliados-pro-v3-2.onrender.com/campaigns/${id}/click`, {
         method: "POST",
       });
-
       carregar();
     } catch (e) {
       console.log(e);
     }
   };
 
+  const registrarVenda = async (id: string) => {
+  try {
+    const res = await fetch(
+      `https://afiliados-pro-v3-2.onrender.com/campaigns/${id}/sale`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ valor: 100 }),
+      }
+    );
+
+    const texto = await res.text();
+    console.log("RESPOSTA VENDA:", texto);
+
+    carregar();
+  } catch (e) {
+    console.log("ERRO VENDA:", e);
+  }
+};
+    
+
   return (
     <ScrollView style={{ flex: 1, padding: 20, backgroundColor: "#111827" }}>
-      <TouchableOpacity onPress={() => router.replace("/dashboard")}>
+      <TouchableOpacity onPress={() => router.replace("/dashboard" as any)}>
         <Text style={{ color: "#60A5FA", marginBottom: 20 }}>
           ← Voltar
         </Text>
@@ -96,6 +88,10 @@ export default function Campanhas() {
             Ganhos: R$ {(item.earnings || 0).toFixed(2)}
           </Text>
 
+          <Text style={{ color: "#fff", marginTop: 5 }}>
+            Vendas: {item.sales || 0}
+          </Text>
+
           <TouchableOpacity
             onPress={() => registrarClique(item._id)}
             style={{
@@ -106,7 +102,21 @@ export default function Campanhas() {
             }}
           >
             <Text style={{ color: "#fff", textAlign: "center" }}>
-              Registrar clique
+              Registrar Clique
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => registrarVenda(item._id)}
+            style={{
+              backgroundColor: "#2563EB",
+              padding: 10,
+              borderRadius: 8,
+              marginTop: 8,
+            }}
+          >
+            <Text style={{ color: "#fff", textAlign: "center" }}>
+              Registrar Venda
             </Text>
           </TouchableOpacity>
         </View>
