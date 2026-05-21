@@ -58,10 +58,10 @@ router.post("/:id/click", async (req, res) => {
       });
     }
 
-    campaign.clicks = (campaign.clicks || 0) + 1;
+   
 
     campaign.earnings =
-      campaign.clicks * (campaign.commission || 0.1);
+     
 
     await campaign.save();
 
@@ -96,8 +96,8 @@ router.post("/:id/sale", async (req, res) => {
       Number(valor || 100) *
       Number(campaign.commission);
 
-    campaign.sales += 1;
-    campaign.earnings += ganho;
+   campaign.sales += 1;
+campaign.earnings += 10;
 
     await campaign.save();
 
