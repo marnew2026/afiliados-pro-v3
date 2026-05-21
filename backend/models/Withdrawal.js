@@ -1,14 +1,22 @@
 import mongoose from "mongoose";
 
-const WithdrawalSchema = new mongoose.Schema({
-  affiliateCode: String,
-  pixKey: String,
-  amount: Number,
-  status: {
-    type: String,
-    default: "pending",
-  },
-  createdAt: { type: Date, default: Date.now },
-});
+const withdrawalSchema = new mongoose.Schema(
+  {
+    userEmail: String,
+    amount: Number,
+    pixKey: String,
 
-export default mongoose.model("Withdrawal", WithdrawalSchema);
+    status: {
+      type: String,
+      default: "pending",
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+export default mongoose.model(
+  "Withdrawal",
+  withdrawalSchema
+);

@@ -9,6 +9,7 @@ import stripeRoutes from "./routes/stripeRoutes.js";
 import campaignsRoutes from "./routes/campaigns.js";
 import userRoutes from "./routes/userRoutes.js";
 import adminRoutes from "./routes/admin.js";
+import withdrawalsRoutes from "./routes/withdrawals.js";
 const app = express();
 
 /* MIDDLEWARE */
@@ -26,6 +27,7 @@ app.use("/stripe", stripeRoutes);
 app.use("/campaigns", campaignsRoutes);
 app.use("/user", userRoutes);
 app.use("/admin", adminRoutes);
+app.use("/withdrawals", withdrawalsRoutes);
 /* TEST */
 app.get("/", (req, res) => {
   res.send("🚀 SaaS Afiliados PRO ONLINE");
