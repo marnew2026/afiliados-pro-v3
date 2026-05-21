@@ -48,6 +48,7 @@ router.post("/create", async (req, res) => {
 });
 
 /* REGISTRAR CLIQUE */
+/* REGISTRAR CLIQUE */
 router.post("/:id/click", async (req, res) => {
   try {
     const campaign = await Campaign.findById(req.params.id);
@@ -58,10 +59,13 @@ router.post("/:id/click", async (req, res) => {
       });
     }
 
-   
+    if (campaign.clicks == null) campaign.clicks = 0;
+    if (campaign.earnings == null) campaign.earnings = 0;
 
-    campaign.earnings =
-     
+    campaign.clicks += 1;
+
+    // ganha 0.10 por clique
+    campaign.earnings += 0.1;
 
     await campaign.save();
 
@@ -70,15 +74,15 @@ router.post("/:id/click", async (req, res) => {
       earnings: campaign.earnings,
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message,
+    });
   }
 });
-
+/* REGISTRAR VENDA */
 /* REGISTRAR VENDA */
 router.post("/:id/sale", async (req, res) => {
   try {
-    const { valor } = req.body;
-
     const campaign = await Campaign.findById(req.params.id);
 
     if (!campaign) {
@@ -89,23 +93,15 @@ router.post("/:id/sale", async (req, res) => {
 
     if (campaign.sales == null) campaign.sales = 0;
     if (campaign.earnings == null) campaign.earnings = 0;
-    if (campaign.commission == null)
-      campaign.commission = 0.1;
 
-    const ganho =
-      Number(valor || 100) *
-      Number(campaign.commission);
+    campaign.sales += 1;
 
-   campaign.sales += 1;
-campaign.earnings += 10;
+    // ganha R$10 por venda
+    campaign.earnings += 10;
 
     await campaign.save();
 
-    const atualizado = await Campaign.findById(
-      req.params.id
-    );
-
-    res.json(atualizado);
+    res.json(campaign);
   } catch (error) {
     console.log(error);
 
@@ -114,7 +110,6 @@ campaign.earnings += 10;
     });
   }
 });
-
 /* EXCLUIR CAMPANHA */
 router.delete("/:id", async (req, res) => {
   try {
