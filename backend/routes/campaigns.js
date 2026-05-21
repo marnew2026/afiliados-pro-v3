@@ -20,6 +20,11 @@ router.get("/:email", async (req, res) => {
 router.post("/create", async (req, res) => {
   try {
     const { userEmail, nome, link } = req.body;
+    if (!nome || !link) {
+      return res.status(400).json({
+        msg: "Nome e link obrigatórios",
+      });
+    }
 
     const codigo = Math.random().toString(36).substring(2, 10);
 
@@ -84,6 +89,7 @@ router.post("/:id/sale", async (req, res) => {
     if (campaign.sales == null) campaign.sales = 0;
     if (campaign.earnings == null) campaign.earnings = 0;
     if (campaign.commission == null) campaign.commission = 0.1;
+    
 
     const ganho = Number(valor) * Number(campaign.commission);
 

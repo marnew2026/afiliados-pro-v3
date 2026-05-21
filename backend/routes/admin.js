@@ -12,21 +12,16 @@ router.get("/metrics", async (req, res) => {
     const sales = await Sale.countDocuments();
 
     const revenue = await Sale.aggregate([
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$amount" },
-        },
-      },
+      { $group: { _id: null, total: { $sum: "$amount" } } }
     ]);
 
     res.json({
       users,
       sales,
-      revenue: revenue[0]?.total || 0,
+      revenue: revenue[0]?.total || 0
     });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -41,16 +36,16 @@ router.get("/users-ranking", async (req, res) => {
       position: index + 1,
       email: u.email,
       riskScore: u.riskScore,
-      trustLevel: u.trustLevel,
+      trustLevel: u.trustLevel
     }));
 
     res.json(ranking);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
-/* STATS */
+/* DASHBOARD ADMIN */
 router.get("/stats", async (req, res) => {
   try {
     const totalUsuarios = await User.countDocuments();
@@ -78,20 +73,20 @@ router.get("/stats", async (req, res) => {
       totalCampanhas,
       totalCliques,
       totalVendas,
-      totalGanhos,
+      totalGanhos
     });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
-/* LISTAR USERS */
+/* USERS */
 router.get("/users", async (req, res) => {
   try {
     const users = await User.find().sort({ createdAt: -1 });
     res.json(users);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -108,8 +103,8 @@ router.post("/pro/:id", async (req, res) => {
     await user.save();
 
     res.json(user);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
