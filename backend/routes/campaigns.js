@@ -59,13 +59,13 @@ router.post("/:id/click", async (req, res) => {
       });
     }
 
-    if (campaign.clicks == null) campaign.clicks = 0;
-    if (campaign.earnings == null) campaign.earnings = 0;
+    if (!campaign.clicks) campaign.clicks = 0;
+    if (!campaign.earnings) campaign.earnings = 0;
+    if (!campaign.commission) campaign.commission = 0.1;
 
     campaign.clicks += 1;
 
-    // ganha 0.10 por clique
-    campaign.earnings += 0.1;
+    campaign.earnings += Number(campaign.commission);
 
     await campaign.save();
 
