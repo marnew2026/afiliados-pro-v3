@@ -1,60 +1,33 @@
 import express from "express";
-import Withdrawal from "../models/Withdrawal.js";
 
 const router = express.Router();
 
-router.post("/create", async (req, res) => {
-  try {
-    console.log("BODY RECEBIDO:", req.body);
-
-    const { userEmail, pixKey, amount } = req.body;
-
-    console.log(userEmail);
-    console.log(pixKey);
-    console.log(amount);
-
-    if (!userEmail || !pixKey || !amount) {
-      return res.json({
-        msg: "dados obrigatorios",
-      });
-    }
-
-    res.json({
-      ok: true,
-    });
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      msg: "erro servidor",
-    });
-  }
-});
-app.post("/withdraw", async (req, res) => {
+router.post("/withdraw", async (req, res) => {
   try {
     const { userEmail, pixKey, amount } = req.body;
-
-    if (!userEmail || !pixKey || !amount) {
-      return res.status(400).json({
-        message: "Dados incompletos",
-      });
-    }
 
     console.log("NOVO SAQUE:");
     console.log(userEmail);
     console.log(pixKey);
     console.log(amount);
 
+    if (!userEmail || !pixKey || !amount) {
+      return res.status(400).json({
+        message: "Dados inválidos",
+      });
+    }
+
     return res.json({
       success: true,
       message: "Saque solicitado com sucesso",
     });
-  } catch (error) {
-    console.log(error);
+  } catch (err) {
+    console.log(err);
 
     return res.status(500).json({
-      message: "Erro interno no saque",
+      message: "Erro interno",
     });
   }
 });
+
 export default router;
