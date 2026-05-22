@@ -30,4 +30,31 @@ router.post("/create", async (req, res) => {
     });
   }
 });
+app.post("/withdraw", async (req, res) => {
+  try {
+    const { userEmail, pixKey, amount } = req.body;
+
+    if (!userEmail || !pixKey || !amount) {
+      return res.status(400).json({
+        message: "Dados incompletos",
+      });
+    }
+
+    console.log("NOVO SAQUE:");
+    console.log(userEmail);
+    console.log(pixKey);
+    console.log(amount);
+
+    return res.json({
+      success: true,
+      message: "Saque solicitado com sucesso",
+    });
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json({
+      message: "Erro interno no saque",
+    });
+  }
+});
 export default router;

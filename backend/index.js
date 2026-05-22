@@ -10,7 +10,11 @@ import campaignsRoutes from "./routes/campaigns.js";
 import userRoutes from "./routes/userRoutes.js";
 import adminRoutes from "./routes/admin.js";
 import withdrawalsRoutes from "./routes/withdrawals.js";
+import { Redirect } from "expo-router";
 
+export default function Index() {
+  return <Redirect href="/login" />;
+}
 
 const app = express();
 
