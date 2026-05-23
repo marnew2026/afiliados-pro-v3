@@ -1,6 +1,7 @@
-import API_URL from "./services/api";
 import axios from "axios";
 
-export const api = axios.create({
-  baseURL: "https://afiliados-pro-v3-production.up.railway.app",
+const api = axios.create({
+  baseURL: "https://afiliados-pro-v3-2.onrender.com",
 });
+
+export default api;
