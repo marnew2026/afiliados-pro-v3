@@ -9,6 +9,7 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "^3.1.0",
     "axios": "^1.16.1",
     "bcryptjs": "^3.0.3",
     "bullmq": "^5.76.8",

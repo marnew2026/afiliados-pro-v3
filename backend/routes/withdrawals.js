@@ -1,4 +1,5 @@
 import express from "express";
+import Withdrawal from "../models/Withdrawal.js";
 
 const router = express.Router();
 
@@ -6,26 +7,52 @@ router.post("/withdraw", async (req, res) => {
   try {
     const { userEmail, pixKey, amount } = req.body;
 
-    console.log("NOVO SAQUE:");
-    console.log(userEmail);
-    console.log(pixKey);
-    console.log(amount);
+    const withdrawal = await Withdrawal.create({
+      userEmail,
+      pixKey,
+      amount,
+    });
 
-    if (!userEmail || !pixKey || !amount) {
-      return res.status(400).json({
-        message: "Dados inválidos",
-      });
-    }
+    res.json(withdrawal);
+  } catch (err) {
+    console.log(err);
 
-    return res.json({
-      success: true,
-      message: "Saque solicitado com sucesso",
+    res.status(500).json({
+      message: "Erro ao solicitar saque",
+    });
+  }
+});
+
+router.get("/withdrawals", async (req, res) => {
+  try {
+    const withdrawals = await Withdrawal.find().sort({
+      createdAt: -1,
+    });
+
+    res.json(withdrawals);
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      message: "Erro ao buscar saques",
+    });
+  }
+});
+
+router.put("/withdrawals/:id/approve", async (req, res) => {
+  try {
+    await Withdrawal.findByIdAndUpdate(req.params.id, {
+      status: "approved",
+    });
+
+    res.json({
+      message: "Saque aprovado",
     });
   } catch (err) {
     console.log(err);
 
-    return res.status(500).json({
-      message: "Erro interno",
+    res.status(500).json({
+      message: "Erro ao aprovar saque",
     });
   }
 });
