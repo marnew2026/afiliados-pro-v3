@@ -9,7 +9,7 @@ import stripeRoutes from "./routes/stripeRoutes.js";
 import campaignsRoutes from "./routes/campaigns.js";
 import userRoutes from "./routes/userRoutes.js";
 import adminRoutes from "./routes/admin.js";
-import withdrawalsRoutes from "./routes/withdrawals.js";
+import withdrawRoutes from "./routes/withdrawRoutes.js";
 
 
 export default function Index() {
@@ -33,7 +33,7 @@ app.use("/stripe", stripeRoutes);
 app.use("/campaigns", campaignsRoutes);
 app.use("/user", userRoutes);
 app.use("/admin", adminRoutes);
-app.use(withdrawalsRoutes);
+app.use("/withdraw", withdrawRoutes);
 
 /* TEST */
 app.get("/", (req, res) => {
