@@ -1,110 +1,94 @@
 import express from "express";
-import User from "../models/User.js";
-import Sale from "../models/Sale.js";
+import Withdraw from "../models/Withdraw.js";
 import Campaign from "../models/Campaign.js";
 
 const router = express.Router();
 
-/* MÉTRICAS */
-router.get("/metrics", async (req, res) => {
+/* LISTAR SAQUES */
+router.get("/withdraws", async (req, res) => {
   try {
-    const users = await User.countDocuments();
-    const sales = await Sale.countDocuments();
-
-    const revenue = await Sale.aggregate([
-      { $group: { _id: null, total: { $sum: "$amount" } } }
-    ]);
-
-    res.json({
-      users,
-      sales,
-      revenue: revenue[0]?.total || 0
+    const withdraws = await Withdraw.find().sort({
+      createdAt: -1,
     });
+
+    res.json(withdraws);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.log(err);
+    res.status(500).json({
+      error: "Erro ao buscar saques",
+    });
   }
 });
 
-/* RANKING */
-router.get("/users-ranking", async (req, res) => {
+/* APROVAR SAQUE */
+router.post("/withdraw/:id/approve", async (req, res) => {
   try {
-    const users = await User.find()
-      .sort({ riskScore: -1 })
-      .limit(100);
+    await Withdraw.findByIdAndUpdate(req.params.id, {
+      status: "approved",
+    });
 
-    const ranking = users.map((u, index) => ({
-      position: index + 1,
-      email: u.email,
-      riskScore: u.riskScore,
-      trustLevel: u.trustLevel
-    }));
-
-    res.json(ranking);
+    res.json({
+      success: true,
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.log(err);
+
+    res.status(500).json({
+      error: "Erro ao aprovar saque",
+    });
+  }
+});
+
+/* REJEITAR SAQUE */
+router.post("/withdraw/:id/reject", async (req, res) => {
+  try {
+    await Withdraw.findByIdAndUpdate(req.params.id, {
+      status: "rejected",
+    });
+
+    res.json({
+      success: true,
+    });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      error: "Erro ao rejeitar saque",
+    });
   }
 });
 
 /* DASHBOARD ADMIN */
 router.get("/stats", async (req, res) => {
   try {
-    const totalUsuarios = await User.countDocuments();
-    const totalCampanhas = await Campaign.countDocuments();
+    const campaigns = await Campaign.find();
 
-    const campanhas = await Campaign.find();
-
-    const totalCliques = campanhas.reduce(
+    const totalClicks = campaigns.reduce(
       (acc, item) => acc + (item.clicks || 0),
       0
     );
 
-    const totalVendas = campanhas.reduce(
+    const totalSales = campaigns.reduce(
       (acc, item) => acc + (item.sales || 0),
       0
     );
 
-    const totalGanhos = campanhas.reduce(
+    const totalEarnings = campaigns.reduce(
       (acc, item) => acc + (item.earnings || 0),
       0
     );
 
     res.json({
-      totalUsuarios,
-      totalCampanhas,
-      totalCliques,
-      totalVendas,
-      totalGanhos
+      totalClicks,
+      totalSales,
+      totalEarnings,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+    console.log(err);
 
-/* USERS */
-router.get("/users", async (req, res) => {
-  try {
-    const users = await User.find().sort({ createdAt: -1 });
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-/* LIBERAR PRO */
-router.post("/pro/:id", async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-
-    if (!user) {
-      return res.status(404).json({ msg: "Usuário não encontrado" });
-    }
-
-    user.isPro = true;
-    await user.save();
-
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: "Erro admin stats",
+    });
   }
 });
 
