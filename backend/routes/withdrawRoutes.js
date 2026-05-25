@@ -38,5 +38,8 @@ router.post("/", async (req, res) => {
     });
   }
 });
-
+router.get("/admin/all", async (req, res) => {
+  const withdraws = await Withdrawal.find().sort({ createdAt: -1 });
+  res.json(withdraws);
+});
 export default router;

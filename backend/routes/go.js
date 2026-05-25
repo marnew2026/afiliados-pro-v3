@@ -54,7 +54,9 @@ router.get("/go/:affiliateCode/:offerId", async (req, res) => {
       },
     });
 
-    return res.redirect(session.url);
+   return res.json({
+  url: session.url
+});
 
   } catch (err) {
     console.log("❌ ERRO /go:", err.message);

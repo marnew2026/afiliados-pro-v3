@@ -5,7 +5,7 @@ import User from "../models/User.js";
 const router = express.Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-router.get("/create-checkout-session", async (req, res) => {
+router.post("/create-checkout-session", async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -20,13 +20,13 @@ router.get("/create-checkout-session", async (req, res) => {
       cancel_url: "https://afiliados-pro-v3-2.onrender.com/cancel",
     });
 
-    res.redirect(session.url);
+    res.json({ url: session.url });
+
   } catch (error) {
     console.log(error);
-    res.status(500).send("Erro Stripe");
+    res.status(500).json({ error: "Erro Stripe" });
   }
 });
-
 router.post("/webhook", async (req, res) => {
   try {
     console.log("🔥 WEBHOOK RECEBIDO");

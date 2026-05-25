@@ -12,9 +12,6 @@ import adminRoutes from "./routes/admin.js";
 import withdrawRoutes from "./routes/withdrawRoutes.js";
 
 
-export default function Index() {
-
-}
 
 const app = express();
 
@@ -90,6 +87,56 @@ app.get("/r/:id", async (req, res) => {
   } catch (err) {
     console.log(err);
     return res.status(500).send("Erro");
+  }
+});
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+app.post("/create-checkout", async (req, res) => {
+
+  try {
+
+    const session = await stripe.checkout.sessions.create({
+
+      payment_method_types: ["card"],
+
+      mode: "payment",
+
+      line_items: [
+        {
+          price_data: {
+            currency: "brl",
+
+            product_data: {
+              name: "Plano PRO"
+            },
+
+            unit_amount: 2900,
+          },
+
+          quantity: 1,
+        },
+      ],
+
+      success_url:
+        "https://google.com",
+
+      cancel_url:
+        "https://google.com",
+    });
+
+    res.json({
+      url: session.url,
+    });
+
+  } catch (err) {
+
+    console.log(err);
+
+    res.status(500).json({
+      error: err.message,
+    });
   }
 });
 
