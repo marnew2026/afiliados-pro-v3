@@ -31,7 +31,7 @@ app.use("/campaigns", campaignsRoutes);
 app.use("/user", userRoutes);
 app.use("/admin", adminRoutes);
 app.use("/withdraw", withdrawRoutes);
-
+app.use("/admin", withdrawRoutes);
 /* TEST */
 app.get("/", (req, res) => {
   res.send("🚀 SaaS Afiliados PRO ONLINE");
