@@ -1,10 +1,14 @@
 import express from "express";
-import Withdraw from "../models/Withdraw.js";
-import Campaign from "../models/Campaign.js";
 
 const router = express.Router();
 
-/* LISTAR SAQUES */
+/* MODELS */
+import Withdraw from "../models/Withdraw.js";
+import Campaign from "../models/Campaign.js";
+
+/* =========================
+   LISTAR SAQUES
+========================= */
 router.get("/withdraws", async (req, res) => {
   try {
     const withdraws = await Withdraw.find().sort({
@@ -15,17 +19,27 @@ router.get("/withdraws", async (req, res) => {
   } catch (err) {
     console.log(err);
     res.status(500).json({
-      error: "Erro ao buscar saques",
+      error: "Erro ao carregar saques",
     });
   }
 });
 
-/* APROVAR SAQUE */
-router.post("/withdraw/:id/approve", async (req, res) => {
+/* =========================
+   APROVAR SAQUE
+========================= */
+router.post("/approve/:id", async (req, res) => {
   try {
-    await Withdraw.findByIdAndUpdate(req.params.id, {
-      status: "approved",
-    });
+    const withdraw = await Withdraw.findById(req.params.id);
+
+    if (!withdraw) {
+      return res.status(404).json({
+        error: "Saque não encontrado",
+      });
+    }
+
+    withdraw.status = "approved";
+
+    await withdraw.save();
 
     res.json({
       success: true,
@@ -34,31 +48,14 @@ router.post("/withdraw/:id/approve", async (req, res) => {
     console.log(err);
 
     res.status(500).json({
-      error: "Erro ao aprovar saque",
+      error: "Erro ao aprovar",
     });
   }
 });
 
-/* REJEITAR SAQUE */
-router.post("/withdraw/:id/reject", async (req, res) => {
-  try {
-    await Withdraw.findByIdAndUpdate(req.params.id, {
-      status: "rejected",
-    });
-
-    res.json({
-      success: true,
-    });
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      error: "Erro ao rejeitar saque",
-    });
-  }
-});
-
-/* DASHBOARD ADMIN */
+/* =========================
+   ESTATÍSTICAS ADMIN
+========================= */
 router.get("/stats", async (req, res) => {
   try {
     const campaigns = await Campaign.find();
@@ -87,7 +84,7 @@ router.get("/stats", async (req, res) => {
     console.log(err);
 
     res.status(500).json({
-      error: "Erro admin stats",
+      error: "Erro stats",
     });
   }
 });
