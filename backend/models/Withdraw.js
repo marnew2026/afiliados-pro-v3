@@ -1,10 +1,12 @@
 import mongoose from "mongoose";
 
-const withdrawalSchema = new mongoose.Schema(
+const withdrawSchema = new mongoose.Schema(
   {
     userEmail: String,
-    amount: Number,
+
     pixKey: String,
+
+    amount: Number,
 
     status: {
       type: String,
@@ -17,6 +19,6 @@ const withdrawalSchema = new mongoose.Schema(
 );
 
 export default mongoose.model(
-  "Withdrawal",
-  withdrawalSchema
+  "Withdraw",
+  withdrawSchema
 );
