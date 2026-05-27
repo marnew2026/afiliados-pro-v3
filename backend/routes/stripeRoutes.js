@@ -5,12 +5,16 @@ const router = express.Router();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-router.get("/create-checkout-session", async (req, res) => {
+router.post("/create-checkout-session", async (req, res) => {
   try {
+    const { email } = req.body;
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
 
-      mode: "payment",
+      mode: "subscription",
+
+      customer_email: email,
 
       line_items: [
         {
@@ -21,7 +25,11 @@ router.get("/create-checkout-session", async (req, res) => {
               name: "Plano PRO",
             },
 
-            unit_amount: 2900,
+            unit_amount: 1990,
+
+            recurring: {
+              interval: "month",
+            },
           },
 
           quantity: 1,
@@ -29,21 +37,21 @@ router.get("/create-checkout-session", async (req, res) => {
       ],
 
       success_url:
-        "https://afiliados-pro-v3-2.onrender.com/success",
+        "https://google.com",
 
       cancel_url:
-        "https://afiliados-pro-v3-2.onrender.com/cancel",
+        "https://google.com",
     });
 
-    return res.json({
+    res.json({
       url: session.url,
     });
 
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.log("ERRO STRIPE:", error);
 
-    return res.status(500).json({
-      error: err.message,
+    res.status(500).json({
+      error: error.message,
     });
   }
 });

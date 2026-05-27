@@ -2,38 +2,69 @@ import express from "express";
 import Stripe from "stripe";
 import admin from "firebase-admin";
 
+import User from "../models/User.js";
+
 const router = express.Router();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-router.post("/", express.raw({ type: "application/json" }), async (req, res) => {
-  try {
-    const sig = req.headers["stripe-signature"];
+router.post(
+  "/",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    try {
+      const sig = req.headers["stripe-signature"];
 
-    const event = stripe.webhooks.constructEvent(
-      req.body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET
-    );
+      const event = stripe.webhooks.constructEvent(
+        req.body,
+        sig,
+        process.env.STRIPE_WEBHOOK_SECRET
+      );
 
-    if (event.type === "checkout.session.completed") {
-      const session = event.data.object;
-      const email = session.customer_email;
+      /* =========================
+         PAGAMENTO APROVADO
+      ========================= */
+      if (event.type === "checkout.session.completed") {
+        const session = event.data.object;
 
-      const user = await admin.auth().getUserByEmail(email);
+        const email = session.customer_email;
 
-      await admin.auth().setCustomUserClaims(user.uid, {
-        pro: true,
+        console.log("PAGAMENTO APROVADO:", email);
+
+        /* FIREBASE */
+        try {
+          const user = await admin.auth().getUserByEmail(email);
+
+          await admin.auth().setCustomUserClaims(user.uid, {
+            pro: true,
+          });
+
+          console.log("FIREBASE PRO OK");
+        } catch (firebaseError) {
+          console.log("ERRO FIREBASE:", firebaseError.message);
+        }
+
+        /* MONGODB */
+        await User.findOneAndUpdate(
+          { email },
+          {
+            isPro: true,
+          },
+          { upsert: true }
+        );
+
+        console.log("MONGO PRO OK");
+      }
+
+      res.json({
+        received: true,
       });
+    } catch (err) {
+      console.log("WEBHOOK ERROR:", err.message);
 
-      console.log("USUÁRIO PRO:", email);
+      res.status(400).send("Webhook Error");
     }
-
-    res.json({ received: true });
-  } catch (err) {
-    console.log(err.message);
-    res.status(400).send(`Webhook Error`);
   }
-});
+);
 
 export default router;
