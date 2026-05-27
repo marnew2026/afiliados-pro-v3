@@ -18,9 +18,9 @@ export default function Index() {
 
   if (loading) return null;
 
-  return logged ? (
-    <Redirect href="/(app)/dashboard" />
-  ) : (
-    <Redirect href="/(auth)/login" />
-  );
+  if (logged) {
+    return <Redirect href={"/dashboard" as any} />;
+  }
+
+  return <Redirect href={"/login" as any} />;
 }

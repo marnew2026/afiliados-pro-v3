@@ -1,7 +1,7 @@
 import { View, Text, TextInput, Button, Alert } from "react-native";
 import { useState } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../firebase";
+import { auth } from "../firebase";
 import { useRouter } from "expo-router";
 
 export default function Signup() {
@@ -23,7 +23,7 @@ export default function Signup() {
       await createUserWithEmailAndPassword(auth, email, password);
 
       // NÃO precisa forçar rota (Firebase já atualiza auth)
-      router.replace("/(app)/dashboard");
+ router.replace("/dashboard")
 
     } catch (error: any) {
       console.log("Erro cadastro:", error.message);

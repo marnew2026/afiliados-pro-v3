@@ -2,33 +2,35 @@
   "expo": {
     "name": "afiliados-pro-mobile",
     "slug": "afiliados-pro-mobile",
+    "scheme": "afiliadospro",
     "version": "1.0.0",
     "orientation": "portrait",
-
-    "plugins": [
-      "expo-router"
-    ],
-
-    "scheme": "afiliadospro",
-
     "userInterfaceStyle": "automatic",
-
-    "android": {
-      "package": "com.marielnew1.afiliadospromobile"
+    "newArchEnabled": true,
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#111827"
     },
-
-    "extra": {
-      "eas": {
-        "projectId": "512600a3-29fe-4c45-9fe5-1ca483021a77"
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#111827"
       }
     },
-
-    "updates": {
-      "url": "https://u.expo.dev/512600a3-29fe-4c45-9fe5-1ca483021a77"
+    "web": {
+      "bundler": "metro"
     },
-
-    "runtimeVersion": {
-      "policy": "appVersion"
+    "plugins": [
+      "expo-router",
+      "expo-web-browser"
+    ],
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }
