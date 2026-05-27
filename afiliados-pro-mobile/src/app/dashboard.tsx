@@ -31,7 +31,7 @@ export default function Dashboard() {
   const adminEmail = "marielsantana@bol.com.br";
 
   const currentUser = auth.currentUser;
-
+  const [withdraws, setWithdraws] = useState([]);
   async function assinarPlano() {
     try {
       const res = await fetch(
@@ -113,7 +113,7 @@ export default function Dashboard() {
       const res = await fetch(
         `https://afiliados-pro-v3-2.onrender.com/campaigns/${email}`
       );
-
+  
       const text = await res.text();
 
       console.log("CAMPAIGNS RAW:", text);
@@ -133,7 +133,26 @@ export default function Dashboard() {
       console.log("Erro campanhas:", error);
     }
   }
+  async function loadWithdraws() {
+  try {
+    const response = await fetch(
+      "https://afiliados-pro-v3-2.onrender.com/admin/withdraws"
+    );
 
+    const data = await response.json();
+
+    const userWithdraws = data.filter(
+      (item: any) =>
+        item.userEmail === currentUser?.email &&
+        item.status === "approved"
+    );
+
+    setWithdraws(userWithdraws);
+
+  } catch (error) {
+    console.log("Erro withdraws:", error);
+  }
+}   
   const campanhasValidas = campanhas.filter(
     (item) =>
       item?.nome &&
@@ -156,6 +175,14 @@ export default function Dashboard() {
     (acc, item) => acc + (item.earnings || 0),
     0
   );
+  const totalSacado = withdraws.reduce(
+  (acc: number, item: any) =>
+    acc + (item.amount || 0),
+  0
+);
+
+const saldoDisponivel =
+  totalGanhos - totalSacado;
 
   const handleUpgrade = async () => {
     try {
@@ -169,12 +196,12 @@ export default function Dashboard() {
   };
 
   useFocusEffect(
-    useCallback(() => {
-      verificarPlano();
-      carregarCampanhas();
-    }, [])
-  );
-
+  useCallback(() => {
+    verificarPlano();
+    carregarCampanhas();
+    loadWithdraws();
+  }, [])
+);
   return (
     <ScrollView
       style={{
@@ -262,7 +289,7 @@ export default function Dashboard() {
             marginBottom: 12,
           }}
         >
-          🤑 Ganhos: R$ {totalGanhos.toFixed(2)}
+          🤑 Saldo: R$ {saldoDisponivel.toFixed(2)}
         </Text>
       </View>
 
