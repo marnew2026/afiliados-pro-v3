@@ -116,16 +116,27 @@ app.get("/fix-earnings", async (req, res) => {
 
     const campaigns = await Campaign.find();
 
+    let fixed = 0;
+
     for (const campaign of campaigns) {
       if ((campaign.earnings || 0) < 0) {
-        campaign.earnings = 0;
-        await campaign.save();
+
+        await Campaign.updateOne(
+          { _id: campaign._id },
+          {
+            $set: {
+              earnings: 0,
+            },
+          }
+        );
+
+        fixed++;
       }
     }
 
     res.json({
       success: true,
-      message: "earnings corrigidos",
+      fixed,
     });
 
   } catch (err) {
@@ -135,8 +146,7 @@ app.get("/fix-earnings", async (req, res) => {
       error: err.message,
     });
   }
-});     
-
+});
 /* =========================
    USER (fallback seguro)
 ========================= */
