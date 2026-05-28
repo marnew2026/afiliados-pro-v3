@@ -180,18 +180,23 @@ app.get("/r/:id", async (req, res) => {
       return res.status(404).send("Link inválido");
     }
 
-    campaign.clicks = (campaign.clicks || 0) + 1;
-
     const commission = campaign.commission ?? 0.1;
 
-    campaign.earnings =
-      (campaign.earnings || 0) + commission;
-
-    await campaign.save();
+    await Campaign.updateOne(
+      { _id: campaign._id },
+      {
+        $inc: {
+          clicks: 1,
+          earnings: commission,
+        },
+      }
+    );
 
     return res.redirect(campaign.link);
+
   } catch (err) {
     console.log(err);
+
     return res.status(500).send("Erro");
   }
 });
