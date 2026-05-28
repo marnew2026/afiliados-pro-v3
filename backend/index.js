@@ -108,6 +108,33 @@ app.get("/dashboard/:email", async (req, res) => {
       error: "Erro dashboard",
     });
   }
+});
+app.get("/fix-earnings", async (req, res) => {
+  try {
+    const Campaign =
+      (await import("./models/Campaign.js")).default;
+
+    const campaigns = await Campaign.find();
+
+    for (const campaign of campaigns) {
+      if ((campaign.earnings || 0) < 0) {
+        campaign.earnings = 0;
+        await campaign.save();
+      }
+    }
+
+    res.json({
+      success: true,
+      message: "earnings corrigidos",
+    });
+
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      error: err.message,
+    });
+  }
 });     
 
 /* =========================
