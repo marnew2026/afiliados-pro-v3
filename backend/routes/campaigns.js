@@ -1,18 +1,55 @@
 import express from "express";
 import Campaign from "../models/Campaign.js";
+import Withdrawal from "../models/Withdraw.js";
 
 const router = express.Router();
 
 /* LISTAR CAMPANHAS */
 router.get("/:email", async (req, res) => {
   try {
-    const campaigns = await Campaign.find({
-      userEmail: req.params.email,
-    }).sort({ createdAt: -1 });
+    const userEmail = req.params.email;
 
-    res.json(campaigns);
+    // campanhas
+    const campaigns = await Campaign.find({
+      userEmail,
+    });
+
+    // total ganhos
+    const totalEarnings = campaigns.reduce(
+      (acc, c) => acc + (c.earnings || 0),
+      0
+    );
+
+    // saques
+    const withdrawals = await Withdrawal.find({
+      userEmail,
+      status: { $in: ["pending", "approved"] },
+    });
+
+    // total sacado
+    const totalWithdrawn = withdrawals.reduce(
+      (acc, w) => acc + (w.amount || 0),
+      0
+    );
+
+    // saldo disponível
+    const availableBalance =
+      totalEarnings - totalWithdrawn;
+
+    res.json({
+      campaigns,
+      totalEarnings,
+      totalWithdrawn,
+      availableBalance,
+      withdrawals,
+    });
+
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.log(error);
+
+    res.status(500).json({
+      error: error.message,
+    });
   }
 });
 
@@ -27,13 +64,16 @@ router.post("/create", async (req, res) => {
       });
     }
 
-    const codigo = Math.random().toString(36).substring(2, 10);
+    const codigo = Math.random()
+      .toString(36)
+      .substring(2, 10);
 
     const campaign = await Campaign.create({
       userEmail,
       nome,
       link,
-      affiliateLink: `https://afiliados-pro-v3-2.onrender.com/r/${codigo}`,
+      affiliateLink:
+        `https://afiliados-pro-v3-2.onrender.com/r/${codigo}`,
       commission: 0.1,
       clicks: 0,
       earnings: 0,
@@ -41,17 +81,22 @@ router.post("/create", async (req, res) => {
     });
 
     res.json(campaign);
+
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: error.message });
+
+    res.status(500).json({
+      error: error.message,
+    });
   }
 });
 
 /* REGISTRAR CLIQUE */
-/* REGISTRAR CLIQUE */
 router.post("/:id/click", async (req, res) => {
   try {
-    const campaign = await Campaign.findById(req.params.id);
+    const campaign = await Campaign.findById(
+      req.params.id
+    );
 
     if (!campaign) {
       return res.status(404).json({
@@ -59,40 +104,43 @@ router.post("/:id/click", async (req, res) => {
       });
     }
 
-    if (!campaign.clicks) campaign.clicks = 0;
-    if (!campaign.earnings) campaign.earnings = 0;
-    if (!campaign.commission) campaign.commission = 0.1;
+   if (!campaign.clicks) campaign.clicks = 0;
 
-    campaign.clicks += 1;
+campaign.clicks += 1;
 
-    campaign.earnings += Number(campaign.commission);
+await campaign.save();
 
-    await campaign.save();
+res.json({
+  clicks: campaign.clicks,
+});
 
-    res.json({
-      clicks: campaign.clicks,
-      earnings: campaign.earnings,
-    });
   } catch (error) {
+    console.log(error);
+
     res.status(500).json({
       error: error.message,
     });
   }
 });
-/* REGISTRAR VENDA */
+
 /* REGISTRAR VENDA */
 router.post("/:id/sale", async (req, res) => {
   try {
-    const campaign = await Campaign.findById(req.params.id);
+    const campaign = await Campaign.findById(
+      req.params.id
+    );
 
     if (!campaign) {
       return res.status(404).json({
-        msg: "Campanha não encontrada",
+        error: "Campanha não encontrada",
       });
     }
 
-    if (campaign.sales == null) campaign.sales = 0;
-    if (campaign.earnings == null) campaign.earnings = 0;
+    if (campaign.sales == null)
+      campaign.sales = 0;
+
+    if (campaign.earnings == null)
+      campaign.earnings = 0;
 
     campaign.sales += 1;
 
@@ -102,23 +150,30 @@ router.post("/:id/sale", async (req, res) => {
     await campaign.save();
 
     res.json(campaign);
+
   } catch (error) {
     console.log(error);
 
     res.status(500).json({
-      msg: "Erro ao registrar venda",
+      error: error.message,
     });
   }
 });
+
 /* EXCLUIR CAMPANHA */
 router.delete("/:id", async (req, res) => {
   try {
-    await Campaign.findByIdAndDelete(req.params.id);
+    await Campaign.findByIdAndDelete(
+      req.params.id
+    );
 
     res.json({
       ok: true,
     });
+
   } catch (error) {
+    console.log(error);
+
     res.status(500).json({
       error: error.message,
     });

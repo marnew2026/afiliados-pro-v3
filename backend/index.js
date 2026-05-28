@@ -5,34 +5,46 @@ import express from "express";
 import cors from "cors";
 import connectDB from "./config/db.js";
 
+import Stripe from "stripe";
+
+/* ROUTES */
 import stripeRoutes from "./routes/stripeRoutes.js";
 import campaignsRoutes from "./routes/campaigns.js";
 import userRoutes from "./routes/userRoutes.js";
 import adminRoutes from "./routes/admin.js";
 import withdrawRoutes from "./routes/withdrawRoutes.js";
 
-
-
 const app = express();
 
-/* MIDDLEWARE */
+/* =========================
+   MIDDLEWARE BASE
+========================= */
 app.use(cors());
-connectDB();
-
-/* Stripe webhook */
-app.use("/stripe/webhook", express.raw({ type: "application/json" }));
-
-/* JSON */
 app.use(express.json());
 
-/* ROUTES */
+/* Stripe webhook raw */
+app.use(
+  "/stripe/webhook",
+  express.raw({ type: "application/json" })
+);
+
+/* =========================
+   DB
+========================= */
+connectDB();
+
+/* =========================
+   ROUTES
+========================= */
 app.use("/stripe", stripeRoutes);
 app.use("/campaigns", campaignsRoutes);
 app.use("/user", userRoutes);
 app.use("/admin", adminRoutes);
 app.use("/withdraw", withdrawRoutes);
-app.use("/admin", withdrawRoutes);
-/* TEST */
+
+/* =========================
+   TEST ROUTES
+========================= */
 app.get("/", (req, res) => {
   res.send("🚀 SaaS Afiliados PRO ONLINE");
 });
@@ -44,8 +56,62 @@ app.get("/success", (req, res) => {
 app.get("/cancel", (req, res) => {
   res.send("Pagamento cancelado");
 });
+app.get("/dashboard/:email", async (req, res) => {
+  try {
+    const Campaign =
+      (await import("./models/Campaign.js")).default;
 
-/* CONSULTAR USUÁRIO */
+    const Withdraw =
+      (await import("./models/Withdraw.js")).default;
+
+    const email = req.params.email;
+
+    const campaigns = await Campaign.find({
+      userEmail: email,
+    });
+
+    const withdraws = await Withdraw.find({
+      userEmail: email,
+      status: "approved",
+    });
+
+    const totalClicks = campaigns.reduce(
+      (sum, c) => sum + (c.clicks || 0),
+      0
+    );
+
+    const totalEarnings = campaigns.reduce(
+      (sum, c) => sum + (c.earnings || 0),
+      0
+    );
+
+    const totalWithdrawn = withdraws.reduce(
+      (sum, w) => sum + (w.amount || 0),
+      0
+    );
+
+    const availableBalance =
+      totalEarnings - totalWithdrawn;
+
+    res.json({
+      campaigns,
+      totalClicks,
+      totalEarnings,
+      totalWithdrawn,
+      availableBalance,
+    });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      error: "Erro dashboard",
+    });
+  }
+});
+
+/* =========================
+   USER (fallback seguro)
+========================= */
 app.get("/user/:email", async (req, res) => {
   try {
     const User = (await import("./models/User.js")).default;
@@ -61,15 +127,15 @@ app.get("/user/:email", async (req, res) => {
   }
 });
 
-/* REDIRECT + CLICK */
+/* =========================
+   AFFILIATE REDIRECT
+========================= */
 app.get("/r/:id", async (req, res) => {
   try {
     const Campaign = (await import("./models/Campaign.js")).default;
 
     const campaign = await Campaign.findOne({
-      affiliateLink: {
-        $regex: req.params.id,
-      },
+      affiliateLink: { $regex: req.params.id },
     });
 
     if (!campaign) {
@@ -79,7 +145,9 @@ app.get("/r/:id", async (req, res) => {
     campaign.clicks = (campaign.clicks || 0) + 1;
 
     const commission = campaign.commission ?? 0.1;
-    campaign.earnings = campaign.clicks * commission;
+
+    campaign.earnings =
+      (campaign.earnings || 0) + commission;
 
     await campaign.save();
 
@@ -89,57 +157,52 @@ app.get("/r/:id", async (req, res) => {
     return res.status(500).send("Erro");
   }
 });
-import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+/* =========================
+   STRIPE INIT SAFE
+========================= */
+if (!process.env.STRIPE_SECRET_KEY) {
+  console.log("❌ STRIPE_SECRET_KEY não encontrada");
+}
 
+
+
+/* =========================
+   CHECKOUT
+========================= */
 app.post("/create-checkout", async (req, res) => {
-
   try {
-
     const session = await stripe.checkout.sessions.create({
-
       payment_method_types: ["card"],
-
       mode: "payment",
 
       line_items: [
         {
           price_data: {
             currency: "brl",
-
             product_data: {
-              name: "Plano PRO"
+              name: "Plano PRO",
             },
-
             unit_amount: 2900,
           },
-
           quantity: 1,
         },
       ],
 
-      success_url:
-        "https://google.com",
-
-      cancel_url:
-        "https://google.com",
+      success_url: "https://google.com",
+      cancel_url: "https://google.com",
     });
 
-    res.json({
-      url: session.url,
-    });
-
+    res.json({ url: session.url });
   } catch (err) {
-
     console.log(err);
-
-    res.status(500).json({
-      error: err.message,
-    });
+    res.status(500).json({ error: err.message });
   }
 });
 
+/* =========================
+   START SERVER
+========================= */
 const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
@@ -147,4 +210,5 @@ app.listen(PORT, () => {
   console.log("🚀 PORTA:", PORT);
   console.log("💳 STRIPE ATIVO");
   console.log("📦 CAMPAIGNS ROUTES OK");
+  console.log("🔥 MongoDB conectado");
 });

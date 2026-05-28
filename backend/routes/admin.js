@@ -1,91 +1,57 @@
 import express from "express";
+import Campaign from "../models/Campaign.js";
+import Withdraw from "../models/Withdraw.js";
 
 const router = express.Router();
 
-/* MODELS */
-import Withdraw from "../models/Withdraw.js";
-import Campaign from "../models/Campaign.js";
-
-/* =========================
-   LISTAR SAQUES
-========================= */
-router.get("/withdraws", async (req, res) => {
-  try {
-    const withdraws = await Withdraw.find().sort({
-      createdAt: -1,
-    });
-
-    res.json(withdraws);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({
-      error: "Erro ao carregar saques",
-    });
-  }
-});
-
-/* =========================
-   APROVAR SAQUE
-========================= */
-router.post("/approve/:id", async (req, res) => {
-  try {
-    const withdraw = await Withdraw.findById(req.params.id);
-
-    if (!withdraw) {
-      return res.status(404).json({
-        error: "Saque não encontrado",
-      });
-    }
-
-    withdraw.status = "approved";
-
-    await withdraw.save();
-
-    res.json({
-      success: true,
-    });
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      error: "Erro ao aprovar",
-    });
-  }
-});
-
-/* =========================
-   ESTATÍSTICAS ADMIN
-========================= */
-router.get("/stats", async (req, res) => {
+/**
+ * 🔥 DASHBOARD ADMIN
+ */
+router.get("/dashboard", async (req, res) => {
   try {
     const campaigns = await Campaign.find();
+    const withdraws = await Withdraw.find();
 
-    const totalClicks = campaigns.reduce(
-      (acc, item) => acc + (item.clicks || 0),
-      0
-    );
-
-    const totalSales = campaigns.reduce(
-      (acc, item) => acc + (item.sales || 0),
-      0
-    );
-
+    // 💰 total ganhos
     const totalEarnings = campaigns.reduce(
-      (acc, item) => acc + (item.earnings || 0),
+      (acc, c) => acc + (c.earnings || 0),
       0
     );
 
-    res.json({
-      totalClicks,
-      totalSales,
+    // 💸 total sacado (SOMENTE APROVADOS)
+    const totalWithdrawn = withdraws
+      .filter(w => w.status === "approved")
+      .reduce((acc, w) => acc + (w.amount || 0), 0);
+
+    // 🧮 saldo real
+    const balance = totalEarnings - totalWithdrawn;
+
+    // ⏳ pendentes
+    const pendingWithdraws = withdraws.filter(
+      w => w.status === "pending"
+    );
+
+    // ✅ aprovados
+    const approvedWithdraws = withdraws.filter(
+      w => w.status === "approved"
+    );
+
+    // 🔥 top campanhas
+    const topCampaigns = campaigns
+      .sort((a, b) => (b.earnings || 0) - (a.earnings || 0))
+      .slice(0, 5);
+
+    return res.json({
       totalEarnings,
+      totalWithdrawn,
+      balance,
+      pendingWithdraws,
+      approvedWithdraws,
+      topCampaigns,
     });
   } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      error: "Erro stats",
-    });
+    console.log("ADMIN DASHBOARD ERROR:", err);
+    return res.status(500).json({ error: err.message });
   }
 });
 
