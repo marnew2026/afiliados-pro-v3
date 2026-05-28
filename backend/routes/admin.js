@@ -24,7 +24,10 @@ router.get("/dashboard", async (req, res) => {
       .reduce((acc, w) => acc + (w.amount || 0), 0);
 
     // 🧮 saldo real
-    const balance = totalEarnings - totalWithdrawn;
+   const balance = Math.max(
+  totalEarnings - totalWithdrawn,
+  0
+);
 
     // ⏳ pendentes
     const pendingWithdraws = withdraws.filter(
@@ -37,9 +40,9 @@ router.get("/dashboard", async (req, res) => {
     );
 
     // 🔥 top campanhas
-    const topCampaigns = campaigns
-      .sort((a, b) => (b.earnings || 0) - (a.earnings || 0))
-      .slice(0, 5);
+   const topCampaigns = campaigns
+  .sort((a, b) => (b.clicks || 0) - (a.clicks || 0))
+  .slice(0, 5);
 
     return res.json({
       totalEarnings,
