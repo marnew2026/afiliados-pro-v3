@@ -147,6 +147,33 @@ app.get("/fix-earnings", async (req, res) => {
     });
   }
 });
+app.get("/fix-earnings", async (req, res) => {
+  try {
+    const Campaign = (await import("./models/Campaign.js")).default;
+
+    await Campaign.updateMany(
+      {},
+      {
+        $set: {
+          earnings: 0,
+          clicks: 0,
+          sales: 0,
+        },
+      }
+    );
+
+    res.json({
+      success: true,
+    });
+
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      error: err.message,
+    });
+  }
+});
 /* =========================
    USER (fallback seguro)
 ========================= */
@@ -180,23 +207,27 @@ app.get("/r/:id", async (req, res) => {
       return res.status(404).send("Link inválido");
     }
 
-    const commission = campaign.commission ?? 0.1;
+    campaign.clicks = (campaign.clicks || 0) + 1;
 
-    await Campaign.updateOne(
-      { _id: campaign._id },
-      {
-        $inc: {
-          clicks: 1,
-          earnings: commission,
-        },
-      }
-    );
+    const commission = Number(campaign.commission || 0.1);
+
+    campaign.earnings =
+      Number(campaign.earnings || 0) + commission;
+
+    // evita erro de validação
+    if (!campaign.nome) {
+      campaign.nome = "Campanha";
+    }
+
+    if (!campaign.link) {
+      campaign.link = "https://google.com";
+    }
+
+    await campaign.save({ validateBeforeSave: false });
 
     return res.redirect(campaign.link);
-
   } catch (err) {
-    console.log(err);
-
+    console.log("ERRO REDIRECT:", err);
     return res.status(500).send("Erro");
   }
 });
