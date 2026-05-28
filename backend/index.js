@@ -165,7 +165,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
   console.log("❌ STRIPE_SECRET_KEY não encontrada");
 }
 
-
+console.log(process.env.STRIPE_SECRET_KEY);
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 /* =========================
    CHECKOUT
