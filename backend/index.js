@@ -75,39 +75,53 @@ app.get("/dashboard/:email", async (req, res) => {
       status: "approved",
     });
 
+    // SOMA CLICKS
     const totalClicks = campaigns.reduce(
       (sum, c) => sum + (c.clicks || 0),
       0
     );
 
-    const totalEarnings = campaigns.reduce(
-      (sum, c) => sum + (c.earnings || 0),
+    // REMOVE GANHOS NEGATIVOS
+    const normalizedCampaigns = campaigns.map(c => ({
+      ...c._doc,
+      earnings: Math.max(c.earnings || 0, 0),
+    }));
+
+    // TOTAL GANHOS
+    const totalEarnings = normalizedCampaigns.reduce(
+      (sum, c) => sum + c.earnings,
       0
     );
 
+    // TOTAL SACADO
     const totalWithdrawn = withdraws.reduce(
       (sum, w) => sum + (w.amount || 0),
       0
     );
 
-    const availableBalance =
-      totalEarnings - totalWithdrawn;
+    // SALDO DISPONÍVEL
+    const availableBalance = Math.max(
+      totalEarnings - totalWithdrawn,
+      0
+    );
 
     res.json({
-      campaigns,
+      campaigns: normalizedCampaigns,
       totalClicks,
       totalEarnings,
       totalWithdrawn,
       availableBalance,
     });
+
   } catch (err) {
-    console.log(err);
+    console.log("DASHBOARD ERROR:", err);
 
     res.status(500).json({
       error: "Erro dashboard",
     });
   }
 });
+     
 
 /* =========================
    USER (fallback seguro)
