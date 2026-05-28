@@ -58,11 +58,8 @@ app.get("/cancel", (req, res) => {
 });
 app.get("/dashboard/:email", async (req, res) => {
   try {
-    const Campaign =
-      (await import("./models/Campaign.js")).default;
-
-    const Withdraw =
-      (await import("./models/Withdraw.js")).default;
+    const Campaign = (await import("./models/Campaign.js")).default;
+    const Withdraw = (await import("./models/Withdraw.js")).default;
 
     const email = req.params.email;
 
@@ -70,43 +67,34 @@ app.get("/dashboard/:email", async (req, res) => {
       userEmail: email,
     });
 
-    const withdraws = await Withdraw.find({
-      userEmail: email,
-      status: "approved",
-    });
-
-    // SOMA CLICKS
     const totalClicks = campaigns.reduce(
       (sum, c) => sum + (c.clicks || 0),
       0
     );
 
-    // REMOVE GANHOS NEGATIVOS
-    const normalizedCampaigns = campaigns.map(c => ({
-      ...c._doc,
-      earnings: Math.max(c.earnings || 0, 0),
-    }));
-
-    // TOTAL GANHOS
-    const totalEarnings = normalizedCampaigns.reduce(
-      (sum, c) => sum + c.earnings,
+    // REMOVE NEGATIVOS
+    const totalEarnings = campaigns.reduce(
+      (sum, c) => sum + Math.max(0, c.earnings || 0),
       0
     );
 
-    // TOTAL SACADO
-    const totalWithdrawn = withdraws.reduce(
+    const approvedWithdraws = await Withdraw.find({
+      userEmail: email,
+      status: "approved",
+    });
+
+    const totalWithdrawn = approvedWithdraws.reduce(
       (sum, w) => sum + (w.amount || 0),
       0
     );
 
-    // SALDO DISPONÍVEL
     const availableBalance = Math.max(
-      totalEarnings - totalWithdrawn,
-      0
+      0,
+      totalEarnings - totalWithdrawn
     );
 
     res.json({
-      campaigns: normalizedCampaigns,
+      campaigns,
       totalClicks,
       totalEarnings,
       totalWithdrawn,
@@ -114,14 +102,13 @@ app.get("/dashboard/:email", async (req, res) => {
     });
 
   } catch (err) {
-    console.log("DASHBOARD ERROR:", err);
+    console.log(err);
 
     res.status(500).json({
       error: "Erro dashboard",
     });
   }
-});
-     
+});     
 
 /* =========================
    USER (fallback seguro)
