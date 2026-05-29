@@ -1,4 +1,5 @@
 import express from "express";
+import User from "../models/User.js";
 import Campaign from "../models/Campaign.js";
 
 const router = express.Router();
@@ -7,32 +8,38 @@ router.get("/:email", async (req, res) => {
   try {
     const { email } = req.params;
 
+    console.log("EMAIL RECEBIDO:", email);
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({
+        error: "Usuário não encontrado",
+      });
+    }
+
     const campaigns = await Campaign.find({
       userEmail: email,
     });
 
-    const totalClicks = campaigns.reduce(
-      (sum, c) => sum + (c.clicks || 0),
-      0
-    );
-
     const totalEarnings = campaigns.reduce(
-      (sum, c) => sum + (c.earnings || 0),
+      (sum, c) => sum + Number(c.earnings || 0),
       0
     );
 
-    const totalWithdrawn = 0;
-
-    const availableBalance =
-      totalEarnings - totalWithdrawn;
+    const totalClicks = campaigns.reduce(
+      (sum, c) => sum + Number(c.clicks || 0),
+      0
+    );
 
     res.json({
-      campaigns,
-      totalClicks,
       totalEarnings,
-      totalWithdrawn,
-      availableBalance,
+      totalWithdrawn: 0,
+      availableBalance: totalEarnings,
+      totalClicks,
+      campaigns,
     });
+
   } catch (err) {
     console.log("❌ DASHBOARD ERROR:", err);
 
