@@ -13,7 +13,7 @@ import campaignsRoutes from "./routes/campaigns.js";
 import userRoutes from "./routes/userRoutes.js";
 import adminRoutes from "./routes/admin.js";
 import withdrawRoutes from "./routes/withdrawRoutes.js";
-
+import trackingRoutes from "./routes/trackingRoutes.js";
 const app = express();
 
 /* =========================
