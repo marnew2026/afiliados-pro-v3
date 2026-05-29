@@ -1,63 +1,37 @@
 import express from "express";
-import Sale from "../models/Sale.js";
+import Campaign from "../models/Campaign.js";
 
 const router = express.Router();
 
-/**
- * 🔥 VENDAS POR AFILIADO (DEVE VIR ANTES DO :id)
- */
-router.get("/affiliate/:affiliateId", async (req, res) => {
+router.post("/:id", async (req, res) => {
   try {
-    const { affiliateId } = req.params;
-
-    const sales = await Sale.find({ affiliateId })
-      .sort({ createdAt: -1 })
-      .lean();
-
-    const totalCommission = sales.reduce(
-      (sum, s) => sum + (Number(s.commission) || 0),
-      0
+    const campaign = await Campaign.findById(
+      req.params.id
     );
 
-    res.json({
-      sales,
-      totalSales: sales.length,
-      totalCommission,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-/**
- * 🔥 LISTAR TODAS VENDAS (ADMIN)
- */
-router.get("/", async (req, res) => {
-  try {
-    const sales = await Sale.find()
-      .sort({ createdAt: -1 })
-      .lean();
-
-    res.json(sales);
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao buscar vendas" });
-  }
-});
-
-/**
- * 🔥 BUSCAR POR ID
- */
-router.get("/:id", async (req, res) => {
-  try {
-    const sale = await Sale.findById(req.params.id);
-
-    if (!sale) {
-      return res.status(404).json({ error: "Venda não encontrada" });
+    if (!campaign) {
+      return res.status(404).json({
+        error: "Campanha não encontrada",
+      });
     }
 
-    res.json(sale);
+    campaign.sales =
+      (campaign.sales || 0) + 1;
+
+    campaign.earnings =
+      (campaign.earnings || 0) + 10;
+
+    await campaign.save();
+
+    res.json({
+      success: true,
+      campaign,
+    });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message,
+    });
   }
 });
 

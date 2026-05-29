@@ -1,45 +1,52 @@
 import express from "express";
 import Sale from "../models/Sale.js";
 import Click from "../models/Click.js";
+import Campaign from "../models/Campaign.js";
 
 const router = express.Router();
 
-router.get("/:affiliateCode", async (req, res) => {
+router.get("/:userEmail", async (req, res) => {
   try {
-    const { affiliateCode } = req.params;
+    const { userEmail } = req.params;
 
-    const clicks = await Click.countDocuments({
-      affiliateId: affiliateCode,
+    const campaigns = await Campaign.find({
+      userEmail,
     });
 
-    const sales = await Sale.find({
-      affiliateId: affiliateCode,
-    });
-
-    const totalEarnings = sales.reduce(
-      (sum, sale) => sum + Number(sale.commission || 0),
+    const totalClicks = campaigns.reduce(
+      (sum, campaign) =>
+        sum + (campaign.clicks || 0),
       0
     );
 
-    const conversionRate =
-      clicks > 0 ? (sales.length / clicks) * 100 : 0;
+    const totalEarnings = campaigns.reduce(
+      (sum, campaign) =>
+        sum + (campaign.earnings || 0),
+      0
+    );
 
-    const pendingBalance = totalEarnings;
-    const paidBalance = 0;
-    const epc = clicks > 0 ? totalEarnings / clicks : 0;
+    const totalWithdrawn = 0;
+
+    const availableBalance =
+      totalEarnings - totalWithdrawn;
 
     res.json({
-      clicks,
-      sales: sales.length,
+      campaigns,
+      totalClicks,
       totalEarnings,
-      pendingBalance,
-      paidBalance,
-      conversionRate,
-      epc,
+      totalWithdrawn,
+      availableBalance,
     });
+
   } catch (err) {
-    console.log("❌ DASHBOARD ERROR:", err.message);
-    res.status(500).json({ error: err.message });
+    console.log(
+      "❌ DASHBOARD ERROR:",
+      err.message
+    );
+
+    res.status(500).json({
+      error: err.message,
+    });
   }
 });
 

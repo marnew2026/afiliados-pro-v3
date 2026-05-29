@@ -4,7 +4,7 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 import connectDB from "./config/db.js";
-
+import salesRoutes from "./routes/salesRoutes.js";
 import Stripe from "stripe";
 
 /* ROUTES */
@@ -42,6 +42,7 @@ app.use("/user", userRoutes);
 app.use("/admin", adminRoutes);
 app.use("/withdraw", withdrawRoutes);
 app.use("/r", trackingRoutes);
+app.use("/sales", salesRoutes);
 /* =========================
    TEST ROUTES
 ========================= */
