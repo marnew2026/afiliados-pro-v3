@@ -33,9 +33,9 @@ router.get("/:email", async (req, res) => {
     );
 
     res.json({
-      totalEarnings,
+     totalEarnings: Number(totalEarnings.toFixed(2)),
       totalWithdrawn: 0,
-      availableBalance: totalEarnings,
+      availableBalance: Number(totalEarnings.toFixed(2)),
       totalClicks,
       campaigns,
     });
