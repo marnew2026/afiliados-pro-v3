@@ -1,18 +1,16 @@
 import express from "express";
-import Sale from "../models/Sale.js";
-import Click from "../models/Click.js";
 import Campaign from "../models/Campaign.js";
 
 const router = express.Router();
 
-router.get("/:email", async (req, res) => {
+router.get("/:userEmail", async (req, res) => {
   try {
-    const { email } = req.params;
+    const { userEmail } = req.params;
 
-    console.log("EMAIL:", email);
+    console.log("EMAIL:", userEmail);
 
     const campaigns = await Campaign.find({
-      userEmail: email,
+      userEmail,
     });
 
     console.log("CAMPAIGNS:", campaigns.length);
@@ -33,18 +31,20 @@ router.get("/:email", async (req, res) => {
       totalEarnings - totalWithdrawn;
 
     res.json({
+      campaigns,
+      totalClicks,
       totalEarnings,
       totalWithdrawn,
       availableBalance,
-      totalClicks,
-      campaigns,
     });
 
   } catch (err) {
-  console.log("❌ DASHBOARD REAL ERROR:", err);
+    console.log("DASHBOARD ERROR:", err);
 
-  res.status(500).json({
-    error: err.message,
-  });
-}
+    res.status(500).json({
+      error: "Erro dashboard",
+    });
+  }
+});
+
 export default router;
