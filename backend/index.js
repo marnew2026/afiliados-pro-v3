@@ -14,6 +14,7 @@ import userRoutes from "./routes/userRoutes.js";
 import adminRoutes from "./routes/admin.js";
 import withdrawRoutes from "./routes/withdrawRoutes.js";
 import trackingRoutes from "./routes/trackingRoutes.js";
+import dashboardRoutes from "./routes/dashboard.js";
 const app = express();
 
 /* =========================
@@ -43,6 +44,7 @@ app.use("/admin", adminRoutes);
 app.use("/withdraw", withdrawRoutes);
 app.use("/r", trackingRoutes);
 app.use("/sales", salesRoutes);
+app.use("/dashboard", dashboardRoutes);
 /* =========================
    TEST ROUTES
 ========================= */
