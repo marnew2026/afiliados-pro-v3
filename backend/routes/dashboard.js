@@ -3,17 +3,13 @@ import Campaign from "../models/Campaign.js";
 
 const router = express.Router();
 
-router.get("/:userEmail", async (req, res) => {
+router.get("/:email", async (req, res) => {
   try {
-    const { userEmail } = req.params;
-
-    console.log("EMAIL:", userEmail);
+    const { email } = req.params;
 
     const campaigns = await Campaign.find({
-      userEmail,
+      userEmail: email,
     });
-
-    console.log("CAMPAIGNS:", campaigns.length);
 
     const totalClicks = campaigns.reduce(
       (sum, c) => sum + (c.clicks || 0),
@@ -37,9 +33,8 @@ router.get("/:userEmail", async (req, res) => {
       totalWithdrawn,
       availableBalance,
     });
-
   } catch (err) {
-    console.log("DASHBOARD ERROR:", err);
+    console.log("❌ DASHBOARD ERROR:", err);
 
     res.status(500).json({
       error: "Erro dashboard",
