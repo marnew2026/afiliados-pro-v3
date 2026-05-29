@@ -72,7 +72,6 @@ app.get("/dashboard/:email", async (req, res) => {
       0
     );
 
-    // REMOVE NEGATIVOS
     const totalEarnings = campaigns.reduce(
       (sum, c) => sum + Math.max(0, c.earnings || 0),
       0
@@ -111,44 +110,6 @@ app.get("/dashboard/:email", async (req, res) => {
 });
 app.get("/fix-earnings", async (req, res) => {
   try {
-    const Campaign =
-      (await import("./models/Campaign.js")).default;
-
-    const campaigns = await Campaign.find();
-
-    let fixed = 0;
-
-    for (const campaign of campaigns) {
-      if ((campaign.earnings || 0) < 0) {
-
-        await Campaign.updateOne(
-          { _id: campaign._id },
-          {
-            $set: {
-              earnings: 0,
-            },
-          }
-        );
-
-        fixed++;
-      }
-    }
-
-    res.json({
-      success: true,
-      fixed,
-    });
-
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      error: err.message,
-    });
-  }
-});
-app.get("/fix-earnings", async (req, res) => {
-  try {
     const Campaign = (await import("./models/Campaign.js")).default;
 
     await Campaign.updateMany(
@@ -161,7 +122,17 @@ app.get("/fix-earnings", async (req, res) => {
         },
       }
     );
-
+    const Withdraw =
+  (await import("./models/Withdraw.js")).default;
+     await Withdraw.updateMany(
+  {},
+  {
+    $set: {
+      amount: 0,
+      status: "approved",
+    },
+  }
+);
     res.json({
       success: true,
     });
@@ -171,6 +142,43 @@ app.get("/fix-earnings", async (req, res) => {
 
     res.status(500).json({
       error: err.message,
+    });
+  }
+});
+app.get("/fix-campaigns", async (req, res) => {
+  try {
+    const Campaign =
+      (await import("./models/Campaign.js")).default;
+
+    const campaigns = await Campaign.find();
+
+    for (const c of campaigns) {
+      if (!c.nome || c.nome === "") {
+        c.nome = "Campanha";
+      }
+
+      if (!c.link || c.link === "") {
+        c.link = "https://google.com";
+      }
+
+      if (c.earnings < 0) {
+        c.earnings = 0;
+      }
+
+      await c.save({
+        validateBeforeSave: false,
+      });
+    }
+
+    res.json({
+      success: true,
+      fixed: campaigns.length,
+    });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      error: "Erro",
     });
   }
 });
@@ -236,11 +244,12 @@ app.get("/r/:id", async (req, res) => {
    STRIPE INIT SAFE
 ========================= */
 if (!process.env.STRIPE_SECRET_KEY) {
-  console.log("❌ STRIPE_SECRET_KEY não encontrada");
+  throw new Error("STRIPE_SECRET_KEY ausente");
 }
 
-console.log(process.env.STRIPE_SECRET_KEY);
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(
+  process.env.STRIPE_SECRET_KEY
+);
 /* =========================
    CHECKOUT
 ========================= */
@@ -273,7 +282,27 @@ app.post("/create-checkout", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+app.post("/withdraw", async (req, res) => {
+  try {
+    const { amount, email } = req.body;
 
+    if (!amount || amount <= 0) {
+      return res.status(400).json({
+        error: "Valor inválido",
+      });
+    }
+
+    return res.json({
+      success: true,
+    });
+  } catch (err) {
+    console.log(err);
+
+    return res.status(500).json({
+      error: "Erro saque",
+    });
+  }
+});
 /* =========================
    START SERVER
 ========================= */

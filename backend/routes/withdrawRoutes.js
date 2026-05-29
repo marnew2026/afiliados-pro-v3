@@ -40,7 +40,9 @@ router.post("/", async (req, res) => {
     }
 
     // campanhas
-    
+    const campaigns = await Campaign.find({
+      userEmail,
+});
 
     // total ganhos
     const totalEarnings = campaigns.reduce(
