@@ -41,7 +41,7 @@ app.use("/campaigns", campaignsRoutes);
 app.use("/user", userRoutes);
 app.use("/admin", adminRoutes);
 app.use("/withdraw", withdrawRoutes);
-
+app.use("/r", trackingRoutes);
 /* =========================
    TEST ROUTES
 ========================= */
@@ -60,7 +60,8 @@ app.get("/dashboard/:email", async (req, res) => {
   try {
     const Campaign = (await import("./models/Campaign.js")).default;
     const Withdraw = (await import("./models/Withdraw.js")).default;
-
+    const trackingRoutes =
+require("./routes/tracking");
     const email = req.params.email;
 
     const campaigns = await Campaign.find({

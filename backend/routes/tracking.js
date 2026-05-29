@@ -1,37 +1,35 @@
-import express from "express";
-import Click from "../models/Click.js";
-import Offer from "../models/Offer.js";
-
+const express = require("express");
 const router = express.Router();
 
-router.get("/:affiliateId/:offerId", async (req, res) => {
+const Campaign = require("../models/Campaign");
+
+router.get("/:code", async (req, res) => {
   try {
-    const { affiliateId, offerId } = req.params;
+    const code = req.params.code;
 
-    console.log("🔥 tracking hit", affiliateId, offerId);
+    const campaign = await Campaign.findOne({
+      affiliateLink: {
+        $regex: code,
+      },
+    });
 
-    const offer = await Offer.findById(offerId);
-
-    if (!offer) {
-      return res.status(404).send("Oferta não encontrada");
+    if (!campaign) {
+      return res
+        .status(404)
+        .send("Link não encontrado");
     }
 
-    await Click.create({
-  affiliateId: req.params.affiliateCode,
-  offerId: req.params.offerId,
-});
+    campaign.clicks += 1;
 
-    const redirectUrl = offer.checkoutUrl || "https://google.com";
+    await campaign.save();
 
-    console.log("🔥 redirect:", redirectUrl);
+    return res.redirect(campaign.link);
 
-    return res.redirect(redirectUrl);
   } catch (err) {
-    console.error("❌ tracking:", err.message);
-    return res.status(500).json({
-      error: err.message,
-    });
+    console.log(err);
+
+    res.status(500).send("Erro");
   }
 });
 
-export default router;
+module.exports = router;
