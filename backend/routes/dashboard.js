@@ -5,23 +5,25 @@ import Campaign from "../models/Campaign.js";
 
 const router = express.Router();
 
-router.get("/:userEmail", async (req, res) => {
+router.get("/:email", async (req, res) => {
   try {
-    const { userEmail } = req.params;
+    const { email } = req.params;
+
+    console.log("EMAIL:", email);
 
     const campaigns = await Campaign.find({
-      userEmail,
+      userEmail: email,
     });
 
+    console.log("CAMPAIGNS:", campaigns.length);
+
     const totalClicks = campaigns.reduce(
-      (sum, campaign) =>
-        sum + (campaign.clicks || 0),
+      (sum, c) => sum + (c.clicks || 0),
       0
     );
 
     const totalEarnings = campaigns.reduce(
-      (sum, campaign) =>
-        sum + (campaign.earnings || 0),
+      (sum, c) => sum + (c.earnings || 0),
       0
     );
 
@@ -31,23 +33,18 @@ router.get("/:userEmail", async (req, res) => {
       totalEarnings - totalWithdrawn;
 
     res.json({
-      campaigns,
-      totalClicks,
       totalEarnings,
       totalWithdrawn,
       availableBalance,
+      totalClicks,
+      campaigns,
     });
 
   } catch (err) {
-    console.log(
-      "❌ DASHBOARD ERROR:",
-      err.message
-    );
+  console.log("❌ DASHBOARD REAL ERROR:", err);
 
-    res.status(500).json({
-      error: err.message,
-    });
-  }
-});
-
+  res.status(500).json({
+    error: err.message,
+  });
+}
 export default router;
