@@ -96,6 +96,16 @@ router.post("/", async (req, res) => {
  */
 router.get("/admin", async (req, res) => {
   try {
+    const { email } = req.query;
+
+    if (
+      email !== "marielsantana@bol.com.br"
+    ) {
+      return res.status(403).json({
+        error: "Acesso negado",
+      });
+    }
+
     const withdraws = await Withdraw.find()
       .sort({ createdAt: -1 });
 
@@ -107,7 +117,6 @@ router.get("/admin", async (req, res) => {
     });
   }
 });
-
 /**
  * 🔥 APROVAR SAQUE
  */
@@ -160,6 +169,15 @@ router.get("/:email", async (req, res) => {
  */
 router.post("/:id/process", async (req, res) => {
   try {
+    const { email } = req.body;
+
+if (
+  email !== "marielsantana@bol.com.br"
+) {
+  return res.status(403).json({
+    error: "Acesso negado",
+  });
+}
     const withdraw = await Withdraw.findById(
       req.params.id
     );

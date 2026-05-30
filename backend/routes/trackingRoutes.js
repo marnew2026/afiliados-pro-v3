@@ -21,9 +21,12 @@ router.get("/:code", async (req, res) => {
     campaign.clicks =
       (campaign.clicks || 0) + 1;
 
-    campaign.earnings =
-      (campaign.earnings || 0) +
-      (campaign.commission || 0.1);
+    campaign.earnings = Number(
+  (
+    (campaign.earnings || 0) +
+    (campaign.commission || 0.1)
+  ).toFixed(2)
+);
 
     await campaign.save();
 

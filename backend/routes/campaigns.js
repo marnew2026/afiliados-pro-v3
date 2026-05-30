@@ -5,7 +5,7 @@ import Withdrawal from "../models/Withdraw.js";
 const router = express.Router();
 
 /* LISTAR CAMPANHAS */
-router.get("/:email", async (req, res) => {
+router.get("/user/:email", async (req, res) => {
   try {
     const userEmail = req.params.email;
 
@@ -67,7 +67,11 @@ router.post("/create", async (req, res) => {
     const codigo = Math.random()
       .toString(36)
       .substring(2, 10);
-
+    console.log({
+  nome,
+  link,
+  userEmail,
+});
     const campaign = await Campaign.create({
       userEmail,
       nome,
