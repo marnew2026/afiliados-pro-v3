@@ -28,7 +28,7 @@ router.get("/:email", async (req, res) => {
     );
 
     const totalClicks = campaigns.reduce(
-      (sum, c) => sum + Number(c.clicks || 0),
+      (acc, c) => acc + Number(c.clicks || 0),
       0
     );
 

@@ -3,7 +3,6 @@ dotenv.config();
 
 import express from "express";
 import cors from "cors";
-import Stripe from "stripe";
 
 import connectDB from "./config/db.js";
 
@@ -20,28 +19,28 @@ import salesRoutes from "./routes/salesRoutes.js";
 const app = express();
 
 /* =========================
-MIDDLEWARE
+   MIDDLEWARE
 ========================= */
 
 app.use(cors());
 
 app.use(
-"/stripe/webhook",
-express.raw({
-type: "application/json",
-})
+  "/stripe/webhook",
+  express.raw({
+    type: "application/json",
+  })
 );
 
 app.use(express.json());
 
 /* =========================
-DATABASE
+   DATABASE
 ========================= */
 
 connectDB();
 
 /* =========================
-ROUTES
+   ROUTES
 ========================= */
 
 app.use("/stripe", stripeRoutes);
@@ -54,201 +53,129 @@ app.use("/dashboard", dashboardRoutes);
 app.use("/sales", salesRoutes);
 
 /* =========================
-TEST ROUTES
+   TEST ROUTES
 ========================= */
 
 app.get("/", (req, res) => {
-res.send("🚀 SaaS Afiliados PRO ONLINE");
+  res.send("🚀 SaaS Afiliados PRO ONLINE");
 });
 
 app.get("/success", (req, res) => {
-res.send("Pagamento aprovado");
+  res.send("Pagamento aprovado");
 });
 
 app.get("/cancel", (req, res) => {
-res.send("Pagamento cancelado");
+  res.send("Pagamento cancelado");
 });
 
 /* =========================
-FIX CAMPAIGNS
+   FIX CAMPAIGNS
 ========================= */
 
 app.get("/fix-campaigns", async (req, res) => {
-try {
-const Campaign =
-(await import("./models/Campaign.js")).default;
+  try {
+    const Campaign =
+      (await import("./models/Campaign.js")).default;
 
-```
-const campaigns = await Campaign.find();
+    const campaigns = await Campaign.find();
 
-for (const c of campaigns) {
+    for (const c of campaigns) {
+      if (!c.nome || c.nome === "") {
+        c.nome = "Campanha";
+      }
 
-  if (!c.nome || c.nome === "") {
-    c.nome = "Campanha";
+      if (
+        c.nome &&
+        (
+          c.nome.startsWith("http://") ||
+          c.nome.startsWith("https://")
+        )
+      ) {
+        c.nome = "Campanha";
+      }
+
+      if (!c.link || c.link === "") {
+        c.link = "https://google.com";
+      }
+
+      if ((c.earnings || 0) < 0) {
+        c.earnings = 0;
+      }
+
+      await c.save({
+        validateBeforeSave: false,
+      });
+    }
+
+    res.json({
+      success: true,
+      fixed: campaigns.length,
+    });
+
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      error: err.message,
+    });
   }
-
-  if (
-    c.nome &&
-    (
-      c.nome.startsWith("http://") ||
-      c.nome.startsWith("https://")
-    )
-  ) {
-    c.nome = "Campanha";
-  }
-
-  if (!c.link || c.link === "") {
-    c.link = "https://google.com";
-  }
-
-  if ((c.earnings || 0) < 0) {
-    c.earnings = 0;
-  }
-
-  await c.save({
-    validateBeforeSave: false,
-  });
-}
-
-res.json({
-  success: true,
-  fixed: campaigns.length,
-});
-```
-
-} catch (err) {
-console.log(err);
-
-```
-res.status(500).json({
-  error: err.message,
-});
-```
-
-}
 });
 
 /* =========================
-FIX EARNINGS
+   FIX EARNINGS
 ========================= */
 
 app.get("/fix-earnings", async (req, res) => {
-try {
-const Campaign =
-(await import("./models/Campaign.js")).default;
+  try {
+    const Campaign =
+      (await import("./models/Campaign.js")).default;
 
-```
-const Withdraw =
-  (await import("./models/Withdraw.js")).default;
+    const Withdraw =
+      (await import("./models/Withdraw.js")).default;
 
-await Campaign.updateMany(
-  {},
-  {
-    $set: {
-      earnings: 0,
-      clicks: 0,
-      sales: 0,
-    },
-  }
-);
-
-await Withdraw.updateMany(
-  {},
-  {
-    $set: {
-      amount: 0,
-      status: "approved",
-    },
-  }
-);
-
-res.json({
-  success: true,
-});
-```
-
-} catch (err) {
-console.log(err);
-
-```
-res.status(500).json({
-  error: err.message,
-});
-```
-
-}
-});
-
-/* =========================
-STRIPE
-========================= */
-
-if (!process.env.STRIPE_SECRET_KEY) {
-throw new Error(
-"STRIPE_SECRET_KEY ausente"
-);
-}
-
-const stripe = new Stripe(
-process.env.STRIPE_SECRET_KEY
-);
-
-app.post("/create-checkout", async (req, res) => {
-try {
-
-```
-const session =
-  await stripe.checkout.sessions.create({
-    payment_method_types: ["card"],
-    mode: "payment",
-
-    line_items: [
+    await Campaign.updateMany(
+      {},
       {
-        price_data: {
-          currency: "brl",
-          product_data: {
-            name: "Plano PRO",
-          },
-          unit_amount: 2900,
+        $set: {
+          earnings: 0,
+          clicks: 0,
+          sales: 0,
         },
-        quantity: 1,
-      },
-    ],
+      }
+    );
 
-    success_url:
-      "https://google.com",
+    await Withdraw.updateMany(
+      {},
+      {
+        $set: {
+          amount: 0,
+          status: "approved",
+        },
+      }
+    );
 
-    cancel_url:
-      "https://google.com",
-  });
+    res.json({
+      success: true,
+    });
 
-res.json({
-  url: session.url,
-});
-```
+  } catch (err) {
+    console.log(err);
 
-} catch (err) {
-console.log(err);
-
-```
-res.status(500).json({
-  error: err.message,
-});
-```
-
-}
+    res.status(500).json({
+      error: err.message,
+    });
+  }
 });
 
 /* =========================
 START SERVER
 ========================= */
 
-const PORT =
-process.env.PORT || 3001;
+const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
-console.log("🔥 SERVER INICIADO");
-console.log("🚀 PORTA:", PORT);
-console.log("💳 STRIPE ATIVO");
-console.log("📦 CAMPAIGNS ROUTES OK");
+  console.log("🔥 SERVER INICIADO");
+  console.log("🚀 PORTA:", PORT);
+  console.log("💳 STRIPE ATIVO");
+  console.log("📦 CAMPAIGNS ROUTES OK");
 });

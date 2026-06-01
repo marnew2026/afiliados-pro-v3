@@ -1,25 +1,37 @@
-exports.redirectCampaign = async (req, res) => {
+export const criarCampanha = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { nome, link, userEmail } = req.body;
 
-    const campaign = await Campaign.findById(id);
+    const affiliateLink =
+      "https://afiliados-pro-v3-2.onrender.com/r/" +
+      Math.random().toString(36).substring(2, 10);
 
-    if (!campaign) {
-      return res.status(404).send("Campanha não encontrada");
-    }
-
-    // 🔥 garante valores
-    campaign.clicks = campaign.clicks || 0;
-
-    // 📊 registra clique
-    campaign.clicks += 1;
+    const campaign = new Campaign({
+      nome,
+      link,
+      userEmail,
+      affiliateLink,
+      commission: 0.1,
+      clicks: 0,
+      sales: 0,
+      earnings: 0,
+    });
 
     await campaign.save();
 
-    // 👉 redireciona
-    return res.redirect(campaign.link);
+    console.log("✅ CAMPANHA SALVA:");
+    console.log(campaign);
 
-  } catch (error) {
-    return res.status(500).send("Erro ao redirecionar");
+    res.status(201).json({
+      success: true,
+      campaign,
+    });
+  } catch (err) {
+    console.log("❌ ERRO AO SALVAR CAMPANHA");
+    console.log(err);
+
+    res.status(500).json({
+      error: err.message,
+    });
   }
 };

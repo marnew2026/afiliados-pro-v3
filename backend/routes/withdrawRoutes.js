@@ -164,21 +164,27 @@ router.get("/:email", async (req, res) => {
     });
   }
 });
+
 /**
  * 🔥 PROCESSAR PIX REAL
  */
 router.post("/:id/process", async (req, res) => {
+
+  let withdraw;
+
   try {
+
     const { email } = req.body;
 
-if (
-  email !== "marielsantana@bol.com.br"
-) {
-  return res.status(403).json({
-    error: "Acesso negado",
-  });
-}
-    const withdraw = await Withdraw.findById(
+    if (
+      email !== "marielsantana@bol.com.br"
+    ) {
+      return res.status(403).json({
+        error: "Acesso negado",
+      });
+    }
+
+    withdraw = await Withdraw.findById(
       req.params.id
     );
 
@@ -194,22 +200,16 @@ if (
       });
     }
 
-    // muda pra processing
     withdraw.status = "processing";
-
     await withdraw.save();
 
-    // envia PIX real
     const pix = await sendPix({
       pixKey: withdraw.pixKey,
       amount: withdraw.amount,
     });
 
-    // aprova
     withdraw.status = "approved";
-
     withdraw.externalId = pix.id;
-
     withdraw.paidAt = new Date();
 
     await withdraw.save();
@@ -220,12 +220,19 @@ if (
     });
 
   } catch (err) {
-    console.log(err);
+
+    console.log("PIX ERROR:", err);
+
+    if (withdraw) {
+      withdraw.status = "failed";
+      withdraw.errorMessage = err.message;
+
+      await withdraw.save();
+    }
 
     return res.status(500).json({
       error: err.message,
     });
   }
 });
-
 export default router;
