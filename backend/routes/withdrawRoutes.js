@@ -6,13 +6,12 @@ import Campaign from "../models/Campaign.js";
 const router = express.Router();
 
 /**
- * 🔥 CRIAR SAQUE
+ * CRIAR SAQUE
  */
 router.post("/", async (req, res) => {
   try {
     const { userEmail, pixKey, amount } = req.body;
 
-    // validações básicas
     if (!userEmail || !pixKey || !amount) {
       return res.status(400).json({
         error: "Dados inválidos",
@@ -25,7 +24,6 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // verifica saque pendente/processando
     const pending = await Withdraw.findOne({
       userEmail,
       status: {
@@ -39,18 +37,15 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // campanhas
     const campaigns = await Campaign.find({
       userEmail,
-});
+    });
 
-    // total ganhos
     const totalEarnings = campaigns.reduce(
       (acc, c) => acc + (c.earnings || 0),
       0
     );
 
-    // total já sacado
     const approvedWithdraws = await Withdraw.find({
       userEmail,
       status: "approved",
@@ -61,18 +56,15 @@ router.post("/", async (req, res) => {
       0
     );
 
-    // saldo real
     const balance =
       totalEarnings - totalWithdrawn;
 
-    // valida saldo
     if (Number(amount) > balance) {
       return res.status(400).json({
         error: "Saldo insuficiente",
       });
     }
 
-    // cria saque
     const withdraw = await Withdraw.create({
       userEmail,
       pixKey,
@@ -83,6 +75,7 @@ router.post("/", async (req, res) => {
     return res.json(withdraw);
 
   } catch (err) {
+
     console.log("WITHDRAW ERROR:", err);
 
     return res.status(500).json({
@@ -92,10 +85,11 @@ router.post("/", async (req, res) => {
 });
 
 /**
- * 🔥 LISTAR ADMIN
+ * LISTAR SAQUES ADMIN
  */
 router.get("/admin", async (req, res) => {
   try {
+
     const { email } = req.query;
 
     if (
@@ -109,20 +103,25 @@ router.get("/admin", async (req, res) => {
     const withdraws = await Withdraw.find()
       .sort({ createdAt: -1 });
 
-    res.json(withdraws);
+    return res.json(withdraws);
 
   } catch (err) {
-    res.status(500).json({
+
+    return res.status(500).json({
       error: err.message,
     });
   }
 });
+
 /**
- * 🔥 APROVAR SAQUE
+ * APROVAR SAQUE
  */
 router.put("/:id/approve", async (req, res) => {
   try {
-    const withdraw = await Withdraw.findById(req.params.id);
+
+    const withdraw = await Withdraw.findById(
+      req.params.id
+    );
 
     if (!withdraw) {
       return res.status(404).json({
@@ -135,21 +134,22 @@ router.put("/:id/approve", async (req, res) => {
 
     await withdraw.save();
 
-    res.json(withdraw);
+    return res.json(withdraw);
 
   } catch (err) {
-    console.log(err);
 
-    res.status(500).json({
+    return res.status(500).json({
       error: "Erro ao aprovar saque",
     });
   }
 });
+
 /**
- * 🔥 HISTÓRICO USUÁRIO
+ * HISTÓRICO DO USUÁRIO
  */
 router.get("/:email", async (req, res) => {
   try {
+
     const withdraws = await Withdraw.find({
       userEmail: req.params.email,
     }).sort({
@@ -159,6 +159,7 @@ router.get("/:email", async (req, res) => {
     return res.json(withdraws);
 
   } catch (err) {
+
     return res.status(500).json({
       error: err.message,
     });
@@ -166,13 +167,9 @@ router.get("/:email", async (req, res) => {
 });
 
 /**
- * 🔥 PROCESSAR PIX REAL
+ * PROCESSAR PIX REAL
  */
 router.post("/:id/process", async (req, res) => {
-    console.log("PIX PROCESS REQUEST");
-  console.log("ID:", req.params.id);
-  console.log("BODY:", req.body);
-
 
   let withdraw;
 
@@ -189,20 +186,22 @@ router.post("/:id/process", async (req, res) => {
     }
 
     withdraw = await Withdraw.findById(
-      req.params.id
-    );
+  req.params.id
+);
 
-    if (!withdraw) {
-      return res.status(404).json({
-        error: "Saque não encontrado",
-      });
-    }
+console.log("PIX PROCESS REQUEST");
+console.log("ID:", req.params.id);
 
-    if (withdraw.status !== "pending") {
-      return res.status(400).json({
-        error: "Status inválido",
-      });
-    }
+console.log("BODY:", {
+  pixKey: withdraw.pixKey,
+  amount: withdraw.amount
+});
+
+if (!withdraw) {
+  return res.status(404).json({
+    error: "Saque não encontrado",
+  });
+}
 
     withdraw.status = "processing";
     await withdraw.save();
@@ -222,40 +221,15 @@ router.post("/:id/process", async (req, res) => {
       success: true,
       pix,
     });
-    app.get("/teste-transferencia", async (req, res) => {
-  try {
-    const response = await axios.post(
-      "https://api.asaas.com/v3/transfers",
-      {
-        pixAddressKey: "marielsantana@bol.com.br",
-        operationType: "PIX",
-        value: 0.01
-      },
-      {
-        headers: {
-          access_token: process.env.ASAAS_API_KEY,
-          "Content-Type": "application/json"
-        }
-      }
-    );
 
-    res.json(response.data);
-  } catch (error) {
-    res.json(error.response?.data || error.message);
-  }
-});
+  } catch (err) {
 
- } catch (err) {
+    console.log("PIX ERROR:");
+    console.log(err?.response?.data || err.message);
 
-  console.log("PIX ERROR:");
-  console.log(err);
-  console.log(err?.response?.data);
-  console.log(err?.message);
-
-  if (withdraw) {
+    if (withdraw) {
       withdraw.status = "failed";
       withdraw.errorMessage = err.message;
-
       await withdraw.save();
     }
 
@@ -264,4 +238,5 @@ router.post("/:id/process", async (req, res) => {
     });
   }
 });
+
 export default router;

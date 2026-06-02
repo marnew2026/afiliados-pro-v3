@@ -178,15 +178,16 @@ app.get("/", (req, res) => {
   res.send("SERVIDOR ONLINE");
 });
 
+import axios from "axios";
+
 app.get("/teste-transferencia", async (req, res) => {
   try {
-
     const response = await axios.post(
-      "https://api.asaas.com/v3/transfers",
+      "https://api.asaas.com/api/v3/transfers",
       {
         pixAddressKey: "marielsantana@bol.com.br",
         operationType: "PIX",
-        value: 0.10
+        value: 0.01
       },
       {
         headers: {
@@ -196,15 +197,19 @@ app.get("/teste-transferencia", async (req, res) => {
       }
     );
 
-    res.json(response.data);
+    return res.json(response.data);
 
   } catch (err) {
 
-    res.status(500).json({
+    console.log(
+      "ASAAS TESTE:",
+      err.response?.data || err.message
+    );
+
+    return res.status(500).json({
       erro: true,
       resposta: err.response?.data || err.message
     });
-
   }
 });
 app.listen(PORT, () => {
