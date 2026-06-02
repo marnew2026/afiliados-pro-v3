@@ -9,53 +9,45 @@ const router = express.Router();
  */
 router.get("/dashboard", async (req, res) => {
   try {
-    const campaigns = await Campaign.find();
-    const withdraws = await Withdraw.find();
+    const { userEmail } = req.query;
 
-    // 💰 total ganhos
+    const campaigns = await Campaign.find({
+      userEmail,
+    });
+
+    const withdraws = await Withdraw.find({
+      userEmail,
+    });
+
     const totalEarnings = campaigns.reduce(
       (acc, c) => acc + (c.earnings || 0),
       0
     );
 
-    // 💸 total sacado (SOMENTE APROVADOS)
     const totalWithdrawn = withdraws
       .filter(w => w.status === "approved")
-      .reduce((acc, w) => acc + (w.amount || 0), 0);
+      .reduce(
+        (acc, w) => acc + (w.amount || 0),
+        0
+      );
 
-    // 🧮 saldo real
-   const balance = Math.max(
-  totalEarnings - totalWithdrawn,
-  0
-);
-
-    // ⏳ pendentes
-    const pendingWithdraws = withdraws.filter(
-      w => w.status === "pending"
-    );
-
-    // ✅ aprovados
-    const approvedWithdraws = withdraws.filter(
-      w => w.status === "approved"
-    );
-
-    // 🔥 top campanhas
-   const topCampaigns = campaigns
-  .sort((a, b) => (b.clicks || 0) - (a.clicks || 0))
-  .slice(0, 5);
+    const availableBalance =
+      totalEarnings - totalWithdrawn;
 
     return res.json({
+      campaigns,
+      withdrawals: withdraws,
       totalEarnings,
       totalWithdrawn,
-      balance,
-      pendingWithdraws,
-      approvedWithdraws,
-      topCampaigns,
+      availableBalance,
     });
+
   } catch (err) {
-    console.log("ADMIN DASHBOARD ERROR:", err);
-    return res.status(500).json({ error: err.message });
+    console.log(err);
+
+    res.status(500).json({
+      error: err.message,
+    });
   }
 });
-
 export default router;

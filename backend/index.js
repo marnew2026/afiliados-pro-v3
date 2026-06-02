@@ -67,7 +67,9 @@ app.get("/success", (req, res) => {
 app.get("/cancel", (req, res) => {
   res.send("Pagamento cancelado");
 });
-
+app.get("/teste-asaas", async (req, res) => {
+  res.json({ ok: true });
+});
 /* =========================
    FIX CAMPAIGNS
 ========================= */

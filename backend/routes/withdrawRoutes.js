@@ -169,6 +169,10 @@ router.get("/:email", async (req, res) => {
  * 🔥 PROCESSAR PIX REAL
  */
 router.post("/:id/process", async (req, res) => {
+    console.log("PIX PROCESS REQUEST");
+  console.log("ID:", req.params.id);
+  console.log("BODY:", req.body);
+
 
   let withdraw;
 
@@ -219,11 +223,14 @@ router.post("/:id/process", async (req, res) => {
       pix,
     });
 
-  } catch (err) {
+ } catch (err) {
 
-    console.log("PIX ERROR:", err);
+  console.log("PIX ERROR:");
+  console.log(err);
+  console.log(err?.response?.data);
+  console.log(err?.message);
 
-    if (withdraw) {
+  if (withdraw) {
       withdraw.status = "failed";
       withdraw.errorMessage = err.message;
 
