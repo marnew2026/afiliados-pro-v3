@@ -222,6 +222,28 @@ router.post("/:id/process", async (req, res) => {
       success: true,
       pix,
     });
+    app.get("/teste-transferencia", async (req, res) => {
+  try {
+    const response = await axios.post(
+      "https://api.asaas.com/v3/transfers",
+      {
+        pixAddressKey: "marielsantana@bol.com.br",
+        operationType: "PIX",
+        value: 0.01
+      },
+      {
+        headers: {
+          access_token: process.env.ASAAS_API_KEY,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    res.json(response.data);
+  } catch (error) {
+    res.json(error.response?.data || error.message);
+  }
+});
 
  } catch (err) {
 

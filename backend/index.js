@@ -174,7 +174,16 @@ START SERVER
 ========================= */
 
 const PORT = process.env.PORT || 3001;
+app.get("/", (req, res) => {
+  res.send("SERVIDOR ONLINE");
+});
 
+app.get("/teste-asaas", (req, res) => {
+  res.json({
+    teste: true,
+    mensagem: "rota funcionando"
+  });
+});
 app.listen(PORT, () => {
   console.log("🔥 SERVER INICIADO");
   console.log("🚀 PORTA:", PORT);
