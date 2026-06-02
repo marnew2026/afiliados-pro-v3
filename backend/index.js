@@ -15,7 +15,7 @@ import withdrawRoutes from "./routes/withdrawRoutes.js";
 import trackingRoutes from "./routes/trackingRoutes.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import salesRoutes from "./routes/salesRoutes.js";
-
+import axios from "axios";
 const app = express();
 
 /* =========================
@@ -178,11 +178,34 @@ app.get("/", (req, res) => {
   res.send("SERVIDOR ONLINE");
 });
 
-app.get("/teste-asaas", (req, res) => {
-  res.json({
-    teste: true,
-    mensagem: "rota funcionando"
-  });
+app.get("/teste-transferencia", async (req, res) => {
+  try {
+
+    const response = await axios.post(
+      "https://api.asaas.com/v3/transfers",
+      {
+        pixAddressKey: "marielsantana@bol.com.br",
+        operationType: "PIX",
+        value: 0.10
+      },
+      {
+        headers: {
+          access_token: process.env.ASAAS_API_KEY,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    res.json(response.data);
+
+  } catch (err) {
+
+    res.status(500).json({
+      erro: true,
+      resposta: err.response?.data || err.message
+    });
+
+  }
 });
 app.listen(PORT, () => {
   console.log("🔥 SERVER INICIADO");
