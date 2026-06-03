@@ -9,7 +9,24 @@ const router = express.Router();
  * CRIAR SAQUE
  */
 router.post("/", async (req, res) => {
+
+  console.log("=== TESTE VERSAO NOVA ===");
+  console.log("HEADERS:", req.headers["content-type"]);
+  console.log("BODY:", req.body);
+
+  return res.json({
+    teste: true,
+    body: req.body
+  });
+});
+router.post("/", async (req, res) => {
   try {
+    console.log("BODY RECEBIDO:");
+  console.log(req.body);
+  console.log("HEADERS:");
+console.log(req.headers["content-type"]);
+
+  
     const { userEmail, pixKey, amount } = req.body;
 
     if (!userEmail || !pixKey || !amount) {
@@ -117,8 +134,10 @@ router.get("/admin", async (req, res) => {
 /**
  * APROVAR SAQUE
  */
+
 router.put("/:id/approve", async (req, res) => {
   try {
+    
 
     const withdraw = await Withdraw.findById(
       req.params.id
@@ -215,12 +234,10 @@ if (!withdraw) {
 console.log("ASAAS RESPONSE:");
 console.log(JSON.stringify(pix, null, 2));
 
-withdraw.status = "approved";
+withdraw.status = "processing";
 withdraw.externalId = pix.id;
-withdraw.paidAt = new Date();
 
 await withdraw.save();
-
 console.log("SAQUE APROVADO:");
 console.log(withdraw._id);
 
