@@ -42,7 +42,7 @@ connectDB();
 /* =========================
    ROUTES
 ========================= */
-
+app.use(express.json());
 app.use("/stripe", stripeRoutes);
 app.use("/campaigns", campaignsRoutes);
 app.use("/user", userRoutes);
@@ -51,7 +51,7 @@ app.use("/withdraw", withdrawRoutes);
 app.use("/r", trackingRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/sales", salesRoutes);
-app.use(express.json());
+
 /* =========================
    TEST ROUTES
 ========================= */
@@ -71,15 +71,55 @@ app.get("/teste-asaas", (req, res) => {
   res.json({ ok: true });
 });
 
-app.post("/teste-asaas", (req, res) => {
+import Withdraw from "./models/Withdraw.js";
 
-  console.log("WEBHOOK ASAAS");
-  console.log(req.body);
+app.post("/teste-asaas", async (req, res) => {
 
-  res.status(200).json({
-    success: true
-  });
+  try {
 
+    console.log("WEBHOOK ASAAS");
+    console.log(req.body);
+
+    const { event, transfer } = req.body;
+
+    if (
+      event === "TRANSFER_CREATED" &&
+      transfer?.status === "DONE"
+    ) {
+
+      const withdraw = await Withdraw.findOne({
+        externalId: transfer.id
+      });
+
+      if (withdraw) {
+
+        withdraw.status = "approved";
+        withdraw.paidAt = new Date();
+
+        await withdraw.save();
+
+        console.log(
+          "SAQUE CONFIRMADO:",
+          withdraw._id
+        );
+      }
+    }
+
+    res.status(200).json({
+      success: true
+    });
+
+  } catch (err) {
+
+    console.log(
+      "WEBHOOK ERROR:",
+      err.message
+    );
+
+    res.status(500).json({
+      error: err.message
+    });
+  }
 });
 /* =========================
    FIX CAMPAIGNS

@@ -9,6 +9,21 @@ const router = express.Router();
  */
 router.get("/dashboard", async (req, res) => {
   try {
+    router.get("/withdrawals", async (req, res) => {
+  try {
+    const withdrawals =
+      await Withdraw.find()
+        .sort({ createdAt: -1 });
+
+    res.json(withdrawals);
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      error: err.message,
+    });
+  }
+});
     const { userEmail } = req.query;
 
     const campaigns = await Campaign.find({

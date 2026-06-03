@@ -9,28 +9,28 @@ const stripe = new Stripe(
   process.env.STRIPE_SECRET_KEY
 );
 
-router.get(
+router.post(
   "/create-checkout-session",
   async (req, res) => {
     try {
+      const { email } = req.body;
+
       const session =
         await stripe.checkout.sessions.create({
           payment_method_types: ["card"],
-
           mode: "payment",
+
+          customer_email: email,
 
           line_items: [
             {
               price_data: {
                 currency: "brl",
-
                 product_data: {
                   name: "Plano PRO",
                 },
-
                 unit_amount: 2900,
               },
-
               quantity: 1,
             },
           ],
@@ -54,5 +54,4 @@ router.get(
     }
   }
 );
-
 export default router;

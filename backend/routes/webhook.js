@@ -55,7 +55,22 @@ router.post(
 
         console.log("MONGO PRO OK");
       }
+if (
+  event === "TRANSFER_CREATED" &&
+  transfer?.status === "FAILED"
+) {
 
+  const withdraw = await Withdraw.findOne({
+    externalId: transfer.id
+  });
+
+  if (withdraw) {
+
+    withdraw.status = "failed";
+
+    await withdraw.save();
+  }
+}
       res.json({
         received: true,
       });
