@@ -5,17 +5,15 @@ import Withdraw from "../models/Withdraw.js";
 const router = express.Router();
 
 /**
- * 🔥 DASHBOARD ADMIN
+ * LISTAR SAQUES
  */
-router.get("/dashboard", async (req, res) => {
+router.get("/withdrawals", async (req, res) => {
   try {
-    router.get("/withdrawals", async (req, res) => {
-  try {
-    const withdrawals =
-      await Withdraw.find()
-        .sort({ createdAt: -1 });
+    const withdrawals = await Withdraw.find()
+      .sort({ createdAt: -1 });
 
     res.json(withdrawals);
+
   } catch (err) {
     console.log(err);
 
@@ -24,6 +22,13 @@ router.get("/dashboard", async (req, res) => {
     });
   }
 });
+
+/**
+ * DASHBOARD
+ */
+router.get("/dashboard", async (req, res) => {
+  try {
+
     const { userEmail } = req.query;
 
     const campaigns = await Campaign.find({
@@ -65,4 +70,5 @@ router.get("/dashboard", async (req, res) => {
     });
   }
 });
+
 export default router;
