@@ -31,7 +31,7 @@ app.use(
   })
 );
 
-app.use(express.json());
+
 
 /* =========================
    DATABASE
@@ -51,7 +51,7 @@ app.use("/withdraw", withdrawRoutes);
 app.use("/r", trackingRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/sales", salesRoutes);
-
+app.use(express.json());
 /* =========================
    TEST ROUTES
 ========================= */
@@ -67,8 +67,19 @@ app.get("/success", (req, res) => {
 app.get("/cancel", (req, res) => {
   res.send("Pagamento cancelado");
 });
-app.get("/teste-asaas", async (req, res) => {
+app.get("/teste-asaas", (req, res) => {
   res.json({ ok: true });
+});
+
+app.post("/teste-asaas", (req, res) => {
+
+  console.log("WEBHOOK ASAAS");
+  console.log(req.body);
+
+  res.status(200).json({
+    success: true
+  });
+
 });
 /* =========================
    FIX CAMPAIGNS
@@ -174,11 +185,8 @@ START SERVER
 ========================= */
 
 const PORT = process.env.PORT || 3001;
-app.get("/", (req, res) => {
-  res.send("SERVIDOR ONLINE");
-});
 
-import axios from "axios";
+
 
 app.get("/teste-transferencia", async (req, res) => {
   try {

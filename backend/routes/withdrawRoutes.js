@@ -56,8 +56,9 @@ router.post("/", async (req, res) => {
       0
     );
 
-    const balance =
-      totalEarnings - totalWithdrawn;
+   const balance = Number(
+  (totalEarnings - totalWithdrawn).toFixed(2)
+);
 
     if (Number(amount) > balance) {
       return res.status(400).json({
@@ -207,15 +208,21 @@ if (!withdraw) {
     await withdraw.save();
 
     const pix = await sendPix({
-      pixKey: withdraw.pixKey,
-      amount: withdraw.amount,
-    });
+  pixKey: withdraw.pixKey,
+  amount: withdraw.amount,
+});
 
-    withdraw.status = "approved";
-    withdraw.externalId = pix.id;
-    withdraw.paidAt = new Date();
+console.log("ASAAS RESPONSE:");
+console.log(JSON.stringify(pix, null, 2));
 
-    await withdraw.save();
+withdraw.status = "approved";
+withdraw.externalId = pix.id;
+withdraw.paidAt = new Date();
+
+await withdraw.save();
+
+console.log("SAQUE APROVADO:");
+console.log(withdraw._id);
 
     return res.json({
       success: true,
@@ -224,9 +231,17 @@ if (!withdraw) {
 
   } catch (err) {
 
-    console.log("PIX ERROR:");
-    console.log(err?.response?.data || err.message);
+   console.log("PIX ERROR:");
+console.log(err);
 
+console.log("PIX ERROR RESPONSE:");
+console.log(
+  JSON.stringify(
+    err?.response?.data,
+    null,
+    2
+  )
+);
     if (withdraw) {
       withdraw.status = "failed";
       withdraw.errorMessage = err.message;
