@@ -293,6 +293,14 @@ app.get("/ping", (req, res) => {
   });
 });
 
+app.get("/ping", (req, res) => {
+  res.json({
+    ok: true,
+    server: "online"
+  });
+});
+
+
 app.listen(PORT, () => {
   console.log("🔥 SERVER INICIADO");
   console.log("🚀 PORTA:", PORT);
