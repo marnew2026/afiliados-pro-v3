@@ -1,32 +1,20 @@
-import { sendPix } from "../services/pixService.js";
 import express from "express";
 import Withdraw from "../models/Withdraw.js";
 import Campaign from "../models/Campaign.js";
+import { sendPix } from "../services/pixService.js";
 
 const router = express.Router();
 
-/**
- * CRIAR SAQUE
- */
-router.post("/", async (req, res) => {
-
-  console.log("=== TESTE VERSAO NOVA ===");
-  console.log("HEADERS:", req.headers["content-type"]);
-  console.log("BODY:", req.body);
-
-  return res.json({
-    teste: true,
-    body: req.body
-  });
-});
+/*
+====================================
+CRIAR SAQUE
+====================================
+*/
 router.post("/", async (req, res) => {
   try {
-    console.log("BODY RECEBIDO:");
-  console.log(req.body);
-  console.log("HEADERS:");
-console.log(req.headers["content-type"]);
+    console.log("NOVA SOLICITAÇÃO DE SAQUE");
+    console.log(req.body);
 
-  
     const { userEmail, pixKey, amount } = req.body;
 
     if (!userEmail || !pixKey || !amount) {
@@ -35,7 +23,9 @@ console.log(req.headers["content-type"]);
       });
     }
 
-    if (Number(amount) <= 0) {
+    const value = Number(amount);
+
+    if (isNaN(value) || value <= 0) {
       return res.status(400).json({
         error: "Valor inválido",
       });
@@ -59,7 +49,7 @@ console.log(req.headers["content-type"]);
     });
 
     const totalEarnings = campaigns.reduce(
-      (acc, c) => acc + (c.earnings || 0),
+      (acc, c) => acc + Number(c.earnings || 0),
       0
     );
 
@@ -69,15 +59,20 @@ console.log(req.headers["content-type"]);
     });
 
     const totalWithdrawn = approvedWithdraws.reduce(
-      (acc, w) => acc + (w.amount || 0),
+      (acc, w) => acc + Number(w.amount || 0),
       0
     );
 
-   const balance = Number(
-  (totalEarnings - totalWithdrawn).toFixed(2)
-);
+    const balance = Number(
+      (totalEarnings - totalWithdrawn).toFixed(2)
+    );
 
-    if (Number(amount) > balance) {
+    console.log("TOTAL EARNINGS:", totalEarnings);
+    console.log("TOTAL WITHDRAWN:", totalWithdrawn);
+    console.log("BALANCE:", balance);
+    console.log("AMOUNT:", value);
+
+    if (value > balance) {
       return res.status(400).json({
         error: "Saldo insuficiente",
       });
@@ -86,15 +81,18 @@ console.log(req.headers["content-type"]);
     const withdraw = await Withdraw.create({
       userEmail,
       pixKey,
-      amount: Number(amount),
+      amount: value,
       status: "pending",
     });
+
+    console.log("SAQUE CRIADO");
+    console.log(withdraw);
 
     return res.json(withdraw);
 
   } catch (err) {
-
-    console.log("WITHDRAW ERROR:", err);
+    console.log("WITHDRAW ERROR:");
+    console.log(err);
 
     return res.status(500).json({
       error: err.message,
@@ -102,21 +100,13 @@ console.log(req.headers["content-type"]);
   }
 });
 
-/**
- * LISTAR SAQUES ADMIN
- */
+/*
+====================================
+ADMIN LISTAR SAQUES
+====================================
+*/
 router.get("/admin", async (req, res) => {
   try {
-
-    const { email } = req.query;
-
-    if (
-      email !== "marielsantana@bol.com.br"
-    ) {
-      return res.status(403).json({
-        error: "Acesso negado",
-      });
-    }
 
     const withdraws = await Withdraw.find()
       .sort({ createdAt: -1 });
@@ -131,42 +121,11 @@ router.get("/admin", async (req, res) => {
   }
 });
 
-/**
- * APROVAR SAQUE
- */
-
-router.put("/:id/approve", async (req, res) => {
-  try {
-    
-
-    const withdraw = await Withdraw.findById(
-      req.params.id
-    );
-
-    if (!withdraw) {
-      return res.status(404).json({
-        error: "Saque não encontrado",
-      });
-    }
-
-    withdraw.status = "approved";
-    withdraw.approvedAt = new Date();
-
-    await withdraw.save();
-
-    return res.json(withdraw);
-
-  } catch (err) {
-
-    return res.status(500).json({
-      error: "Erro ao aprovar saque",
-    });
-  }
-});
-
-/**
- * HISTÓRICO DO USUÁRIO
- */
+/*
+====================================
+HISTÓRICO USUÁRIO
+====================================
+*/
 router.get("/:email", async (req, res) => {
   try {
 
@@ -186,60 +145,43 @@ router.get("/:email", async (req, res) => {
   }
 });
 
-/**
- * PROCESSAR PIX REAL
- */
+/*
+====================================
+PROCESSAR PIX
+====================================
+*/
 router.post("/:id/process", async (req, res) => {
 
   let withdraw;
 
   try {
 
-    const { email } = req.body;
+    withdraw = await Withdraw.findById(
+      req.params.id
+    );
 
-    if (
-      email !== "marielsantana@bol.com.br"
-    ) {
-      return res.status(403).json({
-        error: "Acesso negado",
+    if (!withdraw) {
+      return res.status(404).json({
+        error: "Saque não encontrado",
       });
     }
-
-    withdraw = await Withdraw.findById(
-  req.params.id
-);
-
-console.log("PIX PROCESS REQUEST");
-console.log("ID:", req.params.id);
-
-console.log("BODY:", {
-  pixKey: withdraw.pixKey,
-  amount: withdraw.amount
-});
-
-if (!withdraw) {
-  return res.status(404).json({
-    error: "Saque não encontrado",
-  });
-}
 
     withdraw.status = "processing";
     await withdraw.save();
 
     const pix = await sendPix({
-  pixKey: withdraw.pixKey,
-  amount: withdraw.amount,
-});
+      pixKey: withdraw.pixKey,
+      amount: withdraw.amount,
+    });
 
-console.log("ASAAS RESPONSE:");
-console.log(JSON.stringify(pix, null, 2));
+    console.log("ASAAS RESPONSE:");
+    console.log(JSON.stringify(pix, null, 2));
 
-withdraw.status = "processing";
-withdraw.externalId = pix.id;
+    withdraw.externalId = pix.id;
+    withdraw.status = "approved";
+    withdraw.paidAt = new Date();
 
-await withdraw.save();
-console.log("SAQUE APROVADO:");
-console.log(withdraw._id);
+    await withdraw.save();
 
     return res.json({
       success: true,
@@ -248,17 +190,9 @@ console.log(withdraw._id);
 
   } catch (err) {
 
-   console.log("PIX ERROR:");
-console.log(err);
+    console.log("PIX ERROR:");
+    console.log(err?.response?.data || err.message);
 
-console.log("PIX ERROR RESPONSE:");
-console.log(
-  JSON.stringify(
-    err?.response?.data,
-    null,
-    2
-  )
-);
     if (withdraw) {
       withdraw.status = "failed";
       withdraw.errorMessage = err.message;

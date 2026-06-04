@@ -60,6 +60,13 @@ app.get("/", (req, res) => {
   res.send("🚀 SaaS Afiliados PRO ONLINE");
 });
 
+app.get("/ping", (req, res) => {
+  res.json({
+    ok: true,
+    version: "2026-06-04"
+  });
+});
+
 app.get("/success", (req, res) => {
   res.send("Pagamento aprovado");
 });
@@ -104,7 +111,26 @@ app.post("/teste-asaas", async (req, res) => {
         );
       }
     }
+router.get("/admin/withdrawals", async (req, res) => {
+  const withdrawals = await Withdraw.find()
+    .sort({ createdAt: -1 });
 
+  console.log(
+    "TOTAL SAQUES:",
+    withdrawals.length
+  );
+
+  console.log(
+    withdrawals.map(w => ({
+      id: w._id,
+      amount: w.amount,
+      status: w.status,
+      createdAt: w.createdAt,
+    }))
+  );
+
+  res.json(withdrawals);
+});
     res.status(200).json({
       success: true
     });
@@ -260,6 +286,13 @@ app.get("/teste-transferencia", async (req, res) => {
     });
   }
 });
+app.get("/ping", (req, res) => {
+  res.json({
+    ok: true,
+    server: "online"
+  });
+});
+
 app.listen(PORT, () => {
   console.log("🔥 SERVER INICIADO");
   console.log("🚀 PORTA:", PORT);
