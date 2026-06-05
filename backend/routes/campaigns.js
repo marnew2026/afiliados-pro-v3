@@ -1,7 +1,8 @@
 import express from "express";
 import Wallet from "../models/Wallet.js";
 import Transaction from "../models/Transaction.js";
-
+import Campaign from "../models/Campaign.js";
+import Withdraw from "../models/Withdraw.js";
 
 const router = express.Router();
 router.get("/user/:email", async (req, res) => {
@@ -10,7 +11,7 @@ router.get("/user/:email", async (req, res) => {
 
     const campaigns = await Campaign.find({ userEmail });
 
-    const withdrawals = await Withdrawal.find({
+    const withdrawals = await Withdraw.find({
       userEmail,
       status: { $in: ["pending", "approved"] },
     });
