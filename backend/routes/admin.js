@@ -35,32 +35,26 @@ router.get("/dashboard", async (req, res) => {
       userEmail,
     });
 
-    const withdraws = await Withdraw.find({
-      userEmail,
-    });
+const withdrawals = await Withdraw.find({
+  userEmail: email,
+  status: { $in: ["pending", "approved"] },
+});
 
-    const totalEarnings = campaigns.reduce(
-      (acc, c) => acc + (c.earnings || 0),
-      0
-    );
+const totalWithdrawn = withdrawals.reduce(
+  (acc, w) => acc + Number(w.amount || 0),
+  0
+);
 
-    const totalWithdrawn = withdraws
-      .filter(w => w.status === "approved")
-      .reduce(
-        (acc, w) => acc + (w.amount || 0),
-        0
-      );
+const availableBalance =
+  totalEarnings - totalWithdrawn;
 
-    const availableBalance =
-      totalEarnings - totalWithdrawn;
-
-    return res.json({
-      campaigns,
-      withdrawals: withdraws,
-      totalEarnings,
-      totalWithdrawn,
-      availableBalance,
-    });
+ res.json({
+  totalEarnings: Number(totalEarnings.toFixed(2)),
+  totalWithdrawn,
+  availableBalance,
+  totalClicks,
+  campaigns,
+});
 
   } catch (err) {
     console.log(err);

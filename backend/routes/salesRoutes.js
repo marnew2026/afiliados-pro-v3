@@ -1,5 +1,6 @@
 import express from "express";
 import Campaign from "../models/Campaign.js";
+import Ledger from "../models/Ledger.js";
 
 const router = express.Router();
 
@@ -18,8 +19,13 @@ router.post("/:id", async (req, res) => {
     campaign.sales =
       (campaign.sales || 0) + 1;
 
-    campaign.earnings =
-      (campaign.earnings || 0) + 10;
+    await Ledger.create({
+  userEmail: campaign.userEmail,
+  type: "credit",
+  amount: 10,
+  source: "campaign",
+  referenceId: campaign._id,
+});
 
     await campaign.save();
 

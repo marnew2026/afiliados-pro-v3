@@ -1,40 +1,25 @@
 import express from "express";
-import Campaign from "../models/Campaign.js";
-import Withdrawal from "../models/Withdraw.js";
+import Wallet from "../models/Wallet.js";
+import Transaction from "../models/Transaction.js";
+
 
 const router = express.Router();
-
-/* LISTAR CAMPANHAS */
 router.get("/user/:email", async (req, res) => {
   try {
     const userEmail = req.params.email;
 
-    // campanhas
-    const campaigns = await Campaign.find({
-      userEmail,
-    });
+    const campaigns = await Campaign.find({ userEmail });
 
-    // total ganhos
-    const totalEarnings = campaigns.reduce(
-      (acc, c) => acc + (c.earnings || 0),
-      0
-    );
-
-    // saques
     const withdrawals = await Withdrawal.find({
       userEmail,
       status: { $in: ["pending", "approved"] },
     });
 
-    // total sacado
-    const totalWithdrawn = withdrawals.reduce(
-      (acc, w) => acc + (w.amount || 0),
-      0
-    );
+    const wallet = await Wallet.findOne({ userEmail });
 
-    // saldo disponível
-    const availableBalance =
-      totalEarnings - totalWithdrawn;
+    const totalEarnings = wallet?.totalEarned || 0;
+    const totalWithdrawn = wallet?.totalWithdrawn || 0;
+    const availableBalance = wallet?.balance || 0;
 
     res.json({
       campaigns,
@@ -46,10 +31,7 @@ router.get("/user/:email", async (req, res) => {
 
   } catch (error) {
     console.log(error);
-
-    res.status(500).json({
-      error: error.message,
-    });
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -130,9 +112,7 @@ res.json({
 /* REGISTRAR VENDA */
 router.post("/:id/sale", async (req, res) => {
   try {
-    const campaign = await Campaign.findById(
-      req.params.id
-    );
+    const campaign = await Campaign.findById(req.params.id);
 
     if (!campaign) {
       return res.status(404).json({
@@ -140,26 +120,45 @@ router.post("/:id/sale", async (req, res) => {
       });
     }
 
-    if (campaign.sales == null)
-      campaign.sales = 0;
-
-    if (campaign.earnings == null)
-      campaign.earnings = 0;
+    if (campaign.sales == null) campaign.sales = 0;
 
     campaign.sales += 1;
 
-    // ganha R$10 por venda
-    campaign.earnings += 10;
+    const earnings = 10;
 
+    // salva campanha (somente tracking)
     await campaign.save();
 
-    res.json(campaign);
+    // 💰 WALLET (FONTE ÚNICA DE SALDO)
+    await Wallet.findOneAndUpdate(
+      { userEmail: campaign.userEmail },
+      {
+        $inc: {
+          availableBalance: earnings,
+          totalEarned: earnings,
+        },
+      },
+      { upsert: true }
+    );
 
-  } catch (error) {
-    console.log(error);
+    // 📜 TRANSACTION (AUDITORIA FINANCEIRA - IMPORTANTE)
+    await Transaction.create({
+      userEmail: campaign.userEmail,
+      type: "earning",
+      amount: earnings,
+      description: "Venda registrada",
+    });
 
-    res.status(500).json({
-      error: error.message,
+    return res.json({
+      success: true,
+      earnings,
+    });
+
+  } catch (err) {
+    console.log(err);
+
+    return res.status(500).json({
+      error: err.message,
     });
   }
 });

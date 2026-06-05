@@ -5,7 +5,7 @@ import express from "express";
 import cors from "cors";
 
 import connectDB from "./config/db.js";
-
+import Withdraw from "./models/Withdraw.js";
 /* ROUTES */
 import stripeRoutes from "./routes/stripeRoutes.js";
 import campaignsRoutes from "./routes/campaigns.js";
@@ -16,6 +16,15 @@ import trackingRoutes from "./routes/trackingRoutes.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import salesRoutes from "./routes/salesRoutes.js";
 import axios from "axios";
+import asaasWebhookRoutes from "./routes/asaasWebhook.js";
+
+import { processWithdrawQueue } from "./queue/withdrawQueue.js";
+setInterval(() => {
+  processWithdrawQueue();
+}, 3000);
+
+
+
 const app = express();
 
 /* =========================
@@ -51,6 +60,7 @@ app.use("/withdraw", withdrawRoutes);
 app.use("/r", trackingRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/sales", salesRoutes);
+app.use("/webhooks/asaas", asaasWebhookRoutes);
 
 /* =========================
    TEST ROUTES
@@ -78,13 +88,11 @@ app.get("/teste-asaas", (req, res) => {
   res.json({ ok: true });
 });
 
-import Withdraw from "./models/Withdraw.js";
 
-app.post("/teste-asaas", async (req, res) => {
 
+app.post("/asaas/webhook", async (req, res) => {
   try {
-
-    console.log("WEBHOOK ASAAS");
+    console.log("WEBHOOK ASAAS RECEBIDO");
     console.log(req.body);
 
     const { event, transfer } = req.body;
@@ -93,57 +101,37 @@ app.post("/teste-asaas", async (req, res) => {
       event === "TRANSFER_CREATED" &&
       transfer?.status === "DONE"
     ) {
-
       const withdraw = await Withdraw.findOne({
-        externalId: transfer.id
+        externalId: transfer.id,
       });
 
       if (withdraw) {
-
         withdraw.status = "approved";
         withdraw.paidAt = new Date();
-
         await withdraw.save();
 
-        console.log(
-          "SAQUE CONFIRMADO:",
-          withdraw._id
-        );
+        // 💰 atualiza wallet
+        const wallet = await Wallet.findOne({
+          userEmail: withdraw.userEmail,
+        });
+
+        if (wallet) {
+          wallet.pendingBalance -= withdraw.amount;
+          wallet.totalWithdrawn += withdraw.amount;
+          await wallet.save();
+        }
+
+        console.log("✅ SAQUE CONFIRMADO:", withdraw._id);
       }
     }
-router.get("/admin/withdrawals", async (req, res) => {
-  const withdrawals = await Withdraw.find()
-    .sort({ createdAt: -1 });
 
-  console.log(
-    "TOTAL SAQUES:",
-    withdrawals.length
-  );
-
-  console.log(
-    withdrawals.map(w => ({
-      id: w._id,
-      amount: w.amount,
-      status: w.status,
-      createdAt: w.createdAt,
-    }))
-  );
-
-  res.json(withdrawals);
-});
-    res.status(200).json({
-      success: true
-    });
+    return res.status(200).json({ success: true });
 
   } catch (err) {
+    console.log("❌ WEBHOOK ERROR:", err.message);
 
-    console.log(
-      "WEBHOOK ERROR:",
-      err.message
-    );
-
-    res.status(500).json({
-      error: err.message
+    return res.status(500).json({
+      error: err.message,
     });
   }
 });
@@ -257,7 +245,7 @@ const PORT = process.env.PORT || 3001;
 app.get("/teste-transferencia", async (req, res) => {
   try {
     const response = await axios.post(
-      "https://api.asaas.com/api/v3/transfers",
+      "https://api.asaas.com/v3/transfers",
       {
         pixAddressKey: "marielsantana@bol.com.br",
         operationType: "PIX",

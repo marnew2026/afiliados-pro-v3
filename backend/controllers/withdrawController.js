@@ -1,37 +1,23 @@
-import Withdraw from "../models/Withdraw.js";
-import { sendPix } from "../services/pixService.js";
+import { requestWithdraw } from "../services/walletService.js";
 
-export async function processWithdraw(req, res) {
+export const createWithdraw = async (req, res) => {
   try {
-    const withdraw = await Withdraw.findById(req.params.id);
+    const { userEmail, amount, pixKey } = req.body;
 
-    if (!withdraw) {
-      return res.status(404).json({ error: "Saque não encontrado" });
-    }
-
-    if (withdraw.status !== "processing") {
-      return res.status(400).json({ error: "Status inválido" });
-    }
-
-    // 🔥 ENVIA PIX REAL
-    const pix = await sendPix({
-      pixKey: withdraw.pixKey,
-      amount: withdraw.amount,
+    const withdraw = await requestWithdraw({
+      userEmail,
+      amount,
+      pixKey,
     });
 
-    withdraw.status = "approved";
-    withdraw.externalId = pix.id;
-    withdraw.paidAt = new Date();
-
-    await withdraw.save();
-
-    res.json({
+    return res.json({
       success: true,
-      pix,
       withdraw,
     });
+
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "Erro ao processar PIX" });
+    return res.status(400).json({
+      error: err.message,
+    });
   }
-}
+};

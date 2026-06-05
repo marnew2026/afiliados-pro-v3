@@ -1,32 +1,63 @@
-import express from "express";
 import Withdraw from "../models/Withdraw.js";
+import Transaction from "../models/Transaction.js";
+import Wallet from "../models/Wallet.js";
 
-const router = express.Router();
-
-router.post("/asaas", async (req, res) => {
+export async function asaasWebhook(req, res) {
   try {
-    const event = req.body;
+  const { transfer } = req.body;
+if (!transfer?.id) {
+  return res.status(200).json({ ok: true });
+}    
 
-    // 🔥 PIX RECEBIDO
-    if (event.event === "PIX_RECEIVED") {
-      const externalId = event.payment.id;
+    // 🔒 IDEMPOTÊNCIA
+    const withdraw = await Withdraw.findOne({
+      externalId: transfer.id,
+    });
 
-      const withdraw = await Withdraw.findOne({
-        externalId,
-      });
-
-      if (withdraw) {
-        withdraw.status = "approved";
-        withdraw.paidAt = new Date();
-        await withdraw.save();
-      }
+    if (!withdraw) {
+      return res.status(200).json({ ok: true });
     }
 
-    res.sendStatus(200);
-  } catch (err) {
-    console.log(err);
-    res.sendStatus(500);
+    if (withdraw.status === "paid") {
+      return res.status(200).json({ ok: true });
+    }
+
+
+  if (transfer.status !== "DONE") {
+  return res.status(200).json({ ok: true });
+}
+
+    // 🔥 só confirma pagamento
+   await Wallet.findOneAndUpdate(
+  { userEmail: withdraw.userEmail },
+  {
+    $inc: {
+      lockedBalance: -withdraw.amount,
+    },
+    $set: {
+      withdrawLocked: false,
+    },
   }
+);
+      withdraw.status = "paid";
+      withdraw.paidAt = new Date();
+
+      await withdraw.save();
+
+     await Transaction.create({
+  userEmail: withdraw.userEmail,
+  type: "withdraw",
+  amount: withdraw.amount,
+  referenceId: withdraw._id.toString(),
+  description: "Saque aprovado PIX",
+  status: "confirmed",
 });
 
-export default router;
+return res.status(200).json({ ok: true });
+ 
+
+  } catch (err) {
+    console.log("WEBHOOK ERROR:", err.message);
+    return res.status(200).json({ ok: true });
+  }
+}

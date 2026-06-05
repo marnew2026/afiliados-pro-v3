@@ -1,33 +1,33 @@
 import axios from "axios";
+import Withdraw from "../models/Withdraw.js";
 
-export async function sendPix({
-  pixKey,
-  amount,
-}) {
-  try {
+export async function processWithdraw(withdraw) {
+  if (withdraw.externalId) {
+    throw new Error("PIX já enviado");
+  }
 
-    console.log("CHAVE:", process.env.ASAAS_API_KEY?.substring(0,20));
-
-    const response = await axios.post(
-      "https://api.asaas.com/api/v3/transfers",
-      {
-        value: Number(amount),
-        operationType: "PIX",
-        pixAddressKey: pixKey,
+  const response = await axios.post(
+   "https://api.asaas.com/v3/transfers",
+    {
+      pixAddressKey: withdraw.pixKey,
+      operationType: "PIX",
+      value: withdraw.amount,
+    },
+    {
+      headers: {
+        access_token: process.env.ASAAS_API_KEY,
+        "Content-Type": "application/json",
       },
-      {
-        headers: {
-          access_token: process.env.ASAAS_API_KEY,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    }
+  );
 
-    console.log("ASAAS OK:", response.data);
+  withdraw.externalId = response.data.id;
+  await withdraw.save();
 
-    return response.data;
+  return response.data;
 
-  } catch (err) {
+
+ 
 
     console.log(
       "STATUS:",
@@ -45,4 +45,3 @@ export async function sendPix({
 
     throw err;
   }
-}

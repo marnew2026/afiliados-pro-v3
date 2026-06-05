@@ -1,13 +1,8 @@
 import mongoose from "mongoose";
 
-const withdrawSchema = new mongoose.Schema(
+const WithdrawSchema = new mongoose.Schema(
   {
     userEmail: {
-      type: String,
-      required: true,
-    },
-
-    pixKey: {
       type: String,
       required: true,
     },
@@ -17,41 +12,34 @@ const withdrawSchema = new mongoose.Schema(
       required: true,
     },
 
+    pixKey: {
+      type: String,
+      required: true,
+    },
+
     status: {
       type: String,
       enum: [
         "pending",
+        "queued",
         "processing",
-        "approved",
+        "paid",
         "failed",
       ],
       default: "pending",
     },
 
-    // 🔥 id do ASAAS
     externalId: {
       type: String,
       default: null,
     },
 
-    // 🔥 data pagamento
     paidAt: {
       type: Date,
       default: null,
     },
-
-    // 🔥 erro PIX
-    errorMessage: {
-      type: String,
-      default: null,
-    },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-export default mongoose.model(
-  "Withdraw",
-  withdrawSchema
-);
+export default mongoose.model("Withdraw", WithdrawSchema);
