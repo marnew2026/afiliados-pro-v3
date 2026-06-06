@@ -1,82 +1,102 @@
 import Withdraw from "../models/Withdraw.js";
 import axios from "axios";
+
 let isProcessing = false;
+
+async function sendPix(withdraw) {
+  try {
+    const response = await axios.post(
+      "https://api.asaas.com/v3/transfers",
+      {
+        value: withdraw.amount,
+        pixAddressKey: withdraw.pixKey,
+      },
+      {
+        headers: {
+          access_token: process.env.ASAAS_API_KEY,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("ASAAS RESPONSE:", response.data);
+
+    return response.data;
+  } catch (err) {
+    console.log("🔥 ASAAS ERROR FULL:", {
+      status: err.response?.status,
+      data: err.response?.data,
+      message: err.message,
+    });
+
+    throw err;
+  }
+}
 
 export async function processWithdrawQueue() {
   if (isProcessing) return;
 
   isProcessing = true;
 
+  let withdraw;
+
   try {
-    const withdraw = await Withdraw.findOne({
-      status: "pending",
+    withdraw = await Withdraw.findOne({
+      status: "queued",
     }).sort({ createdAt: 1 });
 
-    if (!withdraw) {
-      isProcessing = false;
-      return;
-    }
-async function sendPix(withdraw) {
-  const response = await axios.post(
-    "https://api.asaas.com/v3/transfers",
-    {
-      pixAddressKey: withdraw.pixKey,
-      operationType: "PIX",
-      value: withdraw.amount,
-    },
-    {
-      headers: {
-        access_token: process.env.ASAAS_API_KEY,
-        "Content-Type": "application/json",
-      },
-    }
-  );
+    if (!withdraw) return;
 
-  return response.data;
-}
-    // 🔒 marca como processando
+    // idempotência
+    if (withdraw.externalId) return;
+
     withdraw.status = "processing";
     await withdraw.save();
 
     console.log(
-  "PROCESSANDO PIX:",
-  withdraw._id.toString()
-);
+      "💸 PROCESSANDO SAQUE:",
+      withdraw._id.toString()
+    );
 
-    console.log("💸 PROCESSANDO SAQUE:", withdraw._id);
-if (withdraw.externalId) {
-  throw new Error("PIX já foi enviado para este saque");
-}
     const pix = await sendPix(withdraw);
 
-withdraw.externalId = pix.id;
+    if (!pix?.id) {
+      throw new Error(
+        "Asaas não retornou ID"
+      );
+    }
 
-console.log(
-  "PIX CONFIRMADO:",
-  withdraw._id.toString()
-);
+    withdraw.externalId = pix.id;
 
-console.log(
-  "PIX ENVIADO:",
-  pix.data.id
-);
+    // aguarda webhook confirmar
+    withdraw.status = "processing";
 
-withdraw.status = "paid";
-
-await withdraw.save();
-    // await sendPix(withdraw)
-
-    withdraw.status = "paid";
     await withdraw.save();
 
-    console.log("✅ SAQUE PAGO:", withdraw._id);
+    console.log(
+      "✅ PIX ENVIADO:",
+      pix.id
+    );
 
   } catch (err) {
-    console.log("❌ ERRO FILA SAQUE:", err.message);
+
+    if (withdraw) {
+      withdraw.status = "failed";
+      await withdraw.save();
+    }
+
+    console.log(
+      "❌ ERRO FILA:",
+      err.response?.data || err.message
+    );
+
+  } finally {
+
+    isProcessing = false;
+
+    setTimeout(
+      processWithdrawQueue,
+      2000
+    );
   }
-
-  isProcessing = false;
-
-  // 🔁 loop automático
-  setTimeout(processWithdrawQueue, 2000);
 }

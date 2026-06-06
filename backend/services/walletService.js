@@ -6,7 +6,13 @@ export async function addEarning({
   amount,
   referenceId,
 }) {
-  // 1. atualiza wallet
+
+  console.log(
+    "ADD EARNING INICIO:",
+    userEmail,
+    amount
+  );
+
   const wallet = await Wallet.findOneAndUpdate(
     { userEmail },
     {
@@ -15,10 +21,17 @@ export async function addEarning({
         totalEarned: amount,
       },
     },
-    { upsert: true, new: true }
+    {
+      upsert: true,
+      new: true,
+    }
   );
 
-  // 2. log financeiro (IMUTÁVEL)
+  console.log(
+    "WALLET APÓS UPDATE:",
+    wallet
+  );
+
   await Transaction.create({
     userEmail,
     type: "earning",

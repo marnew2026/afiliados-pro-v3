@@ -10,124 +10,128 @@ export async function requestWithdraw({
   amount,
   pixKey,
 }) {
-  const wallet = await Wallet.findOne({
+ 
+  let wallet = await Wallet.findOne({
+  userEmail,
+});
+
+if (!wallet) {
+  wallet = await Wallet.create({
     userEmail,
+    availableBalance: 0,
+    lockedBalance: 0,
+    totalEarned: 0,
+    withdrawLocked: false,
   });
 
-  if (!wallet) {
-    throw new Error("Wallet não encontrada");
-  }
-
-  // 🔒 Limite básico antifraude
-  if (amount > 1000) {
-    throw new Error(
-      "Limite diário excedido"
-    );
-  }
-
-  // 🔒 Regras antifraude
-  checkFraudRules(wallet, amount);
-
-  // 🔒 Bloqueio de saque simultâneo
-  if (wallet.withdrawLocked) {
-    throw new Error(
-      "Já existe saque em processamento"
-    );
-  }
-
-  // 💰 Saldo real pelo Ledger
-  const balance = await getBalance(
+  console.log(
+    "WALLET CRIADA:",
     userEmail
   );
+}
 
-  if (balance < amount) {
-    throw new Error(
-      "Saldo insuficiente"
-    );
+  // 🔒 limite antifraude básico
+  if (amount > 1000) {
+    throw new Error("Limite diário excedido");
   }
 
-  try {
-    // 🔒 Reserva atômica
-    const updatedWallet =
-      await Wallet.findOneAndUpdate(
-        {
-          userEmail,
-          availableBalance: {
-            $gte: amount,
-          },
-          withdrawLocked: false,
-        },
-        {
-          $inc: {
-            availableBalance: -amount,
-            lockedBalance: amount,
-          },
-          $set: {
-            withdrawLocked: true,
-            lastWithdrawAt: new Date(),
-          },
-        },
-        { new: true }
-      );
+  // 🔒 regras antifraude
+  checkFraudRules(wallet, amount);
 
-    if (!updatedWallet) {
-      throw new Error(
-        "Saldo insuficiente ou saque em processamento"
-      );
-    }
+  // 🔒 bloqueio de concorrência
+  if (wallet.withdrawLocked) {
+    throw new Error("Já existe saque em processamento");
+  }
 
-    // 🧾 Cria saque para fila PIX
-    const withdraw =
-      await Withdraw.create({
-        userEmail,
-        amount,
-        pixKey,
-        status: "queued",
-      });
-      console.log(
-  "SAQUE CRIADO:",
-  withdraw._id.toString(),
-  withdraw.amount
+  // 💰 saldo real via ledger
+  const balance = await getBalance(userEmail);
+
+console.log("================================");
+console.log("USER:", userEmail);
+console.log("LEDGER BALANCE:", balance);
+console.log("WALLET BALANCE:", wallet.availableBalance);
+console.log("LOCKED BALANCE:", wallet.lockedBalance);
+console.log("SAQUE SOLICITADO:", amount);
+console.log("================================");
+console.log("SAQUE SOLICITADO:", amount);
+console.log("SALDO LEDGER:", balance);
+console.log(
+  "SALDO WALLET:",
+  wallet.availableBalance
 );
 
-    // 🧱 Ledger (reserva financeira)
+if (balance < amount) {
+  throw new Error("Saldo insuficiente");
+}
+
+  try {
+    // 🔒 trava atômica da carteira (CORRIGIDO)
+    const updatedWallet = await Wallet.findOneAndUpdate(
+      {
+        userEmail,
+        withdrawLocked: false,
+        availableBalance: { $gte: amount },
+      },
+      {
+        $inc: {
+          availableBalance: -amount,
+          lockedBalance: amount,
+        },
+        $set: {
+          withdrawLocked: true,
+          lastWithdrawAt: new Date(),
+        },
+      },
+      { new: true }
+    );
+
+    if (!updatedWallet) {
+      throw new Error("Saldo insuficiente ou saque em processamento");
+    }
+
+    // 🧾 cria saque
+    const withdraw = await Withdraw.create({
+      userEmail,
+      amount,
+      pixKey,
+      status: "queued",
+    });
+
+    console.log(
+      "SAQUE CRIADO:",
+      withdraw._id.toString(),
+      withdraw.amount
+    );
+
+    // 🧱 ledger (reserva financeira)
     await addDebit({
       userEmail,
       amount,
-      referenceId:
-        withdraw._id.toString(),
+      referenceId: withdraw._id.toString(),
       source: "withdraw",
-      description:
-        "Reserva de saque PIX",
+      description: "Reserva de saque PIX",
     });
 
-    // 🔓 Libera lock
+    // ❌ IMPORTANTE:
+    // NÃO liberar lock aqui mais (isso causava race condition)
+
+    return withdraw;
+
+  } catch (err) {
+    // 🚨 rollback seguro
+
     await Wallet.findOneAndUpdate(
       { userEmail },
       {
+        $inc: {
+          availableBalance: amount,
+          lockedBalance: -amount,
+        },
         $set: {
           withdrawLocked: false,
         },
       }
     );
-
-    return withdraw;
-
-  } catch (err) {
-    // 🚨 Segurança: nunca deixar lock preso
-   await Wallet.findOneAndUpdate(
-  { userEmail },
-  {
-    $inc: {
-      availableBalance: amount,
-      lockedBalance: -amount,
-    },
-    $set: {
-      withdrawLocked: false,
-    },
-  }
-);
-
 
     throw err;
   }

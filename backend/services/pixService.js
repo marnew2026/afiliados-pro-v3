@@ -10,7 +10,7 @@ export async function processWithdraw(withdraw) {
    "https://api.asaas.com/v3/transfers",
     {
       pixAddressKey: withdraw.pixKey,
-      operationType: "PIX",
+     
       value: withdraw.amount,
     },
     {

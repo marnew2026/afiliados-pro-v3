@@ -1,6 +1,7 @@
 import express from "express";
 import Campaign from "../models/Campaign.js";
 import Withdraw from "../models/Withdraw.js";
+import Wallet from "../models/Wallet.js";
 
 const router = express.Router();
 
@@ -12,6 +13,33 @@ router.get("/withdrawals", async (req, res) => {
     const withdrawals = await Withdraw.find()
       .sort({ createdAt: -1 });
 
+
+console.log("EMAIL:", userEmail);
+
+console.log(
+  "CAMPAIGNS ENCONTRADAS:",
+  campaigns.length
+);
+
+console.log(
+  "TOTAL EARNINGS:",
+  totalEarnings
+);
+
+console.log(
+  "TOTAL CLICKS:",
+  totalClicks
+);
+
+console.log(
+  "TOTAL WITHDRAWN:",
+  totalWithdrawn
+);
+
+console.log(
+  "AVAILABLE:",
+  availableBalance
+);
     res.json(withdrawals);
 
   } catch (err) {
@@ -28,33 +56,47 @@ router.get("/withdrawals", async (req, res) => {
  */
 router.get("/dashboard", async (req, res) => {
   try {
-
     const { userEmail } = req.query;
+
+   
 
     const campaigns = await Campaign.find({
       userEmail,
     });
 
-const withdrawals = await Withdraw.find({
-  userEmail: email,
-  status: { $in: ["pending", "approved"] },
+    const totalClicks = campaigns.reduce(
+      (acc, campaign) =>
+        acc + Number(campaign.clicks || 0),
+      0
+    );
+
+    const withdrawals = await Withdraw.find({
+      userEmail,
+    });
+
+    const wallet = await Wallet.findOne({
+  userEmail,
 });
 
-const totalWithdrawn = withdrawals.reduce(
-  (acc, w) => acc + Number(w.amount || 0),
-  0
-);
+console.log("USER:", userEmail);
+console.log("WALLET:", wallet);
 
-const availableBalance =
-  totalEarnings - totalWithdrawn;
+    res.json({
+      totalEarnings:
+        wallet?.totalEarned || 0,
 
- res.json({
-  totalEarnings: Number(totalEarnings.toFixed(2)),
-  totalWithdrawn,
-  availableBalance,
-  totalClicks,
-  campaigns,
-});
+      totalWithdrawn:
+        wallet?.lockedBalance || 0,
+
+      availableBalance:
+        wallet?.availableBalance || 0,
+
+      totalClicks,
+
+      campaigns,
+
+      withdrawals,
+    });
 
   } catch (err) {
     console.log(err);

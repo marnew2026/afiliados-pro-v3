@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
+import dotenv from "dotenv";
+
 import Campaign from "../models/Campaign.js";
 import Wallet from "../models/Wallet.js";
+
+dotenv.config();
 
 await mongoose.connect(process.env.MONGO_URI);
 
@@ -15,7 +19,7 @@ for (const c of campaigns) {
     map[email] = 0;
   }
 
-  map[email] += c.earnings || 0;
+  map[email] += Number(c.earnings || 0);
 }
 
 for (const email in map) {
@@ -29,7 +33,14 @@ for (const email in map) {
     },
     { upsert: true }
   );
+
+  console.log(
+    "Wallet criada:",
+    email,
+    map[email]
+  );
 }
 
 console.log("MIGRAÇÃO WALLET CONCLUÍDA");
+
 process.exit();

@@ -135,6 +135,8 @@ app.post("/asaas/webhook", async (req, res) => {
     });
   }
 });
+
+console.log("📊 DASHBOARD ROUTES OK");
 /* =========================
    FIX CAMPAIGNS
 ========================= */
@@ -248,7 +250,7 @@ app.get("/teste-transferencia", async (req, res) => {
       "https://api.asaas.com/v3/transfers",
       {
         pixAddressKey: "marielsantana@bol.com.br",
-        operationType: "PIX",
+       
         value: 0.01
       },
       {
