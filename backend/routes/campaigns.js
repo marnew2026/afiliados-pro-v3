@@ -20,7 +20,7 @@ router.get("/user/:email", async (req, res) => {
 
     const totalEarnings = wallet?.totalEarned || 0;
     const totalWithdrawn = wallet?.totalWithdrawn || 0;
-    const availableBalance = wallet?.balance || 0;
+    const availableBalance = wallet?.availableBalance || 0;
 
     res.json({
       campaigns,
@@ -131,16 +131,14 @@ router.post("/:id/sale", async (req, res) => {
     await campaign.save();
 
     // 💰 WALLET (FONTE ÚNICA DE SALDO)
-    await Wallet.findOneAndUpdate(
-      { userEmail: campaign.userEmail },
-      {
-        $inc: {
-          availableBalance: earnings,
-          totalEarned: earnings,
-        },
-      },
-      { upsert: true }
-    );
+    await LedgerEntry.create({
+  userEmail: campaign.userEmail,
+  type: "credit",
+  amount: earnings,
+  status: "confirmed",
+  referenceId: campaign._id.toString(),
+  description: "Venda registrada",
+});
 
     // 📜 TRANSACTION (AUDITORIA FINANCEIRA - IMPORTANTE)
     await Transaction.create({

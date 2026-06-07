@@ -1,9 +1,13 @@
 export function checkFraudRules(wallet, amount) {
   const now = new Date();
-  const last = wallet.lastWithdrawAt;
+
+  const safeAmount = Number(amount);
+  const last = wallet.lastWithdrawAt
+    ? new Date(wallet.lastWithdrawAt)
+    : null;
 
   // 🔥 1. limite por saque
-  if (amount > 1000) {
+  if (safeAmount > 1000) {
     throw new Error("Limite por saque excedido");
   }
 
@@ -17,16 +21,9 @@ export function checkFraudRules(wallet, amount) {
   }
 
   // 🔥 3. risco alto
-  if (wallet.riskScore >= 80) {
+  const risk = Number(wallet.riskScore || 0);
+
+  if (risk >= 80) {
     throw new Error("Conta bloqueada por risco");
   }
-}
-export function increaseRisk(wallet, reason = "") {
-  let score = wallet.riskScore || 0;
-
-  if (reason === "fast_withdraw") score += 20;
-  if (reason === "failed_withdraw") score += 30;
-  if (reason === "multiple_attempts") score += 40;
-
-  wallet.riskScore = score;
 }

@@ -13,20 +13,13 @@ export async function addEarning({
     amount
   );
 
-  const wallet = await Wallet.findOneAndUpdate(
-    { userEmail },
-    {
-      $inc: {
-        availableBalance: amount,
-        totalEarned: amount,
-      },
-    },
-    {
-      upsert: true,
-      new: true,
-    }
-  );
+const wallet = await Wallet.findOne({ userEmail });
 
+const balance = wallet?.availableBalance || 0;
+
+if (balance < amount) {
+  return res.status(400).json({ error: "Saldo insuficiente" });
+}
   console.log(
     "WALLET APÓS UPDATE:",
     wallet

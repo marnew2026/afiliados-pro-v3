@@ -17,12 +17,12 @@ import dashboardRoutes from "./routes/dashboard.js";
 import salesRoutes from "./routes/salesRoutes.js";
 import axios from "axios";
 import asaasWebhookRoutes from "./routes/asaasWebhook.js";
-
+import Wallet from "./models/Wallet.js";
 import { processWithdrawQueue } from "./queue/withdrawQueue.js";
 setInterval(() => {
   processWithdrawQueue();
 }, 3000);
-
+import LedgerEntry from "./models/LedgerEntry.js";
 
 
 const app = express();
@@ -97,34 +97,86 @@ app.post("/asaas/webhook", async (req, res) => {
 
     const { event, transfer } = req.body;
 
-    if (
-      event === "TRANSFER_CREATED" &&
-      transfer?.status === "DONE"
-    ) {
-      const withdraw = await Withdraw.findOne({
-        externalId: transfer.id,
-      });
 
-      if (withdraw) {
-        withdraw.status = "approved";
-        withdraw.paidAt = new Date();
-        await withdraw.save();
 
-        // 💰 atualiza wallet
-        const wallet = await Wallet.findOne({
-          userEmail: withdraw.userEmail,
-        });
 
-        if (wallet) {
-          wallet.pendingBalance -= withdraw.amount;
-          wallet.totalWithdrawn += withdraw.amount;
-          await wallet.save();
-        }
+   if (event === "TRANSFER_CREATED" && transfer?.status === "DONE") {
+  const withdraw = await Withdraw.findOne({
+    externalId: transfer.id,
+  });
 
-        console.log("✅ SAQUE CONFIRMADO:", withdraw._id);
-      }
+  if (!withdraw) return;
+
+  withdraw.status = "approved";
+  withdraw.paidAt = new Date();
+  await withdraw.save();
+
+  const wallet = await Wallet.findOne({
+    userEmail: withdraw.userEmail,
+  });
+
+  if (wallet) {
+    wallet.pendingBalance -= withdraw.amount;
+    wallet.totalWithdrawn += withdraw.amount;
+    await wallet.save();
+  }
+
+  // 🧾 FASE 7 — CONFIRMAR LEDGER
+  await LedgerEntry.updateOne(
+    {
+      referenceId: withdraw._id.toString(),
+      type: "debit",
+    },
+    {
+      $set: {
+        status: "confirmed",
+      },
     }
+  );
 
+  console.log("✅ SAQUE CONFIRMADO:", withdraw._id);
+}
+
+
+
+if (event === "TRANSFER_CREATED" && transfer?.status === "FAILED") {
+  const withdraw = await Withdraw.findOne({
+    externalId: transfer.id,
+  });
+
+  if (!withdraw) return;
+
+  withdraw.status = "failed";
+  await withdraw.save();
+
+
+
+  // 🔥 ROLLBACK LEDGER
+  await LedgerEntry.updateOne(
+    {
+      referenceId: withdraw._id.toString(),
+      type: "debit",
+    },
+    {
+      $set: {
+        status: "failed",
+      },
+    }
+  );
+
+  // 🔥 DEVOLVE SALDO (CRÍTICO)
+  const wallet = await Wallet.findOne({
+    userEmail: withdraw.userEmail,
+  });
+
+  if (wallet) {
+    wallet.availableBalance += withdraw.amount;
+    wallet.pendingBalance -= withdraw.amount;
+    await wallet.save();
+  }
+
+  console.log("❌ SAQUE CANCELADO + ROLLBACK:", withdraw._id);
+}    
     return res.status(200).json({ success: true });
 
   } catch (err) {

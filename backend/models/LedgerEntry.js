@@ -1,24 +1,24 @@
 import mongoose from "mongoose";
 
-const LedgerSchema = new mongoose.Schema(
-  {
-    userEmail: String,
+const ledgerSchema = new mongoose.Schema({
+  userEmail: { type: String, index: true },
 
-    type: {
-      type: String,
-      enum: ["credit", "debit"],
-    },
-
-    amount: Number,
-
-    source: {
-      type: String,
-      enum: ["campaign", "withdraw", "adjustment"],
-    },
-
-    referenceId: String,
+  type: {
+    type: String,
+    enum: ["credit", "debit"],
+    required: true,
   },
-  { timestamps: true }
-);
 
-export default mongoose.model("Ledger", LedgerSchema);
+  amount: { type: Number, required: true },
+
+  status: {
+    type: String,
+    enum: ["pending", "confirmed", "failed"],
+    default: "confirmed",
+  },
+
+  referenceId: String,
+  description: String,
+}, { timestamps: true });
+
+export default mongoose.model("LedgerEntry", ledgerSchema);
