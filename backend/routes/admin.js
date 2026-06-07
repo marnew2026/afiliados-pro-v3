@@ -13,33 +13,11 @@ router.get("/withdrawals", async (req, res) => {
     const withdrawals = await Withdraw.find()
       .sort({ createdAt: -1 });
 
+    console.log(
+      "TOTAL SAQUES:",
+      withdrawals.length
+    );
 
-console.log("EMAIL:", userEmail);
-
-console.log(
-  "CAMPAIGNS ENCONTRADAS:",
-  campaigns.length
-);
-
-console.log(
-  "TOTAL EARNINGS:",
-  totalEarnings
-);
-
-console.log(
-  "TOTAL CLICKS:",
-  totalClicks
-);
-
-console.log(
-  "TOTAL WITHDRAWN:",
-  totalWithdrawn
-);
-
-console.log(
-  "AVAILABLE:",
-  availableBalance
-);
     res.json(withdrawals);
 
   } catch (err) {
