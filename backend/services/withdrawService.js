@@ -31,7 +31,6 @@ console.log("COMPARAÇÃO:", balance < value);
 if (balance < value) {
   throw new Error("Saldo insuficiente");
 }
-
   checkFraudRules(wallet, value);
 
   wallet.availableBalance = balance - value;

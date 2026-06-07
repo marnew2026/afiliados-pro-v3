@@ -70,33 +70,15 @@ router.get("/dashboard", async (req, res) => {
       0
     );
 
-    const withdrawals = await Withdraw.find({
-      userEmail,
-    });
+    const withdrawals = await Withdraw.find()
+  .sort({ createdAt: -1 });
 
-    const wallet = await Wallet.findOne({
-  userEmail,
-});
+console.log(
+  "SAQUES ENCONTRADOS:",
+  withdrawals.length
+);
 
-console.log("USER:", userEmail);
-console.log("WALLET:", wallet);
-
-    res.json({
-      totalEarnings:
-        wallet?.totalEarned || 0,
-
-      totalWithdrawn:
-        wallet?.lockedBalance || 0,
-
-      availableBalance:
-        wallet?.availableBalance || 0,
-
-      totalClicks,
-
-      campaigns,
-
-      withdrawals,
-    });
+res.json(withdrawals);
 
   } catch (err) {
     console.log(err);
