@@ -82,6 +82,10 @@ export async function processWithdrawQueue() {
 
     if (withdraw) {
       withdraw.status = "failed";
+      console.log(
+  "STATUS ANTES DE SALVAR:",
+  withdraw.status
+);
       await withdraw.save();
     }
 

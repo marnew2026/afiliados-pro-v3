@@ -26,7 +26,7 @@ const WithdrawSchema = new mongoose.Schema(
         "paid",
         "failed",
       ],
-      default: "pending",
+     default: "paid",
     },
 
     externalId: {
@@ -41,5 +41,13 @@ const WithdrawSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+WithdrawSchema.pre("save", function(next) {
+  console.log(
+    "MONGOOSE SAVE =>",
+    this._id,
+    this.status
+  );
 
+  next();
+});
 export default mongoose.model("Withdraw", WithdrawSchema);

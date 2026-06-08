@@ -88,106 +88,6 @@ app.get("/teste-asaas", (req, res) => {
   res.json({ ok: true });
 });
 
-
-
-app.post("/asaas/webhook", async (req, res) => {
-  try {
-    console.log("WEBHOOK ASAAS RECEBIDO");
-    console.log(req.body);
-
-    const { event, transfer } = req.body;
-
-
-
-
-   if (event === "TRANSFER_CREATED" && transfer?.status === "DONE") {
-  const withdraw = await Withdraw.findOne({
-    externalId: transfer.id,
-  });
-
-  if (!withdraw) return;
-
-  withdraw.status = "approved";
-  withdraw.paidAt = new Date();
-  await withdraw.save();
-
-  const wallet = await Wallet.findOne({
-    userEmail: withdraw.userEmail,
-  });
-
-  if (wallet) {
-    wallet.pendingBalance -= withdraw.amount;
-    wallet.totalWithdrawn += withdraw.amount;
-    await wallet.save();
-  }
-
-  // 🧾 FASE 7 — CONFIRMAR LEDGER
-  await LedgerEntry.updateOne(
-    {
-      referenceId: withdraw._id.toString(),
-      type: "debit",
-    },
-    {
-      $set: {
-        status: "confirmed",
-      },
-    }
-  );
-
-  console.log("✅ SAQUE CONFIRMADO:", withdraw._id);
-}
-
-
-
-if (event === "TRANSFER_CREATED" && transfer?.status === "FAILED") {
-  const withdraw = await Withdraw.findOne({
-    externalId: transfer.id,
-  });
-
-  if (!withdraw) return;
-
-  withdraw.status = "failed";
-  await withdraw.save();
-
-
-
-  // 🔥 ROLLBACK LEDGER
-  await LedgerEntry.updateOne(
-    {
-      referenceId: withdraw._id.toString(),
-      type: "debit",
-    },
-    {
-      $set: {
-        status: "failed",
-      },
-    }
-  );
-
-  // 🔥 DEVOLVE SALDO (CRÍTICO)
-  const wallet = await Wallet.findOne({
-    userEmail: withdraw.userEmail,
-  });
-
-  if (wallet) {
-    wallet.availableBalance += withdraw.amount;
-    wallet.pendingBalance -= withdraw.amount;
-    await wallet.save();
-  }
-
-  console.log("❌ SAQUE CANCELADO + ROLLBACK:", withdraw._id);
-}    
-    return res.status(200).json({ success: true });
-
-  } catch (err) {
-    console.log("❌ WEBHOOK ERROR:", err.message);
-
-    return res.status(500).json({
-      error: err.message,
-    });
-  }
-});
-
 console.log("📊 DASHBOARD ROUTES OK");
 /* =========================
    FIX CAMPAIGNS
@@ -266,14 +166,14 @@ app.get("/fix-earnings", async (req, res) => {
     );
 
     await Withdraw.updateMany(
-      {},
-      {
-        $set: {
-          amount: 0,
-          status: "approved",
-        },
-      }
-    );
+  {},
+  {
+    $set: {
+      amount: 0,
+      status: "paid",
+    },
+  }
+);
 
     res.json({
       success: true,
@@ -302,8 +202,7 @@ app.get("/teste-transferencia", async (req, res) => {
       "https://api.asaas.com/v3/transfers",
       {
         pixAddressKey: "marielsantana@bol.com.br",
-       
-        value: 0.01
+        value: 5.00
       },
       {
         headers: {
@@ -313,19 +212,15 @@ app.get("/teste-transferencia", async (req, res) => {
       }
     );
 
-    return res.json(response.data);
+    res.json(response.data);
 
   } catch (err) {
-
+    console.log("STATUS:", err.response?.status);
     console.log(
-      "ASAAS TESTE:",
-      err.response?.data || err.message
+      JSON.stringify(err.response?.data, null, 2)
     );
 
-    return res.status(500).json({
-      erro: true,
-      resposta: err.response?.data || err.message
-    });
+    res.status(500).json(err.response?.data);
   }
 });
 app.get("/ping", (req, res) => {

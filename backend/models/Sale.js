@@ -19,7 +19,7 @@ const SaleSchema = new mongoose.Schema({
 
   status: {
     type: String,
-    default: "approved",
+    default: "paid",
   },
 
   createdAt: {

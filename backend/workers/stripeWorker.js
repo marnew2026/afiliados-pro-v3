@@ -32,7 +32,7 @@ export const worker = new Worker(
       amount,
       commission,
       stripeSessionId: session.id,
-      status: "approved",
+      status: "paid",
     });
 
     if (affiliateId) {

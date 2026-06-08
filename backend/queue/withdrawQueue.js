@@ -69,19 +69,34 @@ try {
         throw new Error("Asaas não retornou ID da transferência");
 }
     withdraw.externalId = pix.data.id;
-
+     withdraw.status = "processing";
      await withdraw.save();
 // aguardando confirmação do webhook
-    withdraw.status = "processing";
 
 
 
-  } catch (err) {
 
-    if (withdraw) {
-      withdraw.status = "failed";
-      await withdraw.save();
-    }
+
+
+ const errorCode =
+  err.response?.data?.errors?.[0]?.code;
+
+if (
+  errorCode === "checkout.already.requested"
+) {
+  console.log(
+    "⚠️ Saque já existe no Asaas"
+  );
+
+  withdraw.status = "processing";
+console.log(
+  "STATUS ANTES DE SALVAR:",
+  withdraw.status
+);
+  await withdraw.save();
+
+  return;
+}
 
     console.log(
       "QUEUE ERROR:",

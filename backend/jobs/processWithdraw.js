@@ -11,9 +11,12 @@ export async function processWithdraw(withdrawId) {
     amount: withdraw.amount,
   });
 
-  withdraw.status = "approved";
+ withdraw.status = "paid";
   withdraw.externalId = pix.id;
   withdraw.paidAt = new Date();
-
+console.log(
+  "STATUS ANTES DE SALVAR:",
+  withdraw.status
+);
   await withdraw.save();
 }
