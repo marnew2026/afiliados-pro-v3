@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const AuditLogSchema = new mongoose.Schema({
-  userEmail: String,
+  userId: String,
 
   action: String, // WITHDRAW_REQUEST | PIX_SENT | PIX_CONFIRMED | BLOCKED_FRAUD
 

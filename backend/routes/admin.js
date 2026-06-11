@@ -34,12 +34,12 @@ router.get("/withdrawals", async (req, res) => {
  */
 router.get("/dashboard", async (req, res) => {
   try {
-    const { userEmail } = req.query;
+    const { userId} = req.query;
 
    
 
     const campaigns = await Campaign.find({
-      userEmail,
+      userId,
     });
 
     const totalClicks = campaigns.reduce(

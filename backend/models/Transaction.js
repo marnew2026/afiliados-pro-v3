@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const TransactionSchema = new mongoose.Schema(
   {
-    userEmail: String,
+    userId: String,
 
     type: {
       type: String,

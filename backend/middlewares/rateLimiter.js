@@ -1,9 +1,9 @@
 const attempts = new Map();
 
-export function rateLimiter(userEmail) {
+export function rateLimiter(userId) {
   const now = Date.now();
 
-  const user = attempts.get(userEmail) || [];
+  const user = attempts.get(userId) || [];
 
   const recent = user.filter(t => now - t < 60000);
 
@@ -12,5 +12,5 @@ export function rateLimiter(userEmail) {
   }
 
   recent.push(now);
-  attempts.set(userEmail, recent);
+  attempts.set(userId, recent);
 }

@@ -1,3 +1,4 @@
+import { seedUserCampaigns } from "../services/seedUserCampaigns.js";
 import express from "express";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
@@ -31,6 +32,7 @@ router.post("/register", async (req, res) => {
       role: "affiliate",
       affiliateCode,
     });
+    await seedUserCampaigns(user._id);
 
     return res.json({
       message: "Usuário criado com sucesso",
@@ -58,10 +60,18 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Usuário não encontrado" });
     }
 
-    const passwordMatch = await bcrypt.compare(password, user.password);
-    if (!passwordMatch) {
-      return res.status(400).json({ error: "Senha inválida" });
-    }
+   const passwordMatch = await bcrypt.compare(password, user.password);
+
+if (!passwordMatch) {
+  return res.status(400).json({ error: "Senha inválida" });
+}
+
+// 🔥 AQUI ENTRA
+try {
+  await seedUserCampaigns(user._id);
+} catch (err) {
+  console.log("❌ seed error login:", err.message);
+}
 
     return res.json({
       message: "Login OK",

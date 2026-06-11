@@ -2,18 +2,18 @@ import Wallet from "../models/Wallet.js";
 import Transaction from "../models/Transaction.js";
 
 export async function addEarning({
-  userEmail,
+  userId,
   amount,
   referenceId,
 }) {
 
   console.log(
     "ADD EARNING INICIO:",
-    userEmail,
+    userId,
     amount
   );
 
-const wallet = await Wallet.findOne({ userEmail });
+const wallet = await Wallet.findOne({ userId});
 
 const balance = wallet?.availableBalance || 0;
 
@@ -26,7 +26,7 @@ if (balance < amount) {
   );
 
   await Transaction.create({
-    userEmail,
+    userId,
     type: "earning",
     amount,
     referenceId,

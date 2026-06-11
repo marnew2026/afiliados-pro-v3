@@ -1,11 +1,11 @@
 import Ledger from "../models/Ledger.js";
 
-export async function getBalance(userEmail) {
+export async function getBalance(userId) {
 
   const credit = await Ledger.aggregate([
     {
       $match: {
-        userEmail,
+        userId,
         type: "credit",
       },
     },
@@ -20,7 +20,7 @@ export async function getBalance(userEmail) {
   const debit = await Ledger.aggregate([
     {
       $match: {
-        userEmail,
+        userId,
         type: "debit",
       },
     },
@@ -41,7 +41,7 @@ export async function getBalance(userEmail) {
 
   console.log(
     "LEDGER BALANCE:",
-    userEmail,
+    userId,
     balance
   );
 

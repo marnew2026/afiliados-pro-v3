@@ -2,10 +2,10 @@ import { requestWithdraw } from "../services/walletService.js";
 
 export const createWithdraw = async (req, res) => {
   try {
-    const { userEmail, amount, pixKey } = req.body;
+    const { userId, amount, pixKey } = req.body;
 
     const withdraw = await requestWithdraw({
-      userEmail,
+      userId,
       amount,
       pixKey,
     });

@@ -3,52 +3,67 @@ import Sale from "../models/Sale.js";
 import WalletTransaction from "../models/WalletTransaction.js";
 import User from "../models/User.js";
 import AuditLog from "../models/AuditLog.js";
-import { redis } from "../config/redis.js";
 import Wallet from "../models/Wallet.js";
-// 🔥 WORKER PRINCIPAL
+import { redis } from "../config/redis.js";
+
 export const worker = new Worker(
   "stripe-events",
   async (job) => {
     const event = job.data.body;
 
-    // 🔒 ignora eventos irrelevantes
-    if (event.type !== "checkout.session.completed") return;
+    // ignora eventos irrelevantes
+    if (event.type !== "checkout.session.completed") {
+      return;
+    }
 
     const session = event.data.object;
 
-    const affiliateId = session.metadata?.affiliateId || null;
-    const offerId = session.metadata?.offerId || null;
-    const commissionPercent = Number(session.metadata?.commission || 0);
+    const affiliateId =
+      session.metadata?.affiliateId || null;
 
-    const amount = (session.amount_total || 0) / 100;
-    const commission = (amount * commissionPercent) / 100;
+    const offerId =
+      session.metadata?.offerId || null;
 
-    // 🔐 IDEMPOTÊNCIA FORTE
+    const commissionPercent = Number(
+      session.metadata?.commission || 0
+    );
+
+    const amount =
+      (session.amount_total || 0) / 100;
+
+    const commission =
+      (amount * commissionPercent) / 100;
+
+    // idempotência
     const exists = await Sale.findOne({
       stripeSessionId: session.id,
     });
 
     if (exists) {
-      console.log("⚠️ DUPLICADO IGNORADO:", session.id);
+      console.log(
+        "⚠️ DUPLICADO IGNORADO:",
+        session.id
+      );
       return;
     }
 
-    // 💰 CRIA VENDA
+    // cria venda
     const sale = await Sale.create({
       productId: offerId,
       affiliateId,
       amount,
       commission,
       stripeSessionId: session.id,
-      status: paid,
+      status: "paid",
     });
 
-    // 💳 COMISSÃO
+    // cria transação
     if (affiliateId && commission > 0) {
-      const walletExists = await WalletTransaction.findOne({
-        saleId: sale._id,
-        type: "commission",
-      });
+      const walletExists =
+        await WalletTransaction.findOne({
+          saleId: sale._id,
+          type: "commission",
+        });
 
       if (!walletExists) {
         await WalletTransaction.create({
@@ -58,50 +73,52 @@ export const worker = new Worker(
           status: "pending",
           saleId: sale._id,
         });
-
-        // 🔒 ATUALIZAÇÃO SEGURA
-        await User.findOneAndUpdate(
-          { _id: affiliateId },
-          {
-            $inc: { pendingBalance: commission },
-          }
-        );
       }
     }
-const affiliateUser = await User.findById(
-  affiliateId
-);
 
-if (affiliateUser?.email) {
-  await Wallet.findOneAndUpdate(
-    {
-      userEmail: affiliateUser.email,
-    },
-    {
-      $inc: {
-        availableBalance: commission,
-        totalEarned: commission,
-      },
-    },
-    {
-      upsert: true,
-      new: true,
-    }
-  );
-}
-    // 👑 PRO UPGRADE
-    const email =
-      session.customer_details?.email ||
-      session.customer_email;
+    // credita carteira
+    const affiliateUser =
+      await User.findById(affiliateId);
 
-    if (email) {
-      await User.findOneAndUpdate(
-        { email },
-        { $set: { isPro: true } }
+    if (affiliateUser) {
+      await Wallet.findOneAndUpdate(
+        {
+          userId:
+            affiliateUser._id.toString(),
+        },
+        {
+          $inc: {
+            availableBalance: commission,
+            totalEarned: commission,
+          },
+        },
+        {
+          upsert: true,
+          new: true,
+        }
+      );
+
+      console.log(
+        "💰 COMISSÃO CREDITADA:",
+        affiliateUser.email,
+        commission
       );
     }
 
-    // 🧾 AUDITORIA
+    // upgrade PRO
+    const userId =
+      session.metadata?.userId;
+
+    if (userId) {
+      await User.findByIdAndUpdate(
+        userId,
+        {
+          isPro: true,
+        }
+      );
+    }
+
+    // auditoria
     await AuditLog.create({
       action: "SALE_PROCESSED",
       userId: affiliateId,

@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const ledgerSchema = new mongoose.Schema({
-  userEmail: { type: String, index: true },
+  userId: { type: String, index: true },
 
   type: {
     type: String,

@@ -20,7 +20,7 @@ router.post("/:id", async (req, res) => {
       (campaign.sales || 0) + 1;
 
     await Ledger.create({
-  userEmail: campaign.userEmail,
+  userId: campaign.userId,
   type: "credit",
   amount: 10,
   source: "campaign",

@@ -11,95 +11,116 @@ export async function processWithdrawQueue() {
   let withdraw;
 
   try {
-
     withdraw = await Withdraw.findOne({
       status: "queued",
     }).sort({ createdAt: 1 });
 
     if (!withdraw) {
-  return;
-}
+      return;
+    }
 
-if (withdraw.externalId) {
-  return;
-}
+    // evita reenviar saque já enviado
+    if (withdraw.externalId) {
+      return;
+    }
 
     withdraw.status = "processing";
     await withdraw.save();
 
-    let pix;
+    console.log(
+      "💸 PROCESSANDO SAQUE:",
+      withdraw._id.toString()
+    );
 
-try {
-
-  pix = await axios.post(
-    "https://api.asaas.com/v3/transfers",
-    {
-      pixAddressKey: withdraw.pixKey,
-      
-      value: withdraw.amount,
-    },
-    {
-      headers: {
-        access_token: process.env.ASAAS_API_KEY,
+    const pix = await axios.post(
+      "https://api.asaas.com/v3/transfers",
+      {
+        pixAddressKey: withdraw.pixKey,
+        value: withdraw.amount,
       },
+      {
+        headers: {
+          access_token: process.env.ASAAS_API_KEY,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("ASAAS OK:");
+    console.log(
+      JSON.stringify(pix.data, null, 2)
+    );
+
+    if (!pix.data?.id) {
+      throw new Error(
+        "Asaas não retornou ID da transferência"
+      );
     }
-  );
 
-  console.log("ASAAS OK:");
-  console.log(JSON.stringify(pix.data, null, 2));
-
-} catch (err) {
-
-  console.log("STATUS:");
-  console.log(err.response?.status);
-
-  console.log("DATA:");
-  console.log(
-    JSON.stringify(
-      err.response?.data,
-      null,
-      2
-    )
-  );
-
-  throw err;
-}
-
-     if (!pix.data?.id) {
-        throw new Error("Asaas não retornou ID da transferência");
-}
+    // salva ID da transferência
     withdraw.externalId = pix.data.id;
-     withdraw.status = "processing";
-     await withdraw.save();
-// aguardando confirmação do webhook
 
+    // aguarda webhook confirmar
+    withdraw.status = "processing";
 
-
-
-
-
- const errorCode =
-  err.response?.data?.errors?.[0]?.code;
-
-if (
-  errorCode === "checkout.already.requested"
-) {
-  console.log(
-    "⚠️ Saque já existe no Asaas"
-  );
-
-  withdraw.status = "processing";
-console.log(
-  "STATUS ANTES DE SALVAR:",
-  withdraw.status
-);
-  await withdraw.save();
-
-  return;
-}
+    await withdraw.save();
 
     console.log(
-      "QUEUE ERROR:",
+      "✅ PIX ENVIADO:",
+      pix.data.id
+    );
+
+  } catch (err) {
+
+    console.log(
+      "STATUS:",
+      err.response?.status
+    );
+
+    console.log(
+      "DATA:"
+    );
+
+    console.log(
+      JSON.stringify(
+        err.response?.data,
+        null,
+        2
+      )
+    );
+
+    const errorCode =
+      err.response?.data?.errors?.[0]?.code;
+
+    // saque já existe no Asaas
+    if (
+      errorCode ===
+      "checkout.already.requested"
+    ) {
+
+      console.log(
+        "⚠️ Saque já existe no Asaas"
+      );
+
+      if (withdraw) {
+
+        withdraw.status = "processing";
+
+        await withdraw.save();
+      }
+
+      return;
+    }
+
+    if (withdraw) {
+
+      withdraw.status = "failed";
+
+      await withdraw.save();
+    }
+
+    console.log(
+      "❌ QUEUE ERROR:",
       err.message
     );
 
@@ -111,6 +132,5 @@ console.log(
       processWithdrawQueue,
       2000
     );
-
   }
 }

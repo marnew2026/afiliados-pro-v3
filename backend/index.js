@@ -1,12 +1,21 @@
 import dotenv from "dotenv";
-dotenv.config();
-
+dotenv.config({ path: ".env" });
+import { runTest } from "./src/cron/scheduler.js";
+console.log("🔐 META_TOKEN:", process.env.META_TOKEN ? "OK" : "MISSING");
+console.log("🤖 OPENAI_KEY:", process.env.OPENAI_KEY ? "OK" : "MISSING");
+// depois que o dotenv já carregou
+setTimeout(() => {
+  runTest();
+}, 5000);
 import express from "express";
 import cors from "cors";
-
+import "./src/cron/scheduler.js";
 import connectDB from "./config/db.js";
 import Withdraw from "./models/Withdraw.js";
 /* ROUTES */
+import "./workers/withdrawWorker.js";
+import goRoutes from "./routes/go.js";
+import campaignsAdmin from "./routes/campaignsAdmin.js";
 import stripeRoutes from "./routes/stripeRoutes.js";
 import campaignsRoutes from "./routes/campaigns.js";
 import userRoutes from "./routes/userRoutes.js";
@@ -16,6 +25,9 @@ import trackingRoutes from "./routes/trackingRoutes.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import salesRoutes from "./routes/salesRoutes.js";
 import axios from "axios";
+import User from "./models/User.js";
+import Campaign from "./models/Campaign.js";
+import adminWithdrawRoutes from "./routes/adminWithdrawRoutes.js";
 import asaasWebhookRoutes from "./routes/asaasWebhook.js";
 import Wallet from "./models/Wallet.js";
 import { processWithdrawQueue } from "./queue/withdrawQueue.js";
@@ -23,8 +35,17 @@ setInterval(() => {
   processWithdrawQueue();
 }, 3000);
 import LedgerEntry from "./models/LedgerEntry.js";
+import { generateCampaigns } from "./src/services/campaignGenerator.js";
+import { autoGenerateCampaigns } from "./src/services/mlCampaignAuto.js";
+import cron from "node-cron";
+setInterval(() => {
+  autoGenerateCampaigns();
+}, 1000 * 60 * 60 * 6); // a cada 6h
 
 
+
+cron.schedule("0 */6 * * *", generateCampaigns);
+console.log("VERSION 2026-06-08 18:00");
 const app = express();
 
 /* =========================
@@ -61,10 +82,40 @@ app.use("/r", trackingRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/sales", salesRoutes);
 app.use("/webhooks/asaas", asaasWebhookRoutes);
-
+app.use("/admin/campaigns", campaignsAdmin);
+app.use("/go", goRoutes);
+app.use("/admin/withdrawals", adminWithdrawRoutes);
 /* =========================
    TEST ROUTES
 ========================= */
+app.get("/debug-user/:email", async (req, res) => {
+  try {
+    const user = await User.findOne({
+      email: req.params.email,
+    });
+
+    const campaigns = await Campaign.find({
+      userId: user?._id,
+    });
+
+    res.json({
+      user,
+      campaignsCount: campaigns.length,
+      campaigns,
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      error: err.message,
+    });
+  }
+});
+
+app.get("/", (req, res) => {
+  res.send("Robô de afiliado rodando 🚀");
+});
+
+app.listen(3000, () => console.log("Servidor online"));
 
 app.get("/", (req, res) => {
   res.send("🚀 SaaS Afiliados PRO ONLINE");
@@ -98,7 +149,7 @@ app.get("/fix-campaigns", async (req, res) => {
     const Campaign =
       (await import("./models/Campaign.js")).default;
 
-    const campaigns = await Campaign.find();
+    const campaigns = await Campaign.find({ userId: req.user.id })
 
     for (const c of campaigns) {
       if (!c.nome || c.nome === "") {
@@ -164,6 +215,7 @@ app.get("/fix-earnings", async (req, res) => {
         },
       }
     );
+    
 
     await Withdraw.updateMany(
   {},

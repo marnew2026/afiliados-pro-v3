@@ -1,63 +1,63 @@
 import Withdraw from "../models/Withdraw.js";
-import Transaction from "../models/Transaction.js";
 import Wallet from "../models/Wallet.js";
 
 export async function asaasWebhook(req, res) {
   try {
-  const { transfer } = req.body;
-if (!transfer?.id) {
-  return res.status(200).json({ ok: true });
-}    
+    const event = req.body;
 
-    // 🔒 IDEMPOTÊNCIA
-    const withdraw = await Withdraw.findOne({
-      externalId: transfer.id,
-    });
+    const type = event.event;
 
-    if (!withdraw) {
-      return res.status(200).json({ ok: true });
-    }
+    const externalId = event.transfer?.externalReference;
 
-    if (withdraw.status === "paid") {
-      return res.status(200).json({ ok: true });
-    }
+    const withdraw = await Withdraw.findOne({ externalId });
 
+    if (!withdraw) return res.status(200).send("OK");
 
-  if (transfer.status !== "DONE") {
-  return res.status(200).json({ ok: true });
-}
+    const wallet = await Wallet.findOne({ userId: withdraw.userId });
 
-    // 🔥 só confirma pagamento
-   await Wallet.findOneAndUpdate(
-  { userEmail: withdraw.userEmail },
-  {
-    $inc: {
-      lockedBalance: -withdraw.amount,
-    },
-    $set: {
-      withdrawLocked: false,
-    },
-  }
-);
+    // 🔵 SUCESSO
+    if (type === "TRANSFER_SUCCESS") {
+
+      if (withdraw.status === "paid") {
+        return res.status(200).send("OK");
+      }
+
       withdraw.status = "paid";
       withdraw.paidAt = new Date();
 
+      // 🔵 libera saldo bloqueado
+      if (wallet) {
+        wallet.lockedBalance -= withdraw.amount;
+      }
+
       await withdraw.save();
+      await wallet.save();
+    }
 
-     await Transaction.create({
-  userEmail: withdraw.userEmail,
-  type: "withdraw",
-  amount: withdraw.amount,
-  referenceId: withdraw._id.toString(),
-  description: "Saque aprovado PIX",
-  status: "confirmed",
-});
+    // 🔴 FALHA
+    if (type === "TRANSFER_FAILED") {
 
-return res.status(200).json({ ok: true });
- 
+      if (withdraw.status === "failed") {
+        return res.status(200).send("OK");
+      }
+
+      withdraw.status = "failed";
+      withdraw.errorMessage = event.transfer?.failReason || "falha";
+
+      // 🔴 devolve saldo
+      if (wallet) {
+        wallet.availableBalance += withdraw.amount;
+        wallet.lockedBalance -= withdraw.amount;
+      }
+
+      await withdraw.save();
+      await wallet.save();
+    }
+
+    return res.status(200).send("OK");
 
   } catch (err) {
-    console.log("WEBHOOK ERROR:", err.message);
-    return res.status(200).json({ ok: true });
+    console.error(err);
+    return res.status(200).send("OK");
   }
 }

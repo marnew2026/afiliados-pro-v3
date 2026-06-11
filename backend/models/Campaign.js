@@ -1,24 +1,17 @@
 import mongoose from "mongoose";
 
-const campaignSchema = new mongoose.Schema(
-  {
-    userEmail: { type: String, required: true },
-    nome: { type: String, required: true },
-    link: { type: String, required: true },
-    affiliateLink: { type: String, required: true },
-
-    commission: { type: Number, default: 0.1 },
-
-    clicks: { type: Number, default: 0 },
-    sales: { type: Number, default: 0 },
-
-    earnings: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
+const CampaignSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    index: true
   },
-  { timestamps: true }
-);
+  nome: String,
+  link: String,
+  active: { type: Boolean, default: true },
+  clicks: { type: Number, default: 0 },
+  earnings: { type: Number, default: 0 },
+  sales: { type: Number, default: 0 }
+});
 
-export default mongoose.model("Campaign", campaignSchema);
+export default mongoose.model("Campaign", CampaignSchema);

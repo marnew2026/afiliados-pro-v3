@@ -19,7 +19,7 @@ router.get("/:email", async (req, res) => {
     }
 
     const campaigns = await Campaign.find({
-      userEmail: email,
+      userId: user._id,
     });
 
     const totalEarnings = campaigns.reduce(

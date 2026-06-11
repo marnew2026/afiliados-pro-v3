@@ -13,7 +13,7 @@ const campaigns = await Campaign.find();
 const map = {};
 
 for (const c of campaigns) {
-  const email = c.userEmail;
+  const email = c.userId;
 
   if (!map[email]) {
     map[email] = 0;
@@ -24,7 +24,7 @@ for (const c of campaigns) {
 
 for (const email in map) {
   await Wallet.updateOne(
-    { userEmail: email },
+    { userId: email },
     {
       $set: {
         availableBalance: map[email],

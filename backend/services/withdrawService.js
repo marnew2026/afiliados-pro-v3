@@ -1,48 +1,44 @@
-import LedgerEntry from "../models/LedgerEntry.js";
-import { getBalance } from "./walletBalanceService.js";
 import Wallet from "../models/Wallet.js";
 import Withdraw from "../models/Withdraw.js";
-import { addDebit } from "./ledgerService.js";
-import { checkFraudRules } from "./fraudService.js";
+import { withdrawQueue } from "../queues/withdrawQueue.js";
 
+export async function requestWithdraw({
+  userId,
+  amount,
+  pixKey,
+}) {
 
-export async function requestWithdraw({ userEmail, amount, pixKey }) {
-  const email = userEmail;
-  console.log("EMAIL RECEBIDO:", email);
+  const wallet = await Wallet.findOne({ userId });
 
+  if (!wallet) throw new Error("Wallet não encontrada");
 
+  const value = Number(String(amount).replace(",", "."));
 
-const wallet = await Wallet.findOne({ userEmail: email });
+  const available = Number(wallet.availableBalance || 0);
 
-console.log("EMAIL RECEBIDO:", email);
-console.log("WALLET ENCONTRADA:", wallet);
+  if (available < value) {
+    throw new Error("Saldo insuficiente");
+  }
 
-if (!wallet) {
-  throw new Error("Wallet não encontrada");
-}
-
-const balance = Number(wallet.availableBalance || 0);
-const value = Number(String(amount).replace(",", "."));
-
-console.log("BALANCE:", balance);
-console.log("VALUE:", value);
-console.log("COMPARAÇÃO:", balance < value);
-
-if (balance < value) {
-  throw new Error("Saldo insuficiente");
-}
-  checkFraudRules(wallet, value);
-
-  wallet.availableBalance = balance - value;
-  wallet.lastWithdrawAt = new Date();
+  // 🔵 reserva saldo
+  wallet.availableBalance -= value;
+  wallet.lockedBalance = Number(wallet.lockedBalance || 0) + value;
 
   await wallet.save();
 
+  // 🟡 cria saque
   const withdraw = await Withdraw.create({
-    userEmail: email,
+    userId,
     amount: value,
     pixKey,
-    status: "queued",
+    status: "processing",
+    externalId: crypto.randomUUID(),
+    createdAt: new Date(),
+  });
+
+  // 🔥 ENTRA NA FILA (NÃO ENVIA PIX AQUI)
+  await withdrawQueue.add("process-withdraw", {
+    withdrawId: withdraw._id.toString(),
   });
 
   return withdraw;

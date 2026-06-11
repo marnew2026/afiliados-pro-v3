@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const LedgerSchema = new mongoose.Schema(
   {
-    userEmail: { type: String, required: true },
+    userId: { type: String, required: true },
 
     status: {
   type: String,
@@ -54,10 +54,10 @@ LedgerSchema.index(
   { unique: true }
 );
 
-LedgerSchema.index({ userEmail: 1 });
+LedgerSchema.index({ userId: 1 });
 
 LedgerSchema.index({
-  userEmail: 1,
+  userId: 1,
   createdAt: -1,
 });
 

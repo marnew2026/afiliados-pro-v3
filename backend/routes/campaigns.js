@@ -4,34 +4,33 @@ import Transaction from "../models/Transaction.js";
 import Campaign from "../models/Campaign.js";
 import Withdraw from "../models/Withdraw.js";
 import LedgerEntry from "../models/LedgerEntry.js";
-const router = express.Router();
-router.get("/user/:email", async (req, res) => {
-  try {
-    const userEmail = req.params.email;
+import { protect } from "../middlewares/authMiddleware.js";
 
-    const campaigns = await Campaign.find({ userEmail });
+const router = express.Router();
+router.use(protect);
+
+router.get("/user", async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const campaigns = await Campaign.find({ userId });
 
     const withdrawals = await Withdraw.find({
-      userEmail,
-   status: { $in: ["pending", "paid"] }
+      userId,
+      status: { $in: ["pending", "paid"] }
     });
 
-    const wallet = await Wallet.findOne({ userEmail });
-
-    const totalEarnings = wallet?.totalEarned || 0;
-    const totalWithdrawn = wallet?.totalWithdrawn || 0;
-    const availableBalance = wallet?.availableBalance || 0;
+    const wallet = await Wallet.findOne({ userId });
 
     res.json({
       campaigns,
-      totalEarnings,
-      totalWithdrawn,
-      availableBalance,
+      totalEarnings: wallet?.totalEarned || 0,
+      totalWithdrawn: wallet?.totalWithdrawn || 0,
+      availableBalance: wallet?.availableBalance || 0,
       withdrawals,
     });
 
   } catch (error) {
-    console.log(error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -39,29 +38,13 @@ router.get("/user/:email", async (req, res) => {
 /* CRIAR CAMPANHA */
 router.post("/create", async (req, res) => {
   try {
-    const { userEmail, nome, link } = req.body;
+    const { nome, link } = req.body;
 
-    if (!nome || !link) {
-      return res.status(400).json({
-        msg: "Nome e link obrigatórios",
-      });
-    }
-
-    const codigo = Math.random()
-      .toString(36)
-      .substring(2, 10);
-    console.log({
-  nome,
-  link,
-  userEmail,
-});
     const campaign = await Campaign.create({
-      userEmail,
+      userId: req.user.id,
       nome,
       link,
-      affiliateLink:
-        `https://afiliados-pro-v3-2.onrender.com/r/${codigo}`,
-      commission: 0.1,
+      active: true,
       clicks: 0,
       earnings: 0,
       sales: 0,
@@ -70,43 +53,26 @@ router.post("/create", async (req, res) => {
     res.json(campaign);
 
   } catch (error) {
-    console.log(error);
-
-    res.status(500).json({
-      error: error.message,
-    });
+    res.status(500).json({ error: error.message });
   }
 });
-
 /* REGISTRAR CLIQUE */
 router.post("/:id/click", async (req, res) => {
   try {
-    const campaign = await Campaign.findById(
-      req.params.id
-    );
+    const campaign = await Campaign.findById(req.params.id);
 
     if (!campaign) {
-      return res.status(404).json({
-        error: "Campanha não encontrada",
-      });
+      return res.status(404).json({ error: "Campanha não encontrada" });
     }
 
-   if (!campaign.clicks) campaign.clicks = 0;
+    campaign.clicks = (campaign.clicks || 0) + 1;
 
-campaign.clicks += 1;
+    await campaign.save();
 
-await campaign.save();
-
-res.json({
-  clicks: campaign.clicks,
-});
+    res.json({ clicks: campaign.clicks });
 
   } catch (error) {
-    console.log(error);
-
-    res.status(500).json({
-      error: error.message,
-    });
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -116,69 +82,46 @@ router.post("/:id/sale", async (req, res) => {
     const campaign = await Campaign.findById(req.params.id);
 
     if (!campaign) {
-      return res.status(404).json({
-        error: "Campanha não encontrada",
-      });
+      return res.status(404).json({ error: "Campanha não encontrada" });
     }
 
-    if (campaign.sales == null) campaign.sales = 0;
-
-    campaign.sales += 1;
+    campaign.sales = (campaign.sales || 0) + 1;
 
     const earnings = 10;
 
-    // salva campanha (somente tracking)
     await campaign.save();
 
-    // 💰 WALLET (FONTE ÚNICA DE SALDO)
     await LedgerEntry.create({
-  userEmail: campaign.userEmail,
-  type: "credit",
-  amount: earnings,
-  status: "confirmed",
-  referenceId: campaign._id.toString(),
-  description: "Venda registrada",
-});
+      userId: campaign.userId,
+      type: "credit",
+      amount: earnings,
+      status: "confirmed",
+      referenceId: campaign._id.toString(),
+      description: "Venda registrada",
+    });
 
-    // 📜 TRANSACTION (AUDITORIA FINANCEIRA - IMPORTANTE)
     await Transaction.create({
-      userEmail: campaign.userEmail,
+      userId: campaign.userId,
       type: "earning",
       amount: earnings,
       description: "Venda registrada",
     });
 
-    return res.json({
-      success: true,
-      earnings,
-    });
+    res.json({ success: true, earnings });
 
   } catch (err) {
-    console.log(err);
-
-    return res.status(500).json({
-      error: err.message,
-    });
+    res.status(500).json({ error: err.message });
   }
 });
-
 /* EXCLUIR CAMPANHA */
 router.delete("/:id", async (req, res) => {
   try {
-    await Campaign.findByIdAndDelete(
-      req.params.id
-    );
+    await Campaign.findByIdAndDelete(req.params.id);
 
-    res.json({
-      ok: true,
-    });
+    res.json({ ok: true });
 
   } catch (error) {
-    console.log(error);
-
-    res.status(500).json({
-      error: error.message,
-    });
+    res.status(500).json({ error: error.message });
   }
 });
 

@@ -1,7 +1,7 @@
 import Ledger from "../models/Ledger.js";
 
 export async function addCredit({
-  userEmail,
+  userId,
   amount,
   referenceId,
   source = "campaign",
@@ -10,7 +10,7 @@ export async function addCredit({
   metadata = {},
 }) {
   await Ledger.create({
-    userEmail,
+    userId,
     type: "credit",
     amount,
     source,
@@ -22,7 +22,7 @@ export async function addCredit({
 }
 
 export async function addDebit({
-  userEmail,
+  userId,
   amount,
   referenceId,
   source = "withdraw",
@@ -31,7 +31,7 @@ export async function addDebit({
   metadata = {},
 }) {
   await Ledger.create({
-    userEmail,
+    userId,
     type: "debit",
     amount,
     source,
@@ -43,14 +43,14 @@ export async function addDebit({
 }
   
 
-export async function getBalance(userEmail) {
+export async function getBalance(userId) {
   const credits = await Ledger.aggregate([
-    { $match: { userEmail, type: "credit" } },
+    { $match: { userId, type: "credit" } },
     { $group: { _id: null, total: { $sum: "$amount" } } },
   ]);
 
   const debits = await Ledger.aggregate([
-    { $match: { userEmail, type: "debit" } },
+    { $match: { userId, type: "debit" } },
     { $group: { _id: null, total: { $sum: "$amount" } } },
   ]);
 

@@ -1,14 +1,14 @@
 import AuditLog from "../models/AuditLog.js";
 
 export async function logAudit({
-  userEmail,
+  userId,
   action,
   amount,
   ip,
   metadata,
 }) {
   await AuditLog.create({
-    userEmail,
+    userId,
     action,
     amount,
     ip,
