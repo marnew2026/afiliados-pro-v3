@@ -5,7 +5,8 @@ import Campaign from "../models/Campaign.js";
 import Withdraw from "../models/Withdraw.js";
 import LedgerEntry from "../models/LedgerEntry.js";
 import { protect } from "../middlewares/authMiddleware.js";
-
+import User from "../models/User.js";
+console.log("🔥 CAMPAIGNS ROUTE VERSAO 999999");
 const router = express.Router();
 
 
@@ -38,16 +39,53 @@ router.get("/user", async (req, res) => {
 
 router.post("/create", async (req, res) => {
   try {
-    const { userId, nome, link } = req.body;
+    const { email, nome, link } = req.body;
 
-    console.log("CREATE CHEGOU:", {
-      userId,
-      nome,
-      link,
+    const user = await User.findOne({ email });
+    console.log("USER ENCONTRADO:", user);
+console.log("USER ID:", user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        error: "Usuário não encontrado"
+      });
+    }
+router.get("/:email", async (req, res) => {
+  try {
+    console.log(
+      "BUSCANDO CAMPANHAS:",
+      req.params.email
+    );
+
+    const user = await User.findOne({
+      email: req.params.email,
     });
 
+    if (!user) {
+      return res.json([]);
+    }
+
+    const campaigns = await Campaign.find({
+      userId: user._id,
+    });
+
+    console.log(
+      "CAMPANHAS ENCONTRADAS:",
+      campaigns.length
+    );
+
+    res.json(campaigns);
+
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      error: err.message,
+    });
+  }
+});
     const campaign = await Campaign.create({
-      userId,
+      userId: user._id,
       nome,
       link,
       active: true,
@@ -60,9 +98,8 @@ router.post("/create", async (req, res) => {
 
   } catch (error) {
     console.log(error);
-
     res.status(500).json({
-      error: error.message,
+      error: error.message
     });
   }
 });

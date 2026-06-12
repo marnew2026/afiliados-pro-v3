@@ -17,6 +17,8 @@ import "./workers/withdrawWorker.js";
 import goRoutes from "./routes/go.js";
 import campaignsAdmin from "./routes/campaignsAdmin.js";
 import stripeRoutes from "./routes/stripeRoutes.js";
+import offersRoutes from "./routes/offers.js";
+import stripeConnectRoutes from "./routes/stripeConnect.js";
 import campaignsRoutes from "./routes/campaigns.js";
 import userRoutes from "./routes/userRoutes.js";
 import adminRoutes from "./routes/admin.js";
@@ -74,6 +76,8 @@ connectDB();
 ========================= */
 app.use(express.json());
 app.use("/stripe", stripeRoutes);
+app.use("/offers", offersRoutes);
+app.use("/stripe-connect", stripeConnectRoutes);
 app.use("/campaigns", campaignsRoutes);
 app.use("/user", userRoutes);
 app.use("/admin", adminRoutes);
