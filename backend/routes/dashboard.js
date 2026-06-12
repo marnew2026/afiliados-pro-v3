@@ -3,6 +3,19 @@ import User from "../models/User.js";
 import Campaign from "../models/Campaign.js";
 
 const router = express.Router();
+router.get("/debug-user/:email", async (req, res) => {
+  try {
+    const user = await User.findOne({
+      email: req.params.email,
+    });
+
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({
+      error: err.message,
+    });
+  }
+});
 
 router.get("/:email", async (req, res) => {
   try {

@@ -7,7 +7,7 @@ import LedgerEntry from "../models/LedgerEntry.js";
 import { protect } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
-router.use(protect);
+
 
 router.get("/user", async (req, res) => {
   try {
@@ -34,14 +34,20 @@ router.get("/user", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+// router.use(protect);
 
-/* CRIAR CAMPANHA */
 router.post("/create", async (req, res) => {
   try {
-    const { nome, link } = req.body;
+    const { userId, nome, link } = req.body;
+
+    console.log("CREATE CHEGOU:", {
+      userId,
+      nome,
+      link,
+    });
 
     const campaign = await Campaign.create({
-      userId: req.user.id,
+      userId,
       nome,
       link,
       active: true,
@@ -53,9 +59,14 @@ router.post("/create", async (req, res) => {
     res.json(campaign);
 
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.log(error);
+
+    res.status(500).json({
+      error: error.message,
+    });
   }
 });
+
 /* REGISTRAR CLIQUE */
 router.post("/:id/click", async (req, res) => {
   try {
