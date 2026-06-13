@@ -2,7 +2,7 @@ import express from "express";
 import Stripe from "stripe";
 import Click from "../models/Click.js";
 import Offer from "../models/Offer.js";
-
+throw new Error("GO TESTE 999999");
 const router = express.Router();
 
 
