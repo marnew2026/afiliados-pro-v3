@@ -38,6 +38,16 @@ router.get("/:affiliateCode/:offerId", async (req, res) => {
     console.log("OFFER:", offer);
     console.log("NAME:", offer.name);
     console.log("PRICE:", offer.price);
+    console.log("🔥🔥🔥 GO VERSAO FINAL 999999");
+
+router.get("/:affiliateCode/:offerId", async (req, res) => {
+
+  return res.json({
+    teste: true,
+    rota: "nova"
+  });
+
+});
 
     const price = Number(offer.price);
 

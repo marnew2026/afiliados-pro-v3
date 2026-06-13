@@ -25,6 +25,14 @@ export async function runTest() {
         "📦 campanhas do usuário:",
         campaigns.length
       );
+      console.log(
+  "📦 NOMES:",
+  campaigns.map(c => c.nome)
+);
+console.log(
+  "📦 IDs:",
+  campaigns.map(c => c._id)
+);
 
       if (!campaigns.length) {
         continue;
