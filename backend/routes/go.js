@@ -2,9 +2,8 @@ import express from "express";
 import Stripe from "stripe";
 import Click from "../models/Click.js";
 import Offer from "../models/Offer.js";
-throw new Error("GO TESTE 999999");
-const router = express.Router();
 
+const router = express.Router();
 
 console.log("🔥 GO ROUTE CARREGADA");
 
@@ -16,7 +15,7 @@ router.get("/:affiliateCode/:offerId", async (req, res) => {
   try {
 
     console.log(
-      "🔥🔥🔥 NOVA VERSAO GO 13-06-2026"
+      "🔥🔥🔥 GO VERSION LIMPA 2026-06-13"
     );
 
     const { affiliateCode, offerId } = req.params;
@@ -29,11 +28,6 @@ router.get("/:affiliateCode/:offerId", async (req, res) => {
     const offer = await Offer.findById(
       offerId
     );
-    return res.json({
-  rota: "go",
-  funcionando: true,
-  offer
-});
 
     if (!offer) {
       return res.status(404).json({
@@ -44,59 +38,78 @@ router.get("/:affiliateCode/:offerId", async (req, res) => {
     console.log("OFFER:", offer);
     console.log("NAME:", offer.name);
     console.log("PRICE:", offer.price);
-    console.log("🔥🔥🔥 GO VERSAO FINAL 999999");
-
-router.get("/:affiliateCode/:offerId", async (req, res) => {
-
-  return res.json({
-    teste: true,
-    rota: "nova"
-  });
-
-});
 
     const price = Number(offer.price);
 
+    if (!price || price <= 0) {
+      return res.status(400).json({
+        error: "Preço inválido",
+      });
+    }
+
+    const payload = {
+      mode: "payment",
+
+      payment_method_types: [
+        "card"
+      ],
+
+      line_items: [
+        {
+          price_data: {
+            currency: "brl",
+
+            product_data: {
+              name:
+                offer.name ||
+                "Produto Teste",
+            },
+
+            unit_amount:
+              Math.round(price * 100),
+          },
+
+          quantity: 1,
+        },
+      ],
+
+      success_url:
+        `${process.env.BASE_URL}/success`,
+
+      cancel_url:
+        `${process.env.BASE_URL}/cancel`,
+
+      metadata: {
+        affiliateId: affiliateCode,
+        offerId,
+        commission:
+          String(
+            offer.commissionPercent || 0
+          ),
+      },
+    };
+
     console.log(
-      "PRICE NUMBER:",
-      price
+      "PAYLOAD STRIPE:"
+    );
+
+    console.log(
+      JSON.stringify(
+        payload,
+        null,
+        2
+      )
     );
 
     const session =
-      await stripe.checkout.sessions.create({
-        mode: "payment",
-        payment_method_types: ["card"],
+      await stripe.checkout.sessions.create(
+        payload
+      );
 
-        line_items: [
-          {
-            price_data: {
-              currency: "brl",
-
-              product_data: {
-                name: offer.name,
-              },
-
-              unit_amount:
-                Math.round(price * 100),
-            },
-
-            quantity: 1,
-          },
-        ],
-
-        success_url:
-          `${process.env.BASE_URL}/success`,
-
-        cancel_url:
-          `${process.env.BASE_URL}/cancel`,
-
-        metadata: {
-          affiliateId: affiliateCode,
-          offerId,
-          commission:
-            offer.commissionPercent,
-        },
-      });
+    console.log(
+      "SESSION:",
+      session.id
+    );
 
     return res.redirect(
       session.url
@@ -105,9 +118,10 @@ router.get("/:affiliateCode/:offerId", async (req, res) => {
   } catch (err) {
 
     console.log(
-      "❌ ERRO /go:",
-      err
+      "❌ ERRO /go COMPLETO:"
     );
+
+    console.log(err);
 
     return res.status(500).json({
       error: err.message,
