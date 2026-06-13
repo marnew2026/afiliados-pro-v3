@@ -4,6 +4,7 @@ import Click from "../models/Click.js";
 import Offer from "../models/Offer.js";
 
 const router = express.Router();
+console.log("🔥🔥🔥 GO VERSION 2026-06-13 15:30");
 
 console.log("🔥 GO ROUTE CARREGADA");
 
