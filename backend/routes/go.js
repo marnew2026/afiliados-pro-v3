@@ -28,6 +28,10 @@ router.get("/:affiliateCode/:offerId", async (req, res) => {
     const offer = await Offer.findById(
       offerId
     );
+    console.log("TYPE:", typeof offer);
+console.log("KEYS:", Object.keys(offer));
+console.log("NAME RAW:", offer.name);
+console.log("DOC:", JSON.stringify(offer, null, 2));
 
     if (!offer) {
       return res.status(404).json({
@@ -36,8 +40,15 @@ router.get("/:affiliateCode/:offerId", async (req, res) => {
     }
 
     console.log("OFFER:", offer);
-    console.log("NAME:", offer.name);
+  console.log(
+  "NAME:",
+  offer.get
+    ? offer.get("name")
+    : offer.name
+);
     console.log("PRICE:", offer.price);
+    console.log("TOOBJECT:");
+console.log(offer.toObject());
 
     const price = Number(offer.price);
 
@@ -105,6 +116,7 @@ router.get("/:affiliateCode/:offerId", async (req, res) => {
       await stripe.checkout.sessions.create(
         payload
       );
+      console.log("LINK CHECKOUT:", session.url);
 
     console.log(
       "SESSION:",

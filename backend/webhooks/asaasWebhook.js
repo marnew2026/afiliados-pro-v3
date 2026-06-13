@@ -3,6 +3,8 @@ import Wallet from "../models/Wallet.js";
 
 export async function asaasWebhook(req, res) {
   try {
+    console.log("🔥 WEBHOOK ASAAS RECEBIDO");
+    console.log(JSON.stringify(req.body, null, 2));
     const event = req.body;
 
     const type = event.event;
@@ -15,24 +17,25 @@ export async function asaasWebhook(req, res) {
 
     const wallet = await Wallet.findOne({ userId: withdraw.userId });
 
-    // 🔵 SUCESSO
-    if (type === "TRANSFER_SUCCESS") {
+ if (type === "TRANSFER_DONE") {
 
-      if (withdraw.status === "paid") {
-        return res.status(200).send("OK");
-      }
+  if (withdraw.status === "paid") {
+    return res.status(200).send("OK");
+  }
 
-      withdraw.status = "paid";
-      withdraw.paidAt = new Date();
+  withdraw.status = "paid";
+  withdraw.paidAt = new Date();
 
-      // 🔵 libera saldo bloqueado
-      if (wallet) {
-        wallet.lockedBalance -= withdraw.amount;
-      }
+  if (wallet) {
+    wallet.lockedBalance -= withdraw.amount;
+  }
 
-      await withdraw.save();
-      await wallet.save();
-    }
+  await withdraw.save();
+
+  if (wallet) {
+    await wallet.save();
+  }
+}
 
     // 🔴 FALHA
     if (type === "TRANSFER_FAILED") {

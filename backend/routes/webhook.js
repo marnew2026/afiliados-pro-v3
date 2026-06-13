@@ -55,47 +55,6 @@ router.post(
 
         console.log("MONGO PRO OK");
       }
-if (event === "TRANSFER_FAILED") {
-
-  const withdraw = await Withdraw.findOne({
-    externalId: transfer.id
-  });
-
-  if (withdraw) {
-
-    withdraw.status = "failed";
-console.log(
-  "STATUS ANTES DE SALVAR:",
-  withdraw.status
-);
-    await withdraw.save();
-
-    console.log(
-      "❌ SAQUE FALHOU:",
-      withdraw._id
-    );
-  }
-}
-
-if (event === "TRANSFER_DONE") {
-
-  const withdraw = await Withdraw.findOne({
-    externalId: transfer.id
-  });
-
-  if (withdraw) {
-
-    withdraw.status = "paid";
-    withdraw.paidAt = new Date();
-
-    await withdraw.save();
-
-    console.log(
-      "✅ SAQUE PAGO:",
-      withdraw._id
-    );
-  }
-}
       res.json({
         received: true,
       });

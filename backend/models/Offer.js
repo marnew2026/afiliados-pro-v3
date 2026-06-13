@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const offerSchema = new mongoose.Schema({
-  title: String,
+  name: String,
   description: String,
   price: Number,
   commissionPercent: Number,
@@ -13,4 +13,6 @@ const offerSchema = new mongoose.Schema({
   },
 });
 
-export default mongoose.model("Offer", offerSchema);
+const Offer = mongoose.model("Offer", offerSchema);
+
+export default Offer;

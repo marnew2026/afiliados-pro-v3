@@ -27,6 +27,7 @@ import trackingRoutes from "./routes/trackingRoutes.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import salesRoutes from "./routes/salesRoutes.js";
 import axios from "axios";
+import webhookRoutes from "./routes/webhook.js";
 import User from "./models/User.js";
 import Campaign from "./models/Campaign.js";
 import adminWithdrawRoutes from "./routes/adminWithdrawRoutes.js";
@@ -89,6 +90,7 @@ app.use("/webhooks/asaas", asaasWebhookRoutes);
 app.use("/admin/campaigns", campaignsAdmin);
 app.use("/go", goRoutes);
 app.use("/admin/withdrawals", adminWithdrawRoutes);
+app.use("/stripe/webhook", webhookRoutes);
 /* =========================
    TEST ROUTES
 ========================= */
