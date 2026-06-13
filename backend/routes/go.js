@@ -4,7 +4,7 @@ import Click from "../models/Click.js";
 import Offer from "../models/Offer.js";
 
 const router = express.Router();
-console.log("🔥🔥🔥 GO VERSION 2026-06-13 15:30");
+
 
 console.log("🔥 GO ROUTE CARREGADA");
 
@@ -29,6 +29,11 @@ router.get("/:affiliateCode/:offerId", async (req, res) => {
     const offer = await Offer.findById(
       offerId
     );
+    return res.json({
+  rota: "go",
+  funcionando: true,
+  offer
+});
 
     if (!offer) {
       return res.status(404).json({
