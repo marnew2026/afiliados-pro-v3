@@ -8,7 +8,12 @@ export async function runTest() {
   try {
     console.log("🚀 Robô multiusuário rodando...");
 
-    const users = await User.find({});
+    const users = await User.find({
+  email: {
+    $exists: true,
+    $ne: ""
+  }
+});
 
     for (const user of users) {
 
