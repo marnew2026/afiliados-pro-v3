@@ -1,64 +1,49 @@
 import express from "express";
+import Wallet from "../models/Wallet.js";
 import User from "../models/User.js";
 import Campaign from "../models/Campaign.js";
 
 const router = express.Router();
-router.get("/debug-user/:email", async (req, res) => {
+
+router.get("/:userId", async (req, res) => {
   try {
-    const user = await User.findOne({
-      email: req.params.email,
-    });
+    const { userId } = req.params;
 
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({
-      error: err.message,
-    });
-  }
-});
-
-router.get("/:email", async (req, res) => {
-  try {
-    const { email } = req.params;
-
-    console.log("EMAIL RECEBIDO:", email);
-
-    const user = await User.findOne({ email });
+    const user = await User.findById(userId);
 
     if (!user) {
-      return res.status(404).json({
-        error: "Usuário não encontrado",
+      return res.status(404).json({ error: "Usuário não encontrado" });
+    }
+
+    let wallet = await Wallet.findOne({ userId });
+
+    if (!wallet) {
+      wallet = await Wallet.create({
+        userId,
+        availableBalance: 0,
+        totalEarned: 0,
       });
     }
 
-    const campaigns = await Campaign.find({
-      userId: user._id,
-    });
-
-    const totalEarnings = campaigns.reduce(
-      (sum, c) => sum + Number(c.earnings || 0),
-      0
-    );
+    const campaigns = await Campaign.find({ userId });
 
     const totalClicks = campaigns.reduce(
-      (acc, c) => acc + Number(c.clicks || 0),
+      (acc, c) => acc + (c.clicks || 0),
       0
     );
 
-    res.json({
-     totalEarnings: Number(totalEarnings.toFixed(2)),
-      totalWithdrawn: 0,
-      availableBalance: Number(totalEarnings.toFixed(2)),
-      totalClicks,
+    return res.json({
+      user,
+      wallet,
       campaigns,
+      metrics: {
+        totalEarnings: wallet.totalEarned || 0,
+        totalClicks,
+      },
     });
 
   } catch (err) {
-    console.log("❌ DASHBOARD ERROR:", err);
-
-    res.status(500).json({
-      error: "Erro dashboard",
-    });
+    return res.status(500).json({ error: err.message });
   }
 });
 

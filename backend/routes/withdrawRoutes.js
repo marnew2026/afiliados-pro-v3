@@ -1,51 +1,112 @@
 import express from "express";
-import { requestWithdraw } from "../services/withdrawService.js";
+import { safeCreateLedger } from "../src/services/safeCreateLedger.js";
+import { rebuildWallet } from "../src/services/rebuildWallet.js";
+
 import Withdraw from "../models/Withdraw.js";
 
+import { lockWallet } from "../src/lib/walletLock.js";
 const router = express.Router();
 
-router.post("/", async (req, res) => {
+router.post("/create", async (req, res) => {
+    console.log("🔥 ENTROU NA ROTA /withdraw/create");
+    console.log("1 - antes do withLock");
   try {
-    if (!req.user || !req.user.id) {
-      return res.status(401).json({ error: "Não autenticado" });
+
+    const { userId, amount, pixKey, withdrawId } = req.body;
+
+if (!pixKey) {
+  throw new Error("PIX obrigatório");
+}
+
+if (!withdrawId) {
+  throw new Error("withdrawId obrigatório");
+}
+
+if (Number(amount) <= 0) {
+  throw new Error("Valor inválido");
+}
+
+const existingWithdraw = await Withdraw.findOne({
+  withdrawId,
+});
+
+if (existingWithdraw) {
+  return res.json({
+    success: true,
+    withdraw: existingWithdraw,
+    duplicated: true,
+  });
+}
+   const result = await lockWallet(userId, async (wallet, session) => {
+
+    const existing = await Withdraw.findOne({
+        userId,
+        status: {
+            $in: ["pending", "processing", "sent"],
+        },
+    }).session(session);
+
+    if (existing) {
+        throw new Error("Já existe um saque em andamento.");
     }
 
-    const userId = req.user.id;
-    const { amount, pixKey } = req.body;
-
-    const value = Number(String(amount).replace(",", "."));
-
-    if (isNaN(value) || value <= 0) {
-      return res.status(400).json({ error: "Valor inválido" });
+    if (Number(wallet.availableBalance) < Number(amount)) {
+        throw new Error("Saldo insuficiente");
     }
 
-    if (!pixKey) {
-      return res.status(400).json({ error: "PIX obrigatório" });
-    }
+    const [newWithdraw] = await Withdraw.create(
+        [{
+            userId,
+            amount,
+            pixKey,
+            withdrawId,
+            referenceId: withdrawId,
+            status: "pending",
+        }],
+        { session }
+    );
 
-    const pendingWithdraw = await Withdraw.findOne({
-      userId,
-      status: "processing",
-    });
+    const ledger = await safeCreateLedger(
+        {
+            userId,
+            type: "debit",
+            amount,
+            status: "pending",
+            referenceId: withdrawId,
+            source: "withdraw",
+        },
+        session
+    );
 
-    if (pendingWithdraw) {
-      return res.status(400).json({
-        error: "Você já tem um saque em andamento",
+    await rebuildWallet(userId, session);
+
+    return {
+        success: true,
+        withdraw: newWithdraw,
+        ledger,
+    };
+});
+
+return res.json(result);
+
+
+   
+
+   } catch (err) {
+    console.error(err);
+
+    if (err.code === 11000) {
+      const withdraw = await Withdraw.findOne({
+        withdrawId: req.body.withdrawId,
+      });
+
+      return res.json({
+        success: true,
+        withdraw,
+        duplicated: true,
       });
     }
 
-    const withdraw = await requestWithdraw({
-      userId,
-      amount: value,
-      pixKey,
-    });
-
-    return res.json({
-      success: true,
-      withdraw,
-    });
-
-  } catch (err) {
     return res.status(400).json({
       error: err.message,
     });

@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 
 import Campaign from "./models/Campaign.js";
 
-dotenv.config();
+
 
 await mongoose.connect(process.env.MONGO_URI);
 

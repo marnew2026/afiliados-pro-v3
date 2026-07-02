@@ -27,10 +27,15 @@ const LedgerSchema = new mongoose.Schema(
   required: true,
 },
     source: {
-      type: String,
-      enum: ["campaign", "withdraw", "adjustment"],
-      required: true,
-    },
+  type: String,
+  enum: [
+    "campaign",
+    "withdraw",
+    "adjustment",
+    "sale"
+  ],
+  required: true,
+},
 
     metadata: {
   type: Object,
@@ -50,8 +55,13 @@ const LedgerSchema = new mongoose.Schema(
 // 🔒 REGRA ANTI DUPLICAÇÃO (IMPORTANTE)
 
 LedgerSchema.index(
-  { referenceId: 1, source: 1 },
-  { unique: true }
+  {
+    referenceId: 1,
+    type: 1,
+  },
+  {
+    unique: true,
+  }
 );
 
 LedgerSchema.index({ userId: 1 });

@@ -16,7 +16,8 @@ export const register = async (req, res) => {
       email,
       password: hashedPassword,
     });
-     user.affiliateId = uuidv4();    
+      user.affiliateId = uuidv4();
+await user.save();
     res.status(201).json({
       message: "Usuário criado com sucesso",
       user: {

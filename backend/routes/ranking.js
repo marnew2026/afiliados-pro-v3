@@ -1,31 +1,96 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
-import Sale from "../models/Sale.js";
+
+import Campaign from "../models/Campaign.js";
+import User from "../models/User.js";
 
 const router = express.Router();
 
-router.get("/", async (req, res) => {
-  const sales = await Sale.find();
+console.log("📊 RANKING ROUTE SAAS OK");
 
-  const ranking = {};
+/**
+ * 🖱 RANKING POR CLIQUES
+ */
+router.get("/clicks", async (req, res) => {
+  try {
+    const campaigns = await Campaign.find({});
 
-  sales.forEach(s => {
-    if (!ranking[s.affiliateId]) {
-      ranking[s.affiliateId] = {
-        affiliateId: s.affiliateId,
-        revenue: 0,
-        sales: 0
-      };
+    const map = new Map();
+
+    for (const c of campaigns) {
+      const userId = c.userId?.toString();
+
+      if (!userId) continue;
+
+      map.set(userId, (map.get(userId) || 0) + (c.clicks || 0));
     }
 
-    ranking[s.affiliateId].revenue += s.commission;
-    ranking[s.affiliateId].sales += 1;
-  });
+    const result = await buildRanking(map);
 
-  const sorted = Object.values(ranking)
-    .sort((a, b) => b.revenue - a.revenue)
-    .slice(0, 10);
+    return res.json(result);
+  } catch (error) {
+    console.error("❌ RANKING CLICKS ERROR:", error);
 
-  res.json(sorted);
+    return res.status(500).json({
+      error: "ranking error",
+    });
+  }
 });
+
+/**
+ * 💰 RANKING POR GANHOS
+ */
+router.get("/earnings", async (req, res) => {
+  try {
+    const campaigns = await Campaign.find({});
+
+    const map = new Map();
+
+    for (const c of campaigns) {
+      const userId = c.userId?.toString();
+
+      if (!userId) continue;
+
+      map.set(userId, (map.get(userId) || 0) + (c.earnings || 0));
+    }
+
+    const result = await buildRanking(map);
+
+    return res.json(result);
+  } catch (error) {
+    console.error("❌ RANKING EARNINGS ERROR:", error);
+
+    return res.status(500).json({
+      error: "ranking error",
+    });
+  }
+});
+
+/**
+ * 🧠 FUNÇÃO CENTRAL (TRANSFORMA MAP EM RANKING)
+ */
+async function buildRanking(map) {
+  const entries = [...map.entries()];
+
+  // ordena desc
+  entries.sort((a, b) => b[1] - a[1]);
+
+  const result = [];
+
+  for (const [userId, value] of entries) {
+    const user = await User.findById(userId);
+
+    result.push({
+      userId,
+      email: user?.email || "unknown",
+      value,
+      isPro: user?.isPro || false,
+    });
+  }
+
+  return result;
+}
 
 export default router;

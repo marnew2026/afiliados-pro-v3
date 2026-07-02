@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-dotenv.config();
+
 
 import { sendPixToAsaas } from "../services/asaasService.js";
 

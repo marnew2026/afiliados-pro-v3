@@ -3,21 +3,32 @@ import User from "../models/User.js";
 
 const router = express.Router();
 
-router.get("/:email", async (req, res) => {
+/**
+ * STATUS PRO DO USUÁRIO (PADRÃO USERID)
+ * GET /user-pro/:userId
+ */
+router.get("/:userId", async (req, res) => {
   try {
-    const user = await User.findOne({ email: req.params.email });
+    const { userId } = req.params;
+
+    const user = await User.findById(userId);
 
     if (!user) {
-      return res.json({ isPro: false });
+      return res.json({
+        isPro: false,
+      });
     }
 
-    res.json({
+    return res.json({
       isPro: user.isPro || false,
-      email: user.email,
+      userId: user._id,
     });
+
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: "Erro" });
+    console.log("USER-PRO ERROR:", error);
+    return res.status(500).json({
+      error: "Erro ao buscar status do usuário",
+    });
   }
 });
 

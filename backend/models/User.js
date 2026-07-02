@@ -3,20 +3,24 @@ import mongoose from "mongoose";
 const UserSchema = new mongoose.Schema({
   name: String,
   email: { type: String, unique: true },
-  password: String,
 
-  isPro: { type: Boolean, default: false },
-
-  affiliateCode: {
+  plan: {
     type: String,
-    unique: true,
-    index: true,
+    enum: ["FREE", "PRO", "SCALE"],
+    default: "FREE",
   },
 
-  riskScore: { type: Number, default: 50 },
-  trustLevel: { type: String, default: "MEDIUM" },
+  isPro: { type: Boolean, default: false },
+  status: {
+  type: String,
+  default: "pending", // pending | processing | done | failed
+},
 
-  stripeAccountId: String,
+lastProcessedAt: {
+  type: Date,
+  default: null
+}
 });
+
 
 export default mongoose.model("User", UserSchema);

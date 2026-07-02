@@ -1,144 +1,77 @@
 import express from "express";
-import Stripe from "stripe";
 import Click from "../models/Click.js";
 import Offer from "../models/Offer.js";
+import Stripe from "stripe";
+
 
 const router = express.Router();
+let stripe;
 
-console.log("🔥 GO ROUTE CARREGADA");
+function getStripe() {
+  if (!stripe) {
+    const key = process.env.STRIPE_SECRET_KEY;
 
-const stripe = new Stripe(
-  process.env.STRIPE_SECRET_KEY
-);
+    if (!key) {
+      throw new Error("STRIPE_SECRET_KEY não carregada");
+    }
 
+    stripe = new Stripe(key);
+  }
+
+  return stripe;
+}
 router.get("/:affiliateCode/:offerId", async (req, res) => {
   try {
-
-    console.log(
-      "🔥🔥🔥 GO VERSION LIMPA 2026-06-13"
-    );
+    const stripe = getStripe(); // 👈 AQUI
 
     const { affiliateCode, offerId } = req.params;
+
+    const offer = await Offer.findById(offerId);
+
+    if (!offer) {
+      return res.status(404).json({ error: "Oferta não encontrada" });
+    }
+
+    const price = Number(offer.price);
+
+    if (!price || price <= 0) {
+      return res.status(400).json({ error: "Preço inválido" });
+    }
 
     await Click.create({
       affiliateId: affiliateCode,
       offerId,
     });
 
-    const offer = await Offer.findById(
-      offerId
-    );
-    console.log("TYPE:", typeof offer);
-console.log("KEYS:", Object.keys(offer));
-console.log("NAME RAW:", offer.name);
-console.log("DOC:", JSON.stringify(offer, null, 2));
-
-    if (!offer) {
-      return res.status(404).json({
-        error: "Oferta não encontrada",
-      });
-    }
-
-    console.log("OFFER:", offer);
-  console.log(
-  "NAME:",
-  offer.get
-    ? offer.get("name")
-    : offer.name
-);
-    console.log("PRICE:", offer.price);
-    console.log("TOOBJECT:");
-console.log(offer.toObject());
-
-    const price = Number(offer.price);
-
-    if (!price || price <= 0) {
-      return res.status(400).json({
-        error: "Preço inválido",
-      });
-    }
-
-    const payload = {
+    const session = await stripe.checkout.sessions.create({
       mode: "payment",
-
-      payment_method_types: [
-        "card"
-      ],
-
+      payment_method_types: ["card"],
       line_items: [
         {
           price_data: {
             currency: "brl",
-
             product_data: {
-              name:
-                offer.name ||
-                "Produto Teste",
+              name: offer.name || "Produto",
             },
-
-            unit_amount:
-              Math.round(price * 100),
+            unit_amount: Math.round(price * 100),
           },
-
           quantity: 1,
         },
       ],
-
-      success_url:
-        `${process.env.BASE_URL}/success`,
-
-      cancel_url:
-        `${process.env.BASE_URL}/cancel`,
-
+      success_url: `${process.env.BASE_URL}/success`,
+      cancel_url: `${process.env.BASE_URL}/cancel`,
       metadata: {
         affiliateId: affiliateCode,
         offerId,
-        commission:
-          String(
-            offer.commissionPercent || 0
-          ),
+        commission: String(offer.commissionPercent || 0),
       },
-    };
+    });
 
-    console.log(
-      "PAYLOAD STRIPE:"
-    );
-
-    console.log(
-      JSON.stringify(
-        payload,
-        null,
-        2
-      )
-    );
-
-    const session =
-      await stripe.checkout.sessions.create(
-        payload
-      );
-      console.log("LINK CHECKOUT:", session.url);
-
-    console.log(
-      "SESSION:",
-      session.id
-    );
-
-    return res.redirect(
-      session.url
-    );
+    return res.redirect(session.url);
 
   } catch (err) {
-
-    console.log(
-      "❌ ERRO /go COMPLETO:"
-    );
-
-    console.log(err);
-
-    return res.status(500).json({
-      error: err.message,
-    });
+    console.log("❌ ERRO /go:", err.message);
+    return res.status(500).json({ error: err.message });
   }
 });
-
 export default router;

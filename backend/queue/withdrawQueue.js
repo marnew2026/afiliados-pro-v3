@@ -1,6 +1,7 @@
 import Withdraw from "../models/Withdraw.js";
+import Ledger from "../models/Ledger.js";
 import axios from "axios";
-
+import { rebuildWallet } from "../src/services/rebuildWallet.js";
 let isProcessing = false;
 
 export async function processWithdrawQueue() {
@@ -8,35 +9,72 @@ export async function processWithdrawQueue() {
 
   isProcessing = true;
 
-  let withdraw;
+  let withdraw = null;
 
   try {
-    withdraw = await Withdraw.findOne({
-      status: "queued",
-    }).sort({ createdAt: 1 });
+    // 🔒 Operação atômica:
+    // procura o pending mais antigo
+    // e já marca como processing
+    withdraw = await Withdraw.findOneAndUpdate(
+      {
+        status: "pending",
+      },
+      {
+        $set: {
+          status: "processing",
+          processingAt: new Date(),
+        },
+      },
+      {
+        sort: { createdAt: 1 },
+        new: true,
+      }
+    );
 
     if (!withdraw) {
       return;
     }
 
-    // evita reenviar saque já enviado
-    if (withdraw.externalId) {
-      return;
-    }
+    console.log("💸 PROCESSANDO SAQUE:", withdraw._id.toString());
 
-    withdraw.status = "processing";
-    await withdraw.save();
+    console.log("ASAAS TOKEN:");
+    console.log(process.env.ASAAS_API_KEY);
 
-    console.log(
-      "💸 PROCESSANDO SAQUE:",
-      withdraw._id.toString()
-    );
+    console.log("PIX PAYLOAD:");
+    console.log({
+      pixAddressKey: withdraw.pixKey,
+      pixAddressKeyType: "EMAIL",
+      value: Number(withdraw.amount),
+    });
+
+    // Evita envio duplicado
+   const currentWithdraw = await Withdraw.findById(withdraw._id);
+
+if (!currentWithdraw) {
+  console.log("⚠️ Saque não encontrado.");
+  return;
+}
+
+if (currentWithdraw.status !== "processing") {
+  console.log("⚠️ Saque já mudou de estado.");
+  return;
+}
+
+if (currentWithdraw.asaasTransferId) {
+  console.log(
+    "⚠️ Transferência já registrada:",
+    currentWithdraw.asaasTransferId
+  );
+
+  return;
+}
 
     const pix = await axios.post(
       "https://api.asaas.com/v3/transfers",
       {
         pixAddressKey: withdraw.pixKey,
-        value: withdraw.amount,
+        pixAddressKeyType: "EMAIL",
+        value: Number(withdraw.amount),
       },
       {
         headers: {
@@ -46,40 +84,39 @@ export async function processWithdrawQueue() {
       }
     );
 
-    console.log("ASAAS OK:");
-    console.log(
-      JSON.stringify(pix.data, null, 2)
-    );
+    console.log("ASAAS RESPONSE:");
+    console.log(JSON.stringify(pix.data, null, 2));
 
-    if (!pix.data?.id) {
-      throw new Error(
-        "Asaas não retornou ID da transferência"
-      );
-    }
+    const sentResult = await Withdraw.updateOne(
+  {
+    _id: withdraw._id,
+    status: "processing",
+    asaasTransferId: null,
+  },
+  {
+    $set: {
+      status: "sent",
+      sentAt: new Date(),
+      errorMessage: null,
+      asaasTransferId: pix.data.id,
+      asaasStatus: pix.data.status,
+      asaasOperationType: pix.data.operationType,
+      asaasResponse: pix.data,
+    },
+  }
+);
 
-    // salva ID da transferência
-    withdraw.externalId = pix.data.id;
+if (sentResult.modifiedCount !== 1) {
+  console.log(
+    "⚠️ Outro processo já registrou esta transferência."
+  );
 
-    // aguarda webhook confirmar
-    withdraw.status = "processing";
+  return;
+}
 
-    await withdraw.save();
-
-    console.log(
-      "✅ PIX ENVIADO:",
-      pix.data.id
-    );
-
+    console.log("✅ PIX ENVIADO:", pix.data.id);
   } catch (err) {
-
-    console.log(
-      "STATUS:",
-      err.response?.status
-    );
-
-    console.log(
-      "DATA:"
-    );
+    console.log("🔥 ASAAS ERROR FULL:");
 
     console.log(
       JSON.stringify(
@@ -89,48 +126,58 @@ export async function processWithdrawQueue() {
       )
     );
 
-    const errorCode =
-      err.response?.data?.errors?.[0]?.code;
-
-    // saque já existe no Asaas
-    if (
-      errorCode ===
-      "checkout.already.requested"
-    ) {
-
-      console.log(
-        "⚠️ Saque já existe no Asaas"
-      );
-
-      if (withdraw) {
-
-        withdraw.status = "processing";
-
-        await withdraw.save();
-      }
-
-      return;
-    }
+    console.log("STATUS:", err.response?.status);
+    console.log("MESSAGE:", err.message);
 
     if (withdraw) {
+      // Consulta o estado REAL do saque no banco
+  
 
-      withdraw.status = "failed";
+      // Só marca como failed se ainda estiver em processing
+     // Marca como failed somente se ainda estiver em processing
+const failedResult = await Withdraw.updateOne(
+  {
+    _id: withdraw._id,
+    status: "processing",
+  },
+  {
+    $set: {
+      status: "failed",
+      errorMessage: err.message,
+    },
+  }
+);
 
-      await withdraw.save();
-    }
+if (failedResult.modifiedCount !== 1) {
+  console.log("⚠️ Saque já mudou de estado.");
+  return;
+}
 
-    console.log(
-      "❌ QUEUE ERROR:",
-      err.message
-    );
+const ledgerResult = await Ledger.updateOne(
+  {
+    referenceId: withdraw.withdrawId,
+    type: "debit",
+  },
+  {
+    $set: {
+      status: "failed",
+    },
+  }
+);
 
+if (ledgerResult.matchedCount !== 1) {
+  console.log(
+    "⚠️ Ledger não encontrado:",
+    withdraw.withdrawId
+  );
+}
+
+
+
+await rebuildWallet(withdraw.userId);
+
+console.log("✅ SAQUE MARCADO COMO FAILED");   }
   } finally {
-
     isProcessing = false;
-
-    setTimeout(
-      processWithdrawQueue,
-      2000
-    );
   }
 }

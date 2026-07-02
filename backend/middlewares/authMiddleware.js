@@ -12,7 +12,16 @@ export const protect = (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    req.user = decoded;
+    // 🔥 PADRÃO GLOBAL DEFINITIVO
+    req.user = {
+      id: decoded.id.toString()
+};
+
+    if (!req.user.id) {
+      return res.status(401).json({ message: "Token inválido (sem userId)" });
+    }
+
+    console.log("🔐 USER AUTH:", req.user.id);
 
     next();
   } catch (error) {

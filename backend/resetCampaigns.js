@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 
 import Campaign from "./models/Campaign.js";
 
-dotenv.config();
+
 
 console.log("MONGO:", process.env.MONGO_URI);
 

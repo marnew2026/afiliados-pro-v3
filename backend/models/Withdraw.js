@@ -1,49 +1,76 @@
 import mongoose from "mongoose";
 
-const WithdrawSchema = new mongoose.Schema({
-
+const WithdrawSchema = new mongoose.Schema(
+{
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    required: false,
+    required: true,
     index: true,
   },
 
-  amount: Number,
+  amount: {
+    type: Number,
+    required: true,
+  },
 
-  pixKey: String,
-
-  externalId: {
+  pixKey: {
     type: String,
+    required: true,
+  },
+
+  referenceId: {
+    type: String,
+    required: true,
+    index: true,
+  },
+
+  withdrawId: {
+    type: String,
+    required: true,
     unique: true,
     index: true,
   },
 
-  asaasTransferId: String,
+  asaasTransferId: {
+    type: String,
+    default: null,
+    index: true,
+  },
+
+  asaasStatus: {
+    type: String,
+    default: null,
+  },
+
+  asaasResponse: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null,
+  },
 
   status: {
     type: String,
-    default: "pending",
     enum: [
       "pending",
       "processing",
       "sent",
       "paid",
-      "failed"
+      "failed",
     ],
+    default: "pending",
     index: true,
   },
 
-  errorMessage: String,
-
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
+  processingAt: Date,
 
   sentAt: Date,
 
   paidAt: Date,
 
-});
+  errorMessage: String,
+},
+{
+  timestamps: true,
+}
+);
 
 export default mongoose.model("Withdraw", WithdrawSchema);

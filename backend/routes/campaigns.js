@@ -1,24 +1,36 @@
 import express from "express";
-import Wallet from "../models/Wallet.js";
-import Transaction from "../models/Transaction.js";
+
 import Campaign from "../models/Campaign.js";
+import Wallet from "../models/Wallet.js";
 import Withdraw from "../models/Withdraw.js";
-import LedgerEntry from "../models/LedgerEntry.js";
-import { protect } from "../middlewares/authMiddleware.js";
+import Transaction from "../models/Transaction.js";
+import { safeCreateLedger } from "../src/services/safeCreateLedger.js";
+import { rebuildWallet } from "../src/services/rebuildWallet.js";
+
 import User from "../models/User.js";
-console.log("🔥 CAMPAIGNS ROUTE VERSAO 999999");
+import { protect } from "../middlewares/authMiddleware.js";
+
 const router = express.Router();
 
+/**
+ * 🔐 TODAS ROTAS PROTEGIDAS
+ */
+router.use(protect);
 
+console.log("🔥 CAMPAIGNS ROUTE SAAS BLINDADA");
+
+/**
+ * 📊 DASHBOARD USER (USERID PADRÃO)
+ */
 router.get("/user", async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const campaigns = await Campaign.find({ userId });
+    const campaigns = await Campaign.find({ userId }).sort({ createdAt: -1 });
 
     const withdrawals = await Withdraw.find({
       userId,
-      status: { $in: ["pending", "paid"] }
+      status: { $in: ["pending", "paid"] },
     });
 
     const wallet = await Wallet.findOne({ userId });
@@ -30,62 +42,29 @@ router.get("/user", async (req, res) => {
       availableBalance: wallet?.availableBalance || 0,
       withdrawals,
     });
-
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-// router.use(protect);
 
+/**
+ * 🧠 CRIAR CAMPANHA (SAFE)
+ */
 router.post("/create", async (req, res) => {
   try {
-    const { email, nome, link } = req.body;
+    const userId = req.user.id;
+    const { nome, link } = req.body;
 
-    const user = await User.findOne({ email });
-    console.log("USER ENCONTRADO:", user);
-console.log("USER ID:", user._id);
+    const user = await User.findById(userId);
 
     if (!user) {
       return res.status(404).json({
-        error: "Usuário não encontrado"
+        error: "User inválido",
       });
     }
-router.get("/:email", async (req, res) => {
-  try {
-    console.log(
-      "BUSCANDO CAMPANHAS:",
-      req.params.email
-    );
 
-    const user = await User.findOne({
-      email: req.params.email,
-    });
-
-    if (!user) {
-      return res.json([]);
-    }
-
-    const campaigns = await Campaign.find({
-      userId: user._id,
-    });
-
-    console.log(
-      "CAMPANHAS ENCONTRADAS:",
-      campaigns.length
-    );
-
-    res.json(campaigns);
-
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      error: err.message,
-    });
-  }
-});
     const campaign = await Campaign.create({
-      userId: user._id,
+      userId,
       nome,
       link,
       active: true,
@@ -94,43 +73,48 @@ router.get("/:email", async (req, res) => {
       sales: 0,
     });
 
-    res.json(campaign);
-
+    return res.json(campaign);
   } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      error: error.message
+    return res.status(500).json({
+      error: error.message,
     });
   }
 });
 
-/* REGISTRAR CLIQUE */
+/**
+ * 🖱 CLICK TRACKING
+ */
 router.post("/:id/click", async (req, res) => {
   try {
     const campaign = await Campaign.findById(req.params.id);
 
     if (!campaign) {
-      return res.status(404).json({ error: "Campanha não encontrada" });
+      return res.status(404).json({
+        error: "Campanha não encontrada",
+      });
     }
 
     campaign.clicks = (campaign.clicks || 0) + 1;
 
     await campaign.save();
 
-    res.json({ clicks: campaign.clicks });
-
+    return res.json({ clicks: campaign.clicks });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
-/* REGISTRAR VENDA */
+/**
+ * 💰 SALE TRACKING (COM LEDGER)
+ */
 router.post("/:id/sale", async (req, res) => {
   try {
     const campaign = await Campaign.findById(req.params.id);
 
     if (!campaign) {
-      return res.status(404).json({ error: "Campanha não encontrada" });
+      return res.status(404).json({
+        error: "Campanha não encontrada",
+      });
     }
 
     campaign.sales = (campaign.sales || 0) + 1;
@@ -139,14 +123,16 @@ router.post("/:id/sale", async (req, res) => {
 
     await campaign.save();
 
-    await LedgerEntry.create({
-      userId: campaign.userId,
-      type: "credit",
-      amount: earnings,
-      status: "confirmed",
-      referenceId: campaign._id.toString(),
-      description: "Venda registrada",
-    });
+    await safeCreateLedger({
+  userId: campaign.userId,
+  type: "credit",
+  amount: earnings,
+  status: "confirmed",
+  referenceId: `campaign-${campaign._id}`,
+  source: "campaign",
+});
+
+await rebuildWallet(campaign.userId);
 
     await Transaction.create({
       userId: campaign.userId,
@@ -154,22 +140,68 @@ router.post("/:id/sale", async (req, res) => {
       amount: earnings,
       description: "Venda registrada",
     });
+      const wallet = await Wallet.findOne({
+  userId: campaign.userId,
+});
 
-    res.json({ success: true, earnings });
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+if (wallet) {
+  wallet.availableBalance += earnings;
+  wallet.totalEarned += earnings;
+  await wallet.save();
+}
+    return res.json({
+      success: true,
+      earnings,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      error: error.message,
+    });
   }
 });
-/* EXCLUIR CAMPANHA */
+router.post("/create-dev", async (req, res) => {
+  try {
+    const { userId, nome, link } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: "userId obrigatório" });
+    }
+
+    const campaign = await Campaign.create({
+      userId,
+      nome,
+      link,
+      clicks: 0,
+      sales: 0,
+      earnings: 0,
+      active: true,
+    });
+
+    return res.json(campaign);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+/**
+ * 🗑 DELETE CAMPANHA
+ */
 router.delete("/:id", async (req, res) => {
   try {
+    const campaign = await Campaign.findById(req.params.id);
+
+    if (!campaign) {
+      return res.status(404).json({
+        error: "Campanha não encontrada",
+      });
+    }
+
     await Campaign.findByIdAndDelete(req.params.id);
 
-    res.json({ ok: true });
-
+    return res.json({ ok: true });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({
+      error: error.message,
+    });
   }
 });
 

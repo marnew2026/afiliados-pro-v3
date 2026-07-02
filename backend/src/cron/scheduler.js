@@ -15,6 +15,8 @@ export async function runTest() {
   }
 });
 
+await new Promise((r) => setTimeout(r, 1500));
+
     for (const user of users) {
 
       console.log("👤 USER:", user.email);

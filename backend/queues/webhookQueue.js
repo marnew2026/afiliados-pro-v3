@@ -1,7 +1,7 @@
 import { Queue } from "bullmq";
-import IORedis from "ioredis";
+import { getRedis } from "../src/lib/redis.js";
 
-const connection = new IORedis(process.env.REDIS_URL);
+const connection = getRedis();
 
 export const webhookQueue = new Queue("webhooks", {
   connection,

@@ -1,20 +1,12 @@
 import mongoose from "mongoose";
 
-const AuditLogSchema = new mongoose.Schema({
+const AuditSchema = new mongoose.Schema({
+  action: String,
   userId: String,
-
-  action: String, // WITHDRAW_REQUEST | PIX_SENT | PIX_CONFIRMED | BLOCKED_FRAUD
-
-  amount: Number,
-
+  before: Object,
+  after: Object,
   ip: String,
+  source: String,
+}, { timestamps: true });
 
-  metadata: Object,
-
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
-
-export default mongoose.model("AuditLog", AuditLogSchema);
+export default mongoose.model("AuditLog", AuditSchema);

@@ -1,6 +1,16 @@
 import dotenv from "dotenv";
-dotenv.config();
+
 import axios from "axios";
+console.log("ASAAS TOKEN:");
+
+console.log(process.env.ASAAS_API_KEY);
+
+console.log("PIX PAYLOAD:");
+
+console.log({
+  pixAddressKey: withdraw.pixKey,
+  value: withdraw.amount,
+});
 
 const api = axios.create({
   baseURL: process.env.ASAAS_URL,

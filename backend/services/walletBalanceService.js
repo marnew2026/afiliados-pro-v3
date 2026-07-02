@@ -1,12 +1,12 @@
-import LedgerEntry from "../models/LedgerEntry.js";
+import Ledger from "../models/Ledger.js";
 
 export async function getBalance(userId) {
-  const credits = await LedgerEntry.aggregate([
+  const credits = await Ledger.aggregate([
     { $match: { userId, type: "credit", status: "confirmed" } },
     { $group: { _id: null, total: { $sum: "$amount" } } },
   ]);
 
-  const debits = await LedgerEntry.aggregate([
+  const debits = await Ledger.aggregate([
     { $match: { userId, type: "debit", status: "confirmed" } },
     { $group: { _id: null, total: { $sum: "$amount" } } },
   ]);
