@@ -1,29 +1,27 @@
 import express from "express";
 import { safeCreateLedger } from "../src/services/safeCreateLedger.js";
 import { rebuildWallet } from "../src/services/rebuildWallet.js";
-
+import User from "../models/User.js";
 import Withdraw from "../models/Withdraw.js";
 
 import { lockWallet } from "../src/lib/walletLock.js";
 const router = express.Router();
-
 router.post("/create", async (req, res) => {
-    console.log("🔥 ENTROU NA ROTA /withdraw/create");
-    console.log("1 - antes do withLock");
   try {
 
-    const { userId, amount, pixKey, withdrawId } = req.body;
+    const {
+  userId,
+  amount,
+  pixKey,
+  withdrawId,
+} = req.body;
 
-if (!pixKey) {
-  throw new Error("PIX obrigatório");
-}
+const user = await User.findById(userId);
 
-if (!withdrawId) {
-  throw new Error("withdrawId obrigatório");
-}
-
-if (Number(amount) <= 0) {
-  throw new Error("Valor inválido");
+if (!user) {
+  return res.status(404).json({
+    error: "Usuário não encontrado",
+  });
 }
 
 const existingWithdraw = await Withdraw.findOne({
@@ -50,7 +48,7 @@ if (existingWithdraw) {
         throw new Error("Já existe um saque em andamento.");
     }
 
-    if (Number(wallet.availableBalance) < Number(amount)) {
+    if (Number(wallet?.availableBalance || 0) < Number(amount)) {
         throw new Error("Saldo insuficiente");
     }
 

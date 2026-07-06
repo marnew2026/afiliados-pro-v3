@@ -1,8 +1,21 @@
 import mongoose from "mongoose";
 
-const UserSchema = new mongoose.Schema({
-  name: String,
-  email: { type: String, unique: true },
+const UserSchema = new mongoose.Schema(
+{
+  // legado (pode ser removido futuramente)
+
+  name: {
+    type: String,
+    default: "",
+  },
+
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
+  },
 
   plan: {
     type: String,
@@ -10,17 +23,25 @@ const UserSchema = new mongoose.Schema({
     default: "FREE",
   },
 
-  isPro: { type: Boolean, default: false },
+  isPro: {
+    type: Boolean,
+    default: false,
+  },
+
   status: {
-  type: String,
-  default: "pending", // pending | processing | done | failed
+    type: String,
+    enum: ["pending", "processing", "done", "failed"],
+    default: "pending",
+  },
+
+  lastProcessedAt: {
+    type: Date,
+    default: null,
+  },
 },
-
-lastProcessedAt: {
-  type: Date,
-  default: null
+{
+  timestamps: true,
 }
-});
-
+);
 
 export default mongoose.model("User", UserSchema);

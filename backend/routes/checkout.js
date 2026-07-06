@@ -1,11 +1,14 @@
 import express from "express";
 import Stripe from "stripe";
-
+console.log("🔥 CHECKOUT ROUTE CARREGADA");
 const router = express.Router();
-
+console.log("🔥 CHECKOUT ROUTES CARREGADA");
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 router.post("/create-checkout", async (req, res) => {
+
+    console.log("🔥 CREATE CHECKOUT CHAMADO");
+    console.log("🔥🔥🔥 CHECKOUT.JS FOI IMPORTADO 🔥🔥🔥");
   try {
     const { email } = req.body;
 

@@ -10,10 +10,13 @@ const serviceAccount = JSON.parse(
   Buffer.from(base64, "base64").toString("utf8")
 );
 
-if (!admin.apps.length) {
+// 🔥 FIX PRINCIPAL (não usa mais admin.apps.length)
+try {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
+} catch (e) {
+  // já inicializado → ignora erro
 }
 
 export default admin;

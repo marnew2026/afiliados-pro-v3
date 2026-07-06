@@ -2,7 +2,7 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import User from "../models/User.js";
-
+import jwt from "jsonwebtoken";
 const router = express.Router();
 
 /* REGISTER */
@@ -48,5 +48,57 @@ router.post("/login", async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 });
+/* FIREBASE LOGIN */
+router.post("/firebase-login", async (req, res) => {
+  try {
+    const { email, firebaseUid } = req.body;
 
+    if (!email || !firebaseUid) {
+      return res.status(400).json({
+        error: "email e firebaseUid são obrigatórios",
+      });
+    }
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = await User.create({
+        email,
+        firebaseUid,
+        name: "",
+      });
+    } else if (!user.firebaseUid) {
+      user.firebaseUid = firebaseUid;
+      await user.save();
+    }
+
+    const token = jwt.sign(
+      {
+        id: user._id,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "30d",
+      }
+    );
+
+    return res.json({
+      token,
+      user: {
+        _id: user._id,
+        email: user.email,
+        name: user.name,
+        plan: user.plan,
+        isPro: user.isPro,
+      },
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    return res.status(500).json({
+      error: err.message,
+    });
+  }
+});
 export default router;

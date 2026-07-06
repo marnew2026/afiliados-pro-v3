@@ -1,34 +1,25 @@
 import "dotenv/config";
-
 import express from "express";
 import http from "http";
 import cors from "cors";
 import cron from "node-cron";
 import { Server } from "socket.io";
-
 import connectDB from "./config/db.js";
 import { connection } from "./src/lib/bullmqConnection.js";
-
-import hotmartClick from "./hotmart/routes/click.routes.js";
-import dashboardRoutes from "./hotmart/routes/dashboard.routes.js";
-import attributionRoutes from "./hotmart/routes/attribution.routes.js";
-
-import conversionRoutes from "./hotmart/routes/conversion.routes.js";
-import reportsRoutes from "./hotmart/routes/reports.routes.js";
-import analyticsRoutes from "./hotmart/routes/analytics.routes.js";
-import roiRoutes from "./hotmart/routes/roi.routes.js";
-import rankingRoutes from "./hotmart/routes/ranking.routes.js";
 import debugRoutes from "./routes/debug.js";
-
 import goRoutes from "./routes/go.js";
 import campaignsRoutes from "./routes/campaigns.js";
 import userRoutes from "./routes/userRoutes.js";
 import withdrawRoutes from "./routes/withdrawRoutes.js";
-
 import { initWalletSocket } from "./src/realtime/walletEvents.js";
 import ledgerRoutes from "./routes/ledgerRoutes.js";
 import adminWithdrawRoutes from "./routes/adminWithdrawRoutes.js";
 import asaasWebhookRoutes from "./routes/asaasWebhookRoutes.js";
+import walletRoutes from "./routes/walletRoutes.js";
+import adminDashboardRoutes from "./routes/adminDashboardRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
+import checkoutRoutes from "./routes/checkout.js";
+
 // ==========================
 // ⚠️ IMPORTS DIFERIDOS (FIX ESM ERROR)
 // ==========================
@@ -48,25 +39,24 @@ const io = new Server(server, {
 
 app.use(cors());
 app.use(express.json());
-
+app.use((req, res, next) => {
+  console.log(req.method, req.originalUrl);
+  next();
+});
 // ROTAS
 app.use("/ledger", ledgerRoutes);
 app.use("/go", goRoutes);
 app.use("/campaigns", campaignsRoutes);
 app.use("/user", userRoutes);
 app.use("/withdraw", withdrawRoutes);
-
-app.use("/dashboard", dashboardRoutes);
-app.use("/hotmart", hotmartClick);
-app.use("/hotmart", attributionRoutes);
-app.use("/conversion", conversionRoutes);
-app.use("/ranking", rankingRoutes);
-app.use("/reports", reportsRoutes);
-app.use("/analytics", analyticsRoutes);
-app.use("/roi", roiRoutes);
 app.use("/debug", debugRoutes);
 app.use("/adminWithdraw", adminWithdrawRoutes);
 app.use("/asaas", asaasWebhookRoutes);
+app.use("/wallet", walletRoutes);
+app.use("/admin/dashboard", adminDashboardRoutes);
+app.use("/dashboard", dashboardRoutes);
+app.use("/checkout", checkoutRoutes);
+
 
 // ==========================
 // BOOTSTRAP

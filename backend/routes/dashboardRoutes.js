@@ -1,30 +1,94 @@
 import express from "express";
-
 import User from "../models/User.js";
+import Campaign from "../models/Campaign.js";
 import Wallet from "../models/Wallet.js";
-import Click from "../models/Click.js";
-import Conversion from "../models/Conversion.js";
+
 import Withdraw from "../models/Withdraw.js";
+import Ledger from "../models/Ledger.js";
 
 const router = express.Router();
-router.get("/stats", async (req, res) => {
+router.get("/debug/finance/:userId", async (req, res) => {
   try {
-    const totalUsers = await Wallet.countDocuments();
+    const { userId } = req.params;
+    console.log("PARAM:", userId);
+    const user = await User.findById(userId);
+  
+console.log("USER:", user);
+   const mongoUserId = user._id.toString();
 
-    const result = await Wallet.aggregate([
-  {
-    $group: {
-      _id: null,
-      totalEarned: { $sum: "$totalEarned" },
-      totalAvailable: { $sum: "$availableBalance" }
-    }
-  }
-]);
+const campaigns = await Campaign.find({
+  userId: mongoUserId,
+});
+
+const wallet = await Wallet.findOne({
+  userId: mongoUserId,
+});
+
+const withdraws = await Withdraw.find({
+  userId: mongoUserId,
+});
+
+const ledger = await Ledger.find({
+  userId: mongoUserId,
+});
 
     return res.json({
-      totalUsers,
-      totalEarned,
-      totalAvailable,
+  wallet,
+  withdrawCount: withdraws.length,
+  ledgerCount: ledger.length,
+  withdraws,
+  ledger,
+});
+  } catch (err) {
+    res.status(500).json({
+      error: err.message,
+    });
+  }
+});
+
+
+router.get("/debug/ledger-total/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const credits = await Ledger.aggregate([
+      {
+        $match: {
+          userId,
+          type: "credit",
+          status: "confirmed",
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" },
+        },
+      },
+    ]);
+
+    const debits = await Ledger.aggregate([
+      {
+        $match: {
+          userId,
+          type: "debit",
+          status: "confirmed",
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" },
+        },
+      },
+    ]);
+
+    res.json({
+      credits: credits[0]?.total || 0,
+      debits: debits[0]?.total || 0,
+      balance:
+        (credits[0]?.total || 0) -
+        (debits[0]?.total || 0),
     });
 
   } catch (err) {
@@ -33,53 +97,59 @@ router.get("/stats", async (req, res) => {
     });
   }
 });
-router.get("/", async (req, res) => {
+
+router.get("/:userId", async (req, res) => {
+  
   try {
-    const [
-      users,
-      clicks,
-      conversions,
-      wallets,
-      pendingWithdraws,
-      paidWithdraws,
-    ] = await Promise.all([
-      User.countDocuments(),
-      Click.countDocuments(),
-      Conversion.countDocuments(),
-      Wallet.find(),
-      Withdraw.countDocuments({ status: "pending" }),
-      Withdraw.countDocuments({ status: "paid" }),
-    ]);
+    const { userId } = req.params;
 
-    const totalEarned = wallets.reduce(
-      (sum, w) => sum + (w.totalEarned || 0),
+
+    // Lista todos os usuários cadastrados
+    
+
+  // Procura o usuário pelo _id do MongoDB
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        error: "Usuário não encontrado",
+      });
+    }
+
+    // Busca campanhas
+    const campaigns = await Campaign.find({
+      userId: user._id,
+    });
+
+    // Busca carteira
+    const wallet = await Wallet.findOne({
+      userId: user._id,
+    });
+
+    const totalClicks = campaigns.reduce(
+      (acc, c) => acc + (c.clicks || 0),
       0
     );
-
-    const totalAvailable = wallets.reduce(
-      (sum, w) => sum + (w.availableBalance || 0),
-      0
-    );
-
-    const conversionRate =
-      Number(clicks) > 0
-        ? ((Number(conversions) / Number(clicks)) * 100).toFixed(2)
-        : "0.00";
 
     return res.json({
-      users,
-      clicks,
-      conversions,
-      totalEarned,
-      totalAvailable,
-      pendingWithdraws,
-      paidWithdraws,
-      conversionRate,
+      user,
+      campaigns: campaigns || [],
+      wallet: {
+        availableBalance: wallet?.availableBalance || 0,
+      },
+      metrics: {
+        totalClicks,
+        totalEarnings: wallet?.totalEarned || 0,
+      },
     });
 
   } catch (err) {
+   
+    console.error(err);
+
     return res.status(500).json({
       error: err.message,
+      stack: err.stack,
     });
   }
 });

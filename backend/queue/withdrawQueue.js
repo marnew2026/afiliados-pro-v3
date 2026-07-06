@@ -69,29 +69,30 @@ if (currentWithdraw.asaasTransferId) {
   return;
 }
 
-    const pix = await axios.post(
-      "https://api.asaas.com/v3/transfers",
-      {
-        pixAddressKey: withdraw.pixKey,
-        pixAddressKeyType: "EMAIL",
-        value: Number(withdraw.amount),
-      },
-      {
-        headers: {
-          access_token: process.env.ASAAS_API_KEY,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+   const pix = await axios.post(
+  "https://api.asaas.com/v3/transfers",
+  {
+    pixAddressKey: withdraw.pixKey,
+    pixAddressKeyType: "EMAIL",
+    value: Number(withdraw.amount),
+
+    externalReference: withdraw.withdrawId,
+  },
+  {
+    headers: {
+      access_token: process.env.ASAAS_API_KEY,
+      "Content-Type": "application/json",
+    },
+  }
+);
 
     console.log("ASAAS RESPONSE:");
     console.log(JSON.stringify(pix.data, null, 2));
 
-    const sentResult = await Withdraw.updateOne(
+   const sentResult = await Withdraw.updateOne(
   {
     _id: withdraw._id,
     status: "processing",
-    asaasTransferId: null,
   },
   {
     $set: {
@@ -106,15 +107,28 @@ if (currentWithdraw.asaasTransferId) {
   }
 );
 
-if (sentResult.modifiedCount !== 1) {
-  console.log(
-    "⚠️ Outro processo já registrou esta transferência."
-  );
+console.log("UPDATE RESULT:");
+console.log(sentResult);
 
+if (sentResult.modifiedCount !== 1) {
+  console.log("⚠️ Outro processo já registrou esta transferência.");
   return;
 }
 
-    console.log("✅ PIX ENVIADO:", pix.data.id);
+const saved = await Withdraw.findById(withdraw._id);
+
+console.log("DOCUMENTO ATUALIZADO:");
+console.log({
+  status: saved.status,
+  asaasTransferId: saved.asaasTransferId,
+  withdrawId: saved.withdrawId,
+});
+
+console.log("✅ PIX ENVIADO:", pix.data.id);   
+
+
+console.log("ASAAS ID SALVO:");
+console.log(saved.asaasTransferId);
   } catch (err) {
     console.log("🔥 ASAAS ERROR FULL:");
 

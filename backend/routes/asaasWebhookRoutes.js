@@ -29,14 +29,24 @@ router.post("/webhooks", async (req, res) => {
       return res.sendStatus(200);
     }
 
-    const withdraw = await Withdraw.findOne({
-      asaasTransferId: transfer.id,
-    });
+    let withdraw = await Withdraw.findOne({
+  asaasTransferId: transfer.id,
+});
 
-    if (!withdraw) {
-      console.log("Transfer não encontrada.");
-      return res.sendStatus(200);
-    }
+if (!withdraw) {
+  console.log("⏳ Transferência ainda não vinculada. Esperando 2 segundos...");
+
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+
+  withdraw = await Withdraw.findOne({
+    asaasTransferId: transfer.id,
+  });
+}
+
+if (!withdraw) {
+  console.log("❌ Transfer não encontrada:", transfer.id);
+  return res.sendStatus(200);
+}
 
     switch (event) {
 
