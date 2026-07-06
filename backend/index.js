@@ -56,7 +56,14 @@ app.use("/wallet", walletRoutes);
 app.use("/admin/dashboard", adminDashboardRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/checkout", checkoutRoutes);
+console.log("✅ app.use('/checkout') registrado");
+app.get("/teste", (req, res) => {
+  res.send("OK");
+});
 
+app.post("/checkout/teste", (req, res) => {
+  res.json({ ok: true });
+});
 
 // ==========================
 // BOOTSTRAP
