@@ -19,7 +19,9 @@ import walletRoutes from "./routes/walletRoutes.js";
 import adminDashboardRoutes from "./routes/adminDashboardRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import checkoutRoutes from "./routes/checkout.js";
-
+console.log("#################################");
+console.log("INDEX NOVO 06/07");
+console.log("#################################");
 // ==========================
 // ⚠️ IMPORTS DIFERIDOS (FIX ESM ERROR)
 // ==========================
