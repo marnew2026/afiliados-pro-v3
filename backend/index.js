@@ -63,6 +63,24 @@ app.get("/teste", (req, res) => {
   res.send("OK");
 });
 
+// ==========================
+// STRIPE RETORNOS
+// ==========================
+
+app.get("/success", (req, res) => {
+  res.send(`
+    <h1>✅ Pagamento realizado com sucesso!</h1>
+    <p>Agora você já pode voltar para o aplicativo.</p>
+  `);
+});
+
+app.get("/cancel", (req, res) => {
+  res.send(`
+    <h1>❌ Pagamento cancelado.</h1>
+    <p>Nenhuma cobrança foi realizada.</p>
+  `);
+});
+
 app.post("/checkout/teste", (req, res) => {
   res.json({ ok: true });
 });
