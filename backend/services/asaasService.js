@@ -1,16 +1,16 @@
 import dotenv from "dotenv";
-
 import axios from "axios";
-console.log("ASAAS TOKEN:");
 
-console.log(process.env.ASAAS_API_KEY);
+dotenv.config();
 
-console.log("PIX PAYLOAD:");
 
-console.log({
-  pixAddressKey: withdraw.pixKey,
-  value: withdraw.amount,
-});
+console.log("🔥 ASAAS URL:", process.env.ASAAS_URL);
+
+console.log(
+  "🔥 ASAAS TOKEN EXISTE:",
+  !!process.env.ASAAS_API_KEY
+);
+
 
 const api = axios.create({
   baseURL: process.env.ASAAS_URL,
@@ -20,6 +20,7 @@ const api = axios.create({
   },
 });
 
+
 export async function sendPixToAsaas({
   value,
   pixKey,
@@ -27,12 +28,61 @@ export async function sendPixToAsaas({
   externalId,
 }) {
 
-  const res = await api.post("/transfers", {
-    value: Number(value),
+  console.log("📤 ENVIANDO PIX ASAAS:");
+
+  console.log({
+    value,
     pixAddressKey: pixKey,
     pixAddressKeyType: pixKeyType,
     externalReference: externalId,
   });
 
-  return res.data;
+
+  try {
+
+    const res = await api.post("/transfers", {
+
+      value: Number(value),
+
+      pixAddressKey: pixKey,
+
+      pixAddressKeyType: pixKeyType,
+
+      externalReference: externalId,
+
+    });
+
+
+    console.log(
+      "✅ ASAAS TRANSFER OK:",
+      res.data
+    );
+
+
+    return res.data;
+
+
+  } catch(err){
+
+
+    console.log(
+      "🔥 ASAAS ERRO STATUS:",
+      err.response?.status
+    );
+
+
+    console.log(
+      "🔥 ASAAS ERRO DATA:",
+      JSON.stringify(
+        err.response?.data,
+        null,
+        2
+      )
+    );
+
+
+    throw err;
+
+  }
+
 }

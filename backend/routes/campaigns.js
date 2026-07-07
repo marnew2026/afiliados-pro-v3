@@ -7,13 +7,30 @@ const router = express.Router();
 /**
  * Criar campanha
  */
-router.post("/create", protect, async (req, res) => {
+router.post("/create", async (req, res) => {
+    console.log("🔥 CREATE CAMPANHA");
+  console.log(req.body);
+  console.log("🔥 CAMPAIGNS ROUTE CARREGADA");
+
+ console.log("🔥 CREATE CAMPANHA NOVA");
+
+ console.log("BODY:", req.body);
+
+ console.log("AUTH:", req.headers.authorization);
+    console.log("🔥 CREATE CAMPANHA ENTROU");
+ 
+  
   try {
-    console.log("🔥 CREATE CAMPAIGN");
 
-    const { nome, link } = req.body;
+    const { nome, link, userId } = req.body;
 
-    const userId = req.user.id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        error: "Usuário não encontrado",
+      });
+    }
 
     const campaign = await Campaign.create({
       userId,
@@ -28,6 +45,8 @@ router.post("/create", protect, async (req, res) => {
     return res.json(campaign);
 
   } catch (err) {
+    console.error("ERRO CREATE CAMPAIGN:", err);
+
     return res.status(500).json({
       error: err.message,
     });
