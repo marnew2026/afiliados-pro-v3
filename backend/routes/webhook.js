@@ -1,3 +1,4 @@
+console.log("🔥 WEBHOOK ROUTE CARREGADA");
 import express from "express";
 import Stripe from "stripe";
 
@@ -12,6 +13,10 @@ router.post(
   "/",
   express.raw({ type: "application/json" }),
   async (req, res) => {
+        console.log("🔥🔥🔥 ENTROU NO WEBHOOK");
+     console.log("================================");
+    console.log("🔥 WEBHOOK RECEBIDO");
+    console.log("================================");
     try {
       const sig = req.headers["stripe-signature"];
 
@@ -21,45 +26,60 @@ router.post(
         process.env.STRIPE_WEBHOOK_SECRET
       );
 
+      console.log("EVENTO:", event.type);
+
       /* =========================
          PAGAMENTO APROVADO
       ========================= */
       if (event.type === "checkout.session.completed") {
+            console.log("✅ EVENTO CORRETO");
         const session = event.data.object;
-
+            console.log(session);
         const email = session.customer_email;
 
-        console.log("PAGAMENTO APROVADO:", email);
+     console.log("================================");
+console.log("💳 PAGAMENTO APROVADO");
+console.log("EMAIL:", email);
+console.log("================================");
 
         /* FIREBASE */
-        try {
-          const user = await admin.auth().getUserByEmail(email);
-
-          await admin.auth().setCustomUserClaims(user.uid, {
-            pro: true,
-          });
-
-          console.log("FIREBASE PRO OK");
-        } catch (firebaseError) {
-          console.log("ERRO FIREBASE:", firebaseError.message);
-        }
+        
 
         /* MONGODB */
-        await User.findOneAndUpdate(
-          { email },
-          {
-            isPro: true,
-          },
-          { upsert: true }
-        );
+const user = await User.findOneAndUpdate(
+  { email },
+  {
+    $set: {
+      isPro: true,
+      plan: "PRO",
+      status: "done",
+      lastProcessedAt: new Date(),
+    },
+  },
+  {
+    new: true,
+  }
+);
 
-        console.log("MONGO PRO OK");
+if (!user) {
+  console.log("❌ Usuário não encontrado:", email);
+} else {
+  console.log("✅ Usuário atualizado:", user.email);
+}
+
+
+console.log("================================");
+console.log("USUÁRIO ATUALIZADO");
+console.log(user);
+console.log("================================");
+console.log("✅ MONGO PRO OK");;
       }
       res.json({
         received: true,
       });
     } catch (err) {
-      console.log("WEBHOOK ERROR:", err.message);
+    console.log("ERRO WEBHOOK");
+    console.log(err);
 
       res.status(400).send("Webhook Error");
     }

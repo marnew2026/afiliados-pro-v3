@@ -19,6 +19,7 @@ import walletRoutes from "./routes/walletRoutes.js";
 import adminDashboardRoutes from "./routes/adminDashboardRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import checkoutRoutes from "./routes/checkout.js";
+import webhookRoutes from "./routes/webhook.js";
 console.log("#################################");
 console.log("INDEX NOVO 06/07");
 console.log("#################################");
@@ -40,6 +41,7 @@ const io = new Server(server, {
 });
 
 app.use(cors());
+app.use("/stripe/webhook", webhookRoutes);
 app.use(express.json());
 app.use((req, res, next) => {
   console.log(req.method, req.originalUrl);
