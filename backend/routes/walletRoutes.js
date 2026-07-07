@@ -22,12 +22,14 @@ let wallet = await Wallet.findOne({
   userId: mongoUserId,
 });
 
+if (!wallet) {
   wallet = await Wallet.create({
-  userId: mongoUserId,
-  availableBalance: 0,
-  lockedBalance: 0,
-  totalEarned: 0,
-});
+    userId: mongoUserId,
+    availableBalance: 0,
+    lockedBalance: 0,
+    totalEarned: 0,
+  });
+}
 
     return res.json({
       wallet,
