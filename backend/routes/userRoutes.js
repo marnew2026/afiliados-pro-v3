@@ -43,6 +43,29 @@ router.get("/firebase/:firebaseUid", async (req, res) => {
    LOGIN PELO ID DO MONGO
 =========================== */
 
+
+/* ===========================
+   PRO
+=========================== */
+
+router.get("/pro/:userId", async (req, res) => {
+  try {
+
+    const user = await User.findById(req.params.userId);
+
+    return res.json({
+      isPro: user?.isPro || false,
+      plan: user?.plan || "FREE",
+    });
+
+  } catch (err) {
+
+    return res.status(500).json({
+      error: err.message,
+    });
+
+  }
+});
 router.get("/:userId", async (req, res) => {
   try {
 
@@ -74,29 +97,6 @@ router.get("/:userId", async (req, res) => {
         role: user.role,
         isPro: user.isPro,
       },
-    });
-
-  } catch (err) {
-
-    return res.status(500).json({
-      error: err.message,
-    });
-
-  }
-});
-
-/* ===========================
-   PRO
-=========================== */
-
-router.get("/pro/:userId", async (req, res) => {
-  try {
-
-    const user = await User.findById(req.params.userId);
-
-    return res.json({
-      isPro: user?.isPro || false,
-      plan: user?.plan || "FREE",
     });
 
   } catch (err) {
