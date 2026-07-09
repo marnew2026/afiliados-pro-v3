@@ -33,11 +33,17 @@ console.log(user);
 
       item.user = user;
     }
+const totalUsers = await User.countDocuments();
 
-    res.json({
-      success: true,
-      withdrawals,
-    });
+const totalWithdraws = await Withdraw.countDocuments();
+
+
+res.json({
+  success: true,
+  withdrawals,
+  totalUsers,
+  totalWithdraws,
+});
 
   } catch (err) {
     console.error(err);
@@ -53,48 +59,61 @@ console.log(user);
  * ESTATÍSTICAS
  */
 router.get("/stats", async (req, res) => {
-  console.log("🔥 STATS CHAMADO");
-
+   console.log("🔥🔥🔥 NOVA ROTA /stats EXECUTANDO 🔥🔥🔥");
   try {
     const paid = await Withdraw.countDocuments({
+  status: "paid",
+});
+
+const sent = await Withdraw.countDocuments({
+  status: "sent",
+});
+
+const processing = await Withdraw.countDocuments({
+  status: "processing",
+});
+
+const failed = await Withdraw.countDocuments({
+  status: "failed",
+});
+
+const totalUsers = await User.countDocuments();
+
+const totalWithdraws = await Withdraw.countDocuments();
+
+const totalAmount = await Withdraw.aggregate([
+  {
+    $match: {
       status: "paid",
-    });
-
-    const sent = await Withdraw.countDocuments({
-      status: "sent",
-    });
-
-    const processing = await Withdraw.countDocuments({
-      status: "processing",
-    });
-
-    const failed = await Withdraw.countDocuments({
-      status: "failed",
-    });
-
-    const totalAmount = await Withdraw.aggregate([
-      {
-        $match: {
-          status: "paid",
-        },
+    },
+  },
+  {
+    $group: {
+      _id: null,
+      total: {
+        $sum: "$amount",
       },
-      {
-        $group: {
-          _id: null,
-          total: {
-            $sum: "$amount",
-          },
-        },
-      },
-    ]);
-
-    res.json({
-      paid,
-      sent,
-      processing,
-      failed,
-      totalPaid: totalAmount[0]?.total || 0,
-    });
+    },
+  },
+]);
+console.log({
+  paid,
+  sent,
+  processing,
+  failed,
+  totalUsers,
+  totalWithdraws,
+  totalPaid: totalAmount[0]?.total || 0,
+});
+res.json({
+  paid,
+  sent,
+  processing,
+  failed,
+  totalPaid: totalAmount[0]?.total || 0,
+  totalUsers,
+  totalWithdraws,
+});
 
   } catch (err) {
     console.error(err);
