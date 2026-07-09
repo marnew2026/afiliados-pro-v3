@@ -55,19 +55,34 @@ console.log("================================");
     continue;
   }
 
-  await Ledger.updateOne(
-    {
-      referenceId: w.withdrawId,
-      type: "debit",
-    },
-    {
-      $set: {
-        status: "confirmed",
-      },
-    }
-  );
+  // ============================================
+// ALTERAÇÃO 01 - PÓS TESTES
+// Auditoria da atualização do Ledger
+// Data: 08/07/2026
+// ============================================
 
-  await rebuildWallet(w.userId);
+const ledgerResult = await Ledger.updateOne(
+  {
+    referenceId: w.withdrawId,
+    type: "debit",
+  },
+  {
+    $set: {
+      status: "confirmed",
+      confirmedAt: new Date(),
+    },
+  }
+);
+
+if (ledgerResult.matchedCount !== 1) {
+  console.log("❌ Ledger não encontrado:", w.withdrawId);
+} else if (ledgerResult.modifiedCount === 1) {
+  console.log("✅ Ledger confirmado:", w.withdrawId);
+} else {
+  console.log("ℹ️ Ledger já estava confirmado:", w.withdrawId);
+}
+
+await rebuildWallet(w.userId);
 
   console.log("✅ SAQUE CONCILIADO:", w._id.toString());
 }
@@ -92,7 +107,12 @@ else if (status === "FAILED") {
     continue;
   }
 
-  await Ledger.updateOne(
+  // ============================================
+  // ALTERAÇÃO 01 - PÓS TESTES
+  // Auditoria da atualização do Ledger
+  // ============================================
+
+  const ledgerResult = await Ledger.updateOne(
     {
       referenceId: w.withdrawId,
       type: "debit",
@@ -103,6 +123,14 @@ else if (status === "FAILED") {
       },
     }
   );
+
+  if (ledgerResult.matchedCount !== 1) {
+    console.log("❌ Ledger não encontrado:", w.withdrawId);
+  } else if (ledgerResult.modifiedCount === 1) {
+    console.log("⚠️ Ledger marcado como FAILED:", w.withdrawId);
+  } else {
+    console.log("ℹ️ Ledger já estava FAILED:", w.withdrawId);
+  }
 
   await rebuildWallet(w.userId);
 

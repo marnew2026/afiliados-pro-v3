@@ -13,6 +13,10 @@ const LedgerSchema = new mongoose.Schema(
   ],
   default: "confirmed",
 },
+confirmedAt: {
+  type: Date,
+  default: null,
+},
 
     amount: {
       type: Number,

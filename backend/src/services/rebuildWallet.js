@@ -40,14 +40,18 @@ if (type === "debit") {
 }
   }
 
- const availableBalance = Math.max(
-  0,
-  credit - confirmedDebit - pendingDebit
+ const availableBalance = Number(
+   Math.max(
+      0,
+      credit - confirmedDebit - pendingDebit
+   ).toFixed(2)
 );
 
-const lockedBalance = Math.max(
-  0,
-  pendingDebit
+const lockedBalance = Number(
+   Math.max(
+      0,
+      pendingDebit
+   ).toFixed(2)
 );
 
   console.log("💰 CREDIT:", credit);
