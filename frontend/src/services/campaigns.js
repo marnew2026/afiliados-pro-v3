@@ -3,13 +3,19 @@ const API_URL = "https://afiliados-pro-v3-2.onrender.com";
 // 💳 CHECKOUT / VIRAR PRO
 export const criarCheckout = async (user) => {
   try {
-    const res = await fetch(`${API_URL}/checkout/create-checkout`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: user.email,
-      }),
-    });
+    console.log("BODY RECEBIDO:", req.body);
+    const res = await fetch(
+  `${API_URL}/stripe/create-checkout-session`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email: user.email,
+    }),
+  }
+);
 
     const data = await res.json();
 
@@ -25,38 +31,31 @@ export const criarCheckout = async (user) => {
 };
 
 // 🚀 CRIAR CAMPANHA (BACKEND NODE)
-export const createCampaign = async (data, user) => {
-  if (!user) throw new Error("Usuário não logado");
+export async function handleConversion(userId, amount, metadata = {}) {
+  try {
+    const click = await getLastClick(userId);
 
-  const res = await fetch(`${API_URL}/campaigns`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      name: data.name,
-      link: data.link,
-      ownerId: user.uid,
-      email: user.email,
-    }),
-  });
+    if (!click) {
+      console.log("⚠️ Nenhum clique encontrado para atribuição");
+      return;
+    }
 
-  const response = await res.json();
+    const commissionRate = 0.1;
+    const commission = amount * commissionRate;
 
-  if (res.status === 403) {
-    throw new Error("PRO necessário");
+    await eventBus.add("conversion-event", {
+      name: EVENTS.CONVERSION_CREATED,
+      data: {
+        userId, // 🔥 SEMPRE o user original
+        campaignId: click.campaignId,
+        commission,
+        amount,
+        metadata,
+      },
+    });
+
+    console.log("💰 Conversão enviada para fila:", commission);
+  } catch (err) {
+    console.error("❌ erro na conversão:", err.message);
   }
-
-  return response;
-};
-
-// 📦 LISTAR CAMPANHAS (BACKEND NODE)
-export const getCampaigns = async (user) => {
-  if (!user) return [];
-
-  const res = await fetch(
-    `${API_URL}/campaigns?ownerId=${user.uid}`
-  );
-
-  const data = await res.json();
-
-  return data;
-};
+}

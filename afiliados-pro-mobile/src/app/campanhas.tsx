@@ -8,47 +8,39 @@ import {
 } from "react-native";
 
 import { useEffect, useState } from "react";
-
-import { auth } from "../firebase";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import api from "../services/api";
 
 export default function Campanhas() {
   const [campanhas, setCampanhas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   async function carregarCampanhas() {
-    try {
-      const email = auth.currentUser?.email;
+  try {
+    const userId = await AsyncStorage.getItem("userId");
 
-      if (!email) {
-        setLoading(false);
-        return;
-      }
+    if (!userId) {
+      setCampanhas([]);
+      setLoading(false);
+      return;
+    }
 
-      const response = await fetch(
-        `https://afiliados-pro-v3-2.onrender.com/campaigns/${email}`
-      );
+const { data } = await api.get(`/campaigns/user/${userId}`);
 
-      const text = await response.text();
+    if (!Array.isArray(data)) {
+      setCampanhas([]);
+      return;
+    }
 
-      console.log("RAW:", text);
-
-      const data = JSON.parse(text);
-
-      if (!Array.isArray(data)) {
-        setCampanhas([]);
-        setLoading(false);
-        return;
-      }
-
+    
       const validas = data.filter(
         (item: any) =>
-          item?.nome &&
-          item?.link &&
-          item.nome.trim() !== "" &&
-          item.link.trim() !== ""
+          item?.nome?.trim() &&
+          item?.link?.trim()
       );
 
       setCampanhas(validas);
+
     } catch (error) {
       console.log("ERRO CAMPANHAS:", error);
     } finally {
@@ -57,62 +49,47 @@ export default function Campanhas() {
   }
 
   useEffect(() => {
-    carregarCampanhas();
-  }, []);
-
-  if (loading) {
+  carregarCampanhas();
+}, []);
+ if (loading) {
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "#111827",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
+      <View style={{
+        flex: 1,
+        backgroundColor: "#111827",
+        justifyContent: "center",
+        alignItems: "center",
+      }}>
         <ActivityIndicator size="large" color="#fff" />
-
-        <Text
-          style={{
-            color: "#fff",
-            marginTop: 20,
-          }}
-        >
-          Carregando campanhas...
+        <Text style={{ color: "#fff", marginTop: 20 }}>
+          Carregando campanhas
         </Text>
       </View>
     );
   }
 
   return (
-    <ScrollView
-      style={{
-        flex: 1,
-        backgroundColor: "#111827",
-        padding: 20,
-      }}
-    >
-      <Text
-        style={{
-          color: "#fff",
-          fontSize: 28,
-          fontWeight: "bold",
-          marginBottom: 20,
-          textAlign: "center",
-        }}
-      >
+    <ScrollView style={{
+      flex: 1,
+      backgroundColor: "#111827",
+      padding: 20,
+    }}>
+      <Text style={{
+        color: "#fff",
+        fontSize: 28,
+        fontWeight: "bold",
+        marginBottom: 20,
+        textAlign: "center",
+      }}>
         Minhas Campanhas
       </Text>
 
       {campanhas.length === 0 && (
-        <Text
-          style={{
-            color: "#9CA3AF",
-            textAlign: "center",
-            marginTop: 40,
-            fontSize: 16,
-          }}
-        >
+        <Text style={{
+          color: "#9CA3AF",
+          textAlign: "center",
+          marginTop: 40,
+          fontSize: 16,
+        }}>
           Nenhuma campanha encontrada
         </Text>
       )}
@@ -127,61 +104,40 @@ export default function Campanhas() {
             marginBottom: 15,
           }}
         >
-          <Text
-            style={{
-              color: "#fff",
-              fontSize: 18,
-              fontWeight: "bold",
-              marginBottom: 10,
-            }}
-          >
+          <Text style={{
+            color: "#fff",
+            fontSize: 18,
+            fontWeight: "bold",
+            marginBottom: 10,
+          }}>
             {item.nome}
           </Text>
 
-          <Text
-            style={{
-              color: "#9CA3AF",
-              marginBottom: 5,
-            }}
-          >
+          <Text style={{ color: "#9CA3AF" }}>
             Cliques: {item.clicks || 0}
           </Text>
 
-          <Text
-            style={{
-              color: "#10B981",
-              marginBottom: 5,
-            }}
-          >
+          <Text style={{ color: "#10B981" }}>
             Vendas: {item.sales || 0}
           </Text>
 
-          <Text
-            style={{
-              color: "#FACC15",
-              marginBottom: 15,
-            }}
-          >
+          <Text style={{ color: "#FACC15", marginBottom: 15 }}>
             Ganhos: R$ {(item.earnings || 0).toFixed(2)}
           </Text>
 
           <TouchableOpacity
-            onPress={() =>
-              Linking.openURL(item.affiliateLink)
-            }
+            onPress={() => Linking.openURL(item.link)}
             style={{
               backgroundColor: "#2563EB",
               padding: 12,
               borderRadius: 8,
             }}
           >
-            <Text
-              style={{
-                color: "#fff",
-                textAlign: "center",
-                fontWeight: "bold",
-              }}
-            >
+            <Text style={{
+              color: "#fff",
+              textAlign: "center",
+              fontWeight: "bold",
+            }}>
               Abrir Link
             </Text>
           </TouchableOpacity>

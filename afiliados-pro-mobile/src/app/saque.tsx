@@ -1,221 +1,129 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
+  Alert,
 } from "react-native";
 
+import { router } from "expo-router";
+import api from "../services/api";
+import * as Crypto from "expo-crypto";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function Saque() {
-  const [pixKey, setPixKey] = useState("");
+    
   const [amount, setAmount] = useState("");
+  const [pixKey, setPixKey] = useState("");
   const [loading, setLoading] = useState(false);
-  const [saldo, setSaldo] = useState(0);
 
-  const currentUser = {
-    email: "marielsantana@bol.com.br",
-  };
+  // 🔥 PEGAR DO LOGIN
+  
 
-  useEffect(() => {
-    carregarSaldo();
-  }, []);
-
-  async function carregarSaldo() {
-    try {
-      const response = await fetch(
-        `https://afiliados-pro-v3-2.onrender.com/campaigns/${currentUser.email}`
-      );
-
-      const data = await response.json();
-
-      console.log("CAMPAIGNS RAW:", data);
-
-      if (!Array.isArray(data)) {
-        setSaldo(0);
-        return;
-      }
-
-      let total = 0;
-
-      data.forEach((item: any) => {
-        total += Number(item?.earnings || 0);
-      });
-
-      console.log("TOTAL:", total);
-
-      setSaldo(total);
-    } catch (err) {
-      console.log("ERRO SALDO:", err);
-      setSaldo(0);
-    }
-  }
-
-  async function solicitarSaque() {
+  async function handleWithdraw() {
     try {
       setLoading(true);
 
-      console.log("EMAIL:", currentUser?.email);
-      console.log("PIX:", pixKey);
-      console.log("AMOUNT:", amount);
-
-      const response = await fetch(
-        "https://afiliados-pro-v3-2.onrender.com/withdraw",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userEmail: currentUser?.email,
-            pixKey,
-            amount: Number(amount.replace(",", ".")),
-          }),
-        }
+      const value = parseFloat(
+        amount.replace(/\s/g, "").replace(",", ".")
       );
 
-      const data = await response.json();
-
-      console.log("SAQUE RESPONSE:", data);
-
-      if (data?.success || data?._id) {
-        alert("Saque solicitado com sucesso!");
-
-        setAmount("");
-        setPixKey("");
-      } else {
-        alert(data?.message || "Erro ao solicitar saque");
+      if (isNaN(value) || value <= 0) {
+        Alert.alert("Erro", "Digite um valor válido");
+        return;
       }
-    } catch (error) {
-      console.log("ERRO SAQUE:", error);
-      alert("Erro no saque");
+
+    const userId = await AsyncStorage.getItem("userId");
+
+if (!userId) {
+  Alert.alert("Erro", "Sessão inválida. Faça login novamente.");
+  return;
+}
+console.log("ENVIANDO SAQUE", {
+  userId,
+  pixKey,
+  amount: value,
+  withdrawId: Crypto.randomUUID(),
+});
+const { data } = await api.post("/withdraw/create", {
+  userId,
+  pixKey,
+  amount: value,
+  withdrawId: Crypto.randomUUID()
+});
+
+Alert.alert(
+  "Sucesso",
+  data?.message || "Saque solicitado com sucesso"
+);
+
+      router.replace("/dashboard");
+    } catch (err: any) {
+      console.log("withdraw error:", err?.response?.data || err);
+
+      Alert.alert(
+        "Erro",
+        err?.response?.data?.error || "Falha ao solicitar saque"
+      );
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <ScrollView
-      style={{
-        flex: 1,
-        backgroundColor: "#0f172a",
-      }}
-    >
-      <View
+    <View style={{ flex: 1, backgroundColor: "#0f172a", padding: 20 }}>
+      <TouchableOpacity onPress={() => router.back()} style={{ marginBottom: 20 }}>
+        <Text style={{ color: "#38bdf8", fontSize: 16 }}>
+          ← Voltar
+        </Text>
+      </TouchableOpacity>
+
+      <Text style={{ color: "#fff", fontSize: 24, fontWeight: "bold", marginBottom: 20 }}>
+        💸 Solicitar Saque PIX
+      </Text>
+
+      <TextInput
+        placeholder="Valor"
+        placeholderTextColor="#64748b"
+        keyboardType="numeric"
+        value={amount}
+        onChangeText={setAmount}
         style={{
-          padding: 20,
+          backgroundColor: "#1e293b",
+          padding: 14,
+          borderRadius: 10,
+          color: "#fff",
+          marginBottom: 10,
+        }}
+      />
+
+      <TextInput
+        placeholder="Chave PIX"
+        placeholderTextColor="#64748b"
+        value={pixKey}
+        onChangeText={setPixKey}
+        style={{
+          backgroundColor: "#1e293b",
+          padding: 14,
+          borderRadius: 10,
+          color: "#fff",
+          marginBottom: 20,
+        }}
+      />
+
+      <TouchableOpacity
+        onPress={handleWithdraw}
+        disabled={loading}
+        style={{
+          backgroundColor: "#16a34a",
+          padding: 16,
+          borderRadius: 12,
         }}
       >
-        <Text
-          style={{
-            color: "#fff",
-            fontSize: 28,
-            fontWeight: "bold",
-            marginBottom: 20,
-          }}
-        >
-          Saque Pix
+        <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold" }}>
+          {loading ? "Processando..." : "Solicitar Saque"}
         </Text>
-
-        <View
-          style={{
-            backgroundColor: "#1e293b",
-            padding: 20,
-            borderRadius: 16,
-            marginBottom: 20,
-          }}
-        >
-          <Text
-            style={{
-              color: "#94a3b8",
-              fontSize: 16,
-            }}
-          >
-            Saldo disponível
-          </Text>
-
-          <Text
-            style={{
-              color: "#22c55e",
-              fontSize: 34,
-              fontWeight: "bold",
-              marginTop: 10,
-            }}
-          >
-            R$ {saldo.toFixed(2)}
-          </Text>
-        </View>
-
-        <Text
-          style={{
-            color: "#fff",
-            marginBottom: 8,
-            fontSize: 16,
-          }}
-        >
-          Chave Pix
-        </Text>
-
-        <TextInput
-          placeholder="Digite sua chave Pix"
-          placeholderTextColor="#94a3b8"
-          value={pixKey}
-          onChangeText={setPixKey}
-          style={{
-            backgroundColor: "#1e293b",
-            color: "#fff",
-            padding: 16,
-            borderRadius: 12,
-            marginBottom: 20,
-          }}
-        />
-
-        <Text
-          style={{
-            color: "#fff",
-            marginBottom: 8,
-            fontSize: 16,
-          }}
-        >
-          Valor do saque
-        </Text>
-
-        <TextInput
-          placeholder="Digite o valor"
-          placeholderTextColor="#94a3b8"
-          keyboardType="numeric"
-          value={amount}
-          onChangeText={setAmount}
-          style={{
-            backgroundColor: "#1e293b",
-            color: "#fff",
-            padding: 16,
-            borderRadius: 12,
-            marginBottom: 30,
-          }}
-        />
-
-        <TouchableOpacity
-          onPress={solicitarSaque}
-          disabled={loading}
-          style={{
-            backgroundColor: "#22c55e",
-            padding: 18,
-            borderRadius: 14,
-            alignItems: "center",
-          }}
-        >
-          <Text
-            style={{
-              color: "#fff",
-              fontWeight: "bold",
-              fontSize: 18,
-            }}
-          >
-            {loading ? "Enviando..." : "Solicitar Saque"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+      </TouchableOpacity>
+    </View>
   );
 }

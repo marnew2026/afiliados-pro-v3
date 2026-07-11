@@ -6,38 +6,51 @@ import {
 } from "react-native";
 
 import { useRouter } from "expo-router";
-
 import * as Linking from "expo-linking";
+
+import { getAuth } from "firebase/auth";
+import api from "../services/api";
 
 export default function Checkout() {
   const router = useRouter();
+  const auth = getAuth();
 
-  async function abrirCheckout() {
-    try {
-      const response = await fetch(
-        "https://afiliados-pro-v3-2.onrender.com/stripe/create-checkout-session"
-      );
+ async function abrirCheckout() {
+  console.log("🔥 BOTÃO PRO");
 
-      const data = await response.json();
+  try {
+    const email = auth.currentUser?.email;
 
-      console.log("STRIPE:", data);
-
-      if (data.url) {
-        await Linking.openURL(data.url);
-      } else {
-        Alert.alert("Erro", "Checkout não encontrado");
-      }
-
-    } catch (err) {
-      console.log(err);
-
-      Alert.alert(
-        "Erro",
-        "Falha ao abrir pagamento"
-      );
+    if (!email) {
+      Alert.alert("Erro", "Usuário não autenticado");
+      return;
     }
-  }
 
+    console.log("EMAIL:", email);
+
+    const { data } = await api.post("/checkout/create-checkout", {
+      email,
+    });
+
+    console.log("RESPOSTA:", data);
+
+    if (data.url) {
+      await Linking.openURL(data.url);
+    } else {
+      Alert.alert("Erro", "Checkout não encontrado");
+    }
+
+  } catch (err: any) {
+    console.log("========== CHECKOUT ERROR ==========");
+    console.log("STATUS:", err.response?.status);
+    console.log("URL:", err.config?.url);
+    console.log("DATA:", err.response?.data);
+    console.log("MESSAGE:", err.message);
+    console.log("====================================");
+
+    Alert.alert("Erro", "Falha ao abrir pagamento");
+  }
+}
   return (
     <View
       style={{
@@ -80,9 +93,7 @@ export default function Checkout() {
       </TouchableOpacity>
 
       <TouchableOpacity
-        onPress={() =>
-          router.replace("/dashboard")
-        }
+        onPress={() => router.replace("/dashboard")}
         style={{
           marginTop: 20,
         }}

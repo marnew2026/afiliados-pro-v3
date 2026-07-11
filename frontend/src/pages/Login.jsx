@@ -20,7 +20,7 @@ export default function Login() {
 
       if (data?.token) {
         localStorage.setItem("token", data.token);
-        localStorage.setItem("userEmail", data.user.email);
+        localStorage.setItem("userId", data.user.email);
 
         navigate("/dashboard");
       } else {
