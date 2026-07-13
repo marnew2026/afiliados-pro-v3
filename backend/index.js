@@ -21,8 +21,9 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 import checkoutRoutes from "./routes/checkout.js";
 import webhookRoutes from "./routes/webhook.js";
 console.log("#################################");
-console.log("INDEX NOVO 06/07");
+console.log("INDEX NOVO ATUAL  12/07  17H 45M   ");
 console.log("#################################");
+
 // ==========================
 // ⚠️ IMPORTS DIFERIDOS (FIX ESM ERROR)
 // ==========================
