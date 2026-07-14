@@ -5,6 +5,7 @@ import Click from "../models/Click.js";
 import User from "../models/User.js";
 import Ledger from "../models/Ledger.js";
 import Withdraw from "../models/Withdraw.js";
+import { rebuildWallet } from "../src/services/rebuildWallet.js";
 console.log("🔥 DEBUG ROUTE CARREGADA");
 const router = express.Router();
 
@@ -75,4 +76,35 @@ router.get("/finance/:userId", async (req, res) => {
     });
   }
 });
+
+router.get("/rebuild-wallet/:userId", async (req, res) => {
+  try {
+
+    const { userId } = req.params;
+
+    console.log("🔄 REBUILD WALLET DEBUG");
+    console.log("USER:", userId);
+
+    const wallet = await rebuildWallet(userId);
+
+    console.log("✅ WALLET REBUILD OK");
+    console.log(wallet);
+
+    res.json({
+      success: true,
+      wallet
+    });
+
+  } catch (err) {
+
+    console.log("❌ REBUILD ERROR");
+    console.log(err);
+
+    res.status(500).json({
+      error: err.message
+    });
+
+  }
+});
+
 export default router;
