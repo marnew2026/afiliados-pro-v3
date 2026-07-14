@@ -1,10 +1,13 @@
 import Ledger from "../../models/Ledger.js";
 import Wallet from "../../models/Wallet.js";
-
+console.log("🔥 rebuildWallet carregado");
 export async function rebuildWallet(
+  
     userId,
     session = null
 ) {
+  console.log("🔥 rebuildWallet EXECUTOU");
+  console.log("USER:", userId);
  const ledger = await Ledger.find({ userId })
     .session(session)
     .lean();

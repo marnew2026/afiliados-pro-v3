@@ -4,6 +4,8 @@ import User from "../models/User.js";
 import { protect } from "../middlewares/authMiddleware.js";
 import { registerClick } from "../services/clickService.js";
 import { addCredit } from "../services/ledgerService.js";
+import { rebuildWallet } from "../services/rebuildWallet.js";
+import Wallet from "../models/Wallet.js";
  console.log("🔥🔥🔥 ENTROU NA ROTA CLICK");
 const router = express.Router();
 
@@ -173,6 +175,7 @@ router.get("/r/:id", async (req, res) => {
 
     await campaign.save();
 
+
     // Registra o clique
     await registerClick(
       campaign.userId.toString(),
@@ -237,6 +240,10 @@ router.post("/:id/click", async (req, res) => {
     await campaign.save();
 
     console.log("SAVE OK");
+    console.log("===== CAMPANHA APÓS SAVE =====");
+console.log("Clicks:", campaign.clicks);
+console.log("Ganhos:", campaign.earnings);
+console.log("==============================");
 
     console.log("ANTES registerClick");
 
@@ -249,18 +256,37 @@ router.post("/:id/click", async (req, res) => {
 
     console.log("ANTES addCredit");
 
-    await addCredit({
-      userId: campaign.userId.toString(),
-      amount:0.10,
-      referenceId:`click-${campaign._id}-${Date.now()}`,
-      source:"campaign",
-      description:"Clique manual",
-      metadata:{
-        campaignId:campaign._id
-      }
-    });
+console.log("1️⃣ Entrando no addCredit");
 
-    console.log("addCredit OK");
+await addCredit({
+  userId: campaign.userId.toString(),
+  amount: 0.10,
+  referenceId: `click-${campaign._id}-${Date.now()}`,
+  source: "campaign",
+  description: "Clique manual",
+  metadata: {
+    campaignId: campaign._id,
+  },
+});
+
+console.log("2️⃣ Saiu do addCredit");
+
+console.log("3️⃣ Vai chamar rebuildWallet");
+
+await rebuildWallet(campaign.userId.toString());
+const wallet = await Wallet.findOne({
+  userId: campaign.userId.toString(),
+});
+
+console.log("===== WALLET =====");
+console.log(wallet);
+console.log("==================");
+
+console.log("4️⃣ RebuildWallet terminou");
+
+return res.json({
+  success: true,
+});
 
     return res.json({
       success:true
