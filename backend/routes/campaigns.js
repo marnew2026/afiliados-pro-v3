@@ -27,7 +27,35 @@ router.post("/create", async (req, res) => {
   
   try {
 
-    const { nome, link, userId } = req.body;
+    let { nome, link, userId } = req.body;
+
+// Remove espaços e quebras de linha
+nome = (nome || "").trim();
+link = (link || "").trim();
+
+// Validação do nome
+if (!nome) {
+  return res.status(400).json({
+    success: false,
+    error: "Nome da campanha é obrigatório."
+  });
+}
+
+// Validação do link
+if (!link) {
+  return res.status(400).json({
+    success: false,
+    error: "Link da campanha é obrigatório."
+  });
+}
+
+// Aceita apenas URLs HTTP/HTTPS
+if (!/^https?:\/\/.+/i.test(link)) {
+  return res.status(400).json({
+    success: false,
+    error: "Link inválido. Informe uma URL iniciando com http:// ou https://."
+  });
+}
 
     const user = await User.findById(userId);
 
@@ -150,7 +178,7 @@ router.get("/r/:id", async (req, res) => {
       campaign.userId.toString(),
       campaign._id.toString()
     );
-
+console.log("USER DA CAMPANHA:", campaign.userId);
     // Registra o crédito no Ledger
     await addCredit({
     userId: campaign.userId.toString(),
