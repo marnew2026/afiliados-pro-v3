@@ -4,7 +4,7 @@ import User from "../models/User.js";
 import { protect } from "../middlewares/authMiddleware.js";
 import { registerClick } from "../services/clickService.js";
 import { addCredit } from "../services/ledgerService.js";
-import { rebuildWallet } from "../services/rebuildWallet.js";
+import { rebuildWallet } from "../src/services/rebuildWallet.js";
 import Wallet from "../models/Wallet.js";
  console.log("🔥🔥🔥 ENTROU NA ROTA CLICK");
 const router = express.Router();
