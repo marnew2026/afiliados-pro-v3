@@ -1,7 +1,7 @@
 import Ledger from "../models/Ledger.js";
 
 import Wallet from "../models/Wallet.js";
-console.log("🔥🔥🔥 LEDGER SERVICE NOVO 14/07");
+
 export async function addCredit({
   userId,
   amount,
@@ -11,7 +11,7 @@ export async function addCredit({
   status = "confirmed",
   metadata = {},
 }) {
-console.log("🔥 ADD CREDIT EXECUTOU");
+
   // grava no Ledger
   await Ledger.create({
     userId,
@@ -25,7 +25,7 @@ console.log("🔥 ADD CREDIT EXECUTOU");
   });
 
   // atualiza a Wallet
- const walletUpdated = await Wallet.findOneAndUpdate(
+ await Wallet.findOneAndUpdate(
     { userId },
     {
       $inc: {
@@ -38,8 +38,7 @@ console.log("🔥 ADD CREDIT EXECUTOU");
       upsert: true,
     }
   );
-console.log("💰 WALLET RESULT:", walletUpdated);
-  console.log("💰 Wallet atualizada:", userId, amount);
+
 }
 
 export async function addDebit({

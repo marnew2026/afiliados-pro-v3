@@ -43,7 +43,27 @@ router.post("/login", async (req, res) => {
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(400).json({ error: "Senha inválida" });
 
-    return res.json(user);
+  const token = jwt.sign(
+  {
+    id: user._id,
+  },
+  process.env.JWT_SECRET,
+  {
+    expiresIn: "30d",
+  }
+);
+
+return res.json({
+  token,
+  user: {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    plan: user.plan,
+    isPro: user.isPro,
+    role: user.role,
+  },
+});
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

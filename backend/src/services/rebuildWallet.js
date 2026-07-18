@@ -1,6 +1,5 @@
 import Ledger from "../../models/Ledger.js";
-import Wallet from "../../models/Wallet.js";
-console.log("🔥 rebuildWallet carregado");
+
 export async function rebuildWallet(
   
     userId,
@@ -57,10 +56,9 @@ const lockedBalance = Number(
    ).toFixed(2)
 );
 
-  console.log("💰 CREDIT:", credit);
-  console.log("💸 CONFIRMED:", confirmedDebit);
-  console.log("🔒 LOCKED:", lockedBalance);
-  console.log("📊 BALANCE:", availableBalance);
+ console.log(
+  `Wallet recalculada -> Saldo: ${availableBalance}`
+);
 
  const wallet = await Wallet.findOneAndUpdate(
   { userId },

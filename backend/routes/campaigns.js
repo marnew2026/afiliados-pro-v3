@@ -1,31 +1,19 @@
 import express from "express";
+console.log("🔥🔥🔥 CAMPAIGNS ROUTE NOVA CARREGADA");
 import Campaign from "../models/Campaign.js";
 import User from "../models/User.js";
 import { protect } from "../middlewares/authMiddleware.js";
 import { registerClick } from "../services/clickService.js";
 import { addCredit } from "../services/ledgerService.js";
 import { rebuildWallet } from "../src/services/rebuildWallet.js";
-import Wallet from "../models/Wallet.js";
- console.log("🔥🔥🔥 ENTROU NA ROTA CLICK");
+
+
 const router = express.Router();
 
 /**
  * Criar campanha
  */
 router.post("/create", async (req, res) => {
-  console.log("🔥🔥🔥 CAMPAIGN ROUTES NOVA 13/07");
-   console.log("🔥🔥🔥 CREATE CHAMADO");
-    console.log("🔥 CREATE CAMPANHA");
-  console.log(req.body);
-  console.log("🔥 CAMPAIGNS ROUTE CARREGADA");
-
- console.log("🔥 CREATE CAMPANHA NOVA");
-
- console.log("BODY:", req.body);
-
- console.log("AUTH:", req.headers.authorization);
-    console.log("🔥 CREATE CAMPANHA ENTROU");
- 
   
   try {
 
@@ -61,11 +49,12 @@ if (!/^https?:\/\/.+/i.test(link)) {
 
     const user = await User.findById(userId);
 
-    if (!user) {
-      return res.status(404).json({
-        error: "Usuário não encontrado",
-      });
-    }
+   if (!user) {
+  return res.status(404).json({
+    success: false,
+    error: "Usuário não encontrado",
+  });
+}
 
     const campaign = await Campaign.create({
       userId,
@@ -76,19 +65,16 @@ if (!/^https?:\/\/.+/i.test(link)) {
       sales: 0,
       earnings: 0,
     });
-   console.log("========== CAMPANHA CRIADA ==========");
-console.log(campaign);
-console.log("createdAt:", campaign.createdAt);
-console.log("updatedAt:", campaign.updatedAt);
-console.log("=====================================");
+  
     return res.json(campaign);
 
   } catch (err) {
     console.error("ERRO CREATE CAMPAIGN:", err);
 
     return res.status(500).json({
-      error: err.message,
-    });
+  success: false,
+  error: err.message,
+});
   }
 });
 
@@ -109,8 +95,9 @@ return res.json(campaigns);
 
   } catch (err) {
     return res.status(500).json({
-      error: err.message,
-    });
+  success: false,
+  error: err.message,
+});
   }
 });
 
@@ -120,44 +107,83 @@ return res.json(campaigns);
 router.put("/:id", protect, async (req, res) => {
   try {
 
-    const campaign = await Campaign.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
+    const campaign = await Campaign.findById(req.params.id);
 
-    return res.json(campaign);
+    if (!campaign) {
+      return res.status(404).json({
+        success: false,
+        error: "Campanha não encontrada",
+      });
+    }
+
+    if (campaign.userId.toString() !== req.user.id.toString()) {
+      return res.status(403).json({
+        success: false,
+        error: "Sem permissão",
+      });
+    }
+
+    campaign.nome = req.body.nome ?? campaign.nome;
+    campaign.link = req.body.link ?? campaign.link;
+
+    await campaign.save();
+
+    return res.json({
+      success: true,
+      campaign,
+    });
 
   } catch (err) {
+
     return res.status(500).json({
+      success: false,
       error: err.message,
     });
+
   }
 });
-
 /**
  * Excluir campanha
  */
 router.delete("/:id", protect, async (req, res) => {
   try {
 
-    await Campaign.findByIdAndDelete(req.params.id);
+    const campaign = await Campaign.findById(req.params.id);
+
+    if (!campaign) {
+      return res.status(404).json({
+        success: false,
+        error: "Campanha não encontrada",
+      });
+    }
+
+    if (campaign.userId.toString() !== req.user.id.toString()) {
+      return res.status(403).json({
+        success: false,
+        error: "Sem permissão",
+      });
+    }
+
+    await campaign.deleteOne();
 
     return res.json({
       success: true,
     });
 
   } catch (err) {
+
     return res.status(500).json({
+      success: false,
       error: err.message,
     });
+
   }
 });
-
 /**
  * Tracking de clique
  */
 router.get("/r/:id", async (req, res) => {
+  
   try {
     const campaign = await Campaign.findById(req.params.id);
 
@@ -181,7 +207,7 @@ router.get("/r/:id", async (req, res) => {
       campaign.userId.toString(),
       campaign._id.toString()
     );
-console.log("USER DA CAMPANHA:", campaign.userId);
+
     // Registra o crédito no Ledger
     await addCredit({
     userId: campaign.userId.toString(),
@@ -193,16 +219,11 @@ console.log("USER DA CAMPANHA:", campaign.userId);
         campaignId: campaign._id,
       },
     });
-console.log("✅ Clique registrado:", {
-  campanha: campaign.nome,
-  clicks: campaign.clicks,
-  earnings: campaign.earnings,
-  destino: campaign.link,
-});
+
     return res.redirect(campaign.link);
 
   } catch (err) {
-    console.error(err);
+   console.error("Erro no redirecionamento da campanha:", err);
 
     return res.status(500).send("Erro interno");
   }
@@ -211,102 +232,63 @@ console.log("✅ Clique registrado:", {
 /**
  * Gerar clique (sem redirecionar)
  */
-router.post("/:id/click", async (req, res) => {
-    console.log("🔥🔥🔥 ENTROU NA ROTA CLICK");
-  console.log("=================================");
-  console.log("🔥 INICIOU CLICK");
-  console.log("ID:", req.params.id);
+router.post("/title", async (req, res) => {
+   console.log("🔥🔥🔥 ROTA /campaigns/title EXECUTOU");
 
   try {
 
-    const campaign = await Campaign.findById(req.params.id);
+    const { link } = req.body;
 
-    console.log("CAMPANHA:", campaign);
+    console.log("================================");
+    console.log("LINK RECEBIDO:");
+    console.log(link);
+    console.log("================================");
 
-    if (!campaign) {
-      console.log("❌ Campanha não encontrada");
-
-      return res.status(404).json({
-        success:false
+    if (!link) {
+      return res.status(400).json({
+        success:false,
+        error:"Link não informado"
       });
     }
 
-    campaign.clicks += 1;
+    const response = await axios.get(link);
 
-    campaign.earnings += 0.10;
+    const html = response.data;
 
-    console.log("ANTES SAVE");
+    const match = html.match(/<title>(.*?)<\/title>/i);
 
-    await campaign.save();
+    let titulo = "";
 
-    console.log("SAVE OK");
-    console.log("===== CAMPANHA APÓS SAVE =====");
-console.log("Clicks:", campaign.clicks);
-console.log("Ganhos:", campaign.earnings);
-console.log("==============================");
+    if(match){
 
-    console.log("ANTES registerClick");
+      titulo = match[1]
+        .replace(" | Mercado Livre","")
+        .replace(" | MercadoLivre","")
+        .replace("Mercado Livre","")
+        .replace("Brasil","")
+        .trim();
 
-    await registerClick(
-      campaign.userId.toString(),
-      campaign._id.toString()
-    );
+    }
 
-    console.log("registerClick OK");
+    console.log("TÍTULO:");
+    console.log(titulo);
 
-    console.log("ANTES addCredit");
-
-console.log("1️⃣ Entrando no addCredit");
-
-await addCredit({
-  userId: campaign.userId.toString(),
-  amount: 0.10,
-  referenceId: `click-${campaign._id}-${Date.now()}`,
-  source: "campaign",
-  description: "Clique manual",
-  metadata: {
-    campaignId: campaign._id,
-  },
-});
-
-console.log("2️⃣ Saiu do addCredit");
-
-console.log("3️⃣ Vai chamar rebuildWallet");
-
-await rebuildWallet(campaign.userId.toString());
-const wallet = await Wallet.findOne({
-  userId: campaign.userId.toString(),
-});
-
-console.log("===== WALLET =====");
-console.log(wallet);
-console.log("==================");
-
-console.log("4️⃣ RebuildWallet terminou");
-
-return res.json({
-  success: true,
-});
-
-    return res.json({
-      success:true
+    res.json({
+      success:true,
+      title:titulo
     });
 
   } catch(err){
 
-    console.log("######### ERRO #########");
+    console.log("ERRO TITLE");
 
-    console.log(err);
+    console.log(err.message);
 
-    console.log("########################");
-
-    return res.status(500).json({
-      success:false,
-      error:err.message
+    res.status(500).json({
+      success:false
     });
 
   }
 
 });
-
 export default router;
