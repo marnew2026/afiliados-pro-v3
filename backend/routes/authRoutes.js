@@ -60,12 +60,15 @@ if (!user.password) {
   });
 }
 
+console.log("PASSWORD RECEBIDA:", password);
+console.log("HASH BANCO:", user.password);
+
 const ok = await bcrypt.compare(
-  String(password).trim(),
-  String(user.password).trim()
+  password,
+  user.password.trim()
 );
 
-console.log("RESULTADO BCRYPT:", ok);
+console.log("🔥 RESULTADO BCRYPT:", ok);
     console.log("🔥 RESULTADO BCRYPT:");
     console.log(ok);
     if (!ok) return res.status(400).json({ error: "Senha inválida" });
