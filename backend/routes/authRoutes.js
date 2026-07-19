@@ -41,6 +41,8 @@ router.post("/login", async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ error: "Usuário não encontrado" });
+console.log("🔥 USER ENCONTRADO NO LOGIN:");
+console.log(user);
 
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(400).json({ error: "Senha inválida" });
