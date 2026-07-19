@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
+console.log("🔥🔥🔥 TESTE AUTH 19-07-02 CARREGADO 🔥🔥🔥");
 const router = express.Router();
 
 /* REGISTER */
@@ -42,10 +43,34 @@ router.post("/login", async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ error: "Usuário não encontrado" });
 console.log("🔥 USER ENCONTRADO NO LOGIN:");
-console.log(user);
+console.log(JSON.stringify(user, null, 2));
 
-    const ok = await bcrypt.compare(password, user.password);
+ console.log("PASSWORD RECEBIDO:", password);
+console.log("PASSWORD BANCO:", user.password);
+
+if (!password) {
+  return res.status(400).json({
+    error:"PASSWORD VEIO VAZIO"
+  });
+}
+
+if (!user.password) {
+  return res.status(400).json({
+    error:"USUARIO SEM PASSWORD NO BANCO"
+  });
+}
+
+const ok = await bcrypt.compare(
+  String(password).trim(),
+  String(user.password).trim()
+);
+
+console.log("RESULTADO BCRYPT:", ok);
+    console.log("🔥 RESULTADO BCRYPT:");
+    console.log(ok);
     if (!ok) return res.status(400).json({ error: "Senha inválida" });
+    console.log("🔥 GERANDO JWT");
+console.log("JWT SECRET EXISTE:", !!process.env.JWT_SECRET);
 
   const token = jwt.sign(
   {
@@ -56,7 +81,7 @@ console.log(user);
     expiresIn: "30d",
   }
 );
-
+console.log("🔥 TOKEN GERADO");
 return res.json({
   token,
   user: {
