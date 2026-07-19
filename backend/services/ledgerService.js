@@ -11,7 +11,8 @@ export async function addCredit({
   status = "confirmed",
   metadata = {},
 }) {
-
+  console.log("💰 ADD CREDIT INICIO");
+  console.log({ userId, amount, referenceId });
   // grava no Ledger
   await Ledger.create({
     userId,
@@ -23,7 +24,7 @@ export async function addCredit({
     status,
     metadata,
   });
-
+console.log("✅ Ledger gravado");
   // atualiza a Wallet
  await Wallet.findOneAndUpdate(
     { userId },
@@ -40,7 +41,7 @@ export async function addCredit({
   );
 
 }
-
+ 
 export async function addDebit({
   userId,
   amount,

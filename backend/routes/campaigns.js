@@ -123,8 +123,34 @@ router.put("/:id", protect, async (req, res) => {
       });
     }
 
-    campaign.nome = req.body.nome ?? campaign.nome;
-    campaign.link = req.body.link ?? campaign.link;
+    if(req.body.nome !== undefined){
+
+  const novoNome = req.body.nome.trim();
+
+  if(!novoNome){
+    return res.status(400).json({
+      success:false,
+      error:"Nome não pode ficar vazio"
+    });
+  }
+
+  campaign.nome = novoNome;
+}
+
+
+if(req.body.link !== undefined){
+
+  const novoLink = req.body.link.trim();
+
+  if(!novoLink){
+    return res.status(400).json({
+      success:false,
+      error:"Link não pode ficar vazio"
+    });
+  }
+
+  campaign.link = novoLink;
+}
 
     await campaign.save();
 
@@ -183,10 +209,12 @@ router.delete("/:id", protect, async (req, res) => {
  * Tracking de clique
  */
 router.get("/r/:id", async (req, res) => {
-  
+  console.log("==================================");
+  console.log("VERSAO NOVA 19/07 - ROUTA R");
+  console.log("==================================");
   try {
     const campaign = await Campaign.findById(req.params.id);
-
+console.log("Campanha encontrada:", campaign?.nome);
     if (!campaign) {
       return res.status(404).send("Campanha não encontrada");
     }
@@ -196,19 +224,24 @@ router.get("/r/:id", async (req, res) => {
 
     // Valor do clique (ajuste depois se desejar)
     const valorClique = 0.10;
-
+  console.log("Salvando campanha...");
     campaign.earnings += valorClique;
 
     await campaign.save();
-
+  console.log("Campaign salva.");
+  console.log("Chamando registerClick...");
 
     // Registra o clique
     await registerClick(
       campaign.userId.toString(),
       campaign._id.toString()
     );
+  console.log("registerClick OK");
 
+  console.log("➡️ Chamando addCredit...");
+ 
     // Registra o crédito no Ledger
+     console.log("ANTES DO ADD CREDIT");
     await addCredit({
     userId: campaign.userId.toString(),
       amount: valorClique,
@@ -219,7 +252,9 @@ router.get("/r/:id", async (req, res) => {
         campaignId: campaign._id,
       },
     });
-
+    console.log("DEPOIS DO ADD CREDIT");
+console.log("addCredit OK");
+console.log("✅ addCredit terminou");
     return res.redirect(campaign.link);
 
   } catch (err) {
