@@ -215,8 +215,16 @@ router.get("/r/:id", async (req, res) => {
    console.log("🔥 ENTROU NA ROTA /campaigns/r");
   console.log("ID:", req.params.id);
   try {
-    const campaign = await Campaign.findById(req.params.id);
-console.log("Campanha encontrada:", campaign?.nome);
+const campaign = await Campaign.findById(req.params.id);
+
+console.log("===== CAMPANHA ENCONTRADA =====");
+console.log({
+  id: campaign?._id,
+  nome: campaign?.nome,
+  clicksAntes: campaign?.clicks,
+  ganhosAntes: campaign?.earnings,
+});
+console.log("===============================");
     if (!campaign) {
       return res.status(404).send("Campanha não encontrada");
     }
@@ -229,9 +237,26 @@ console.log("Campanha encontrada:", campaign?.nome);
   console.log("Salvando campanha...");
     campaign.earnings += valorClique;
 
-    await campaign.save();
-  console.log("Campaign salva.");
-  console.log("Chamando registerClick...");
+  await campaign.save();
+
+console.log("===== CAMPANHA APÓS SAVE =====");
+console.log({
+  id: campaign._id,
+  clicks: campaign.clicks,
+  earnings: campaign.earnings,
+})
+console.log({
+  clicksDepois: campaign.clicks,
+  ganhosDepois: campaign.earnings,
+});
+console.log("===============================");
+
+console.log("===== CAMPANHA APÓS SAVE =====");
+console.log("Clicks:", campaign.clicks);
+console.log("Ganhos:", campaign.earnings);
+console.log("==============================");
+
+console.log("Chamando registerClick...");
 
     // Registra o clique
     await registerClick(
@@ -240,23 +265,45 @@ console.log("Campanha encontrada:", campaign?.nome);
     );
   console.log("registerClick OK");
 
-  console.log("➡️ Chamando addCredit...");
- 
-    // Registra o crédito no Ledger
-     console.log("ANTES DO ADD CREDIT");
-    await addCredit({
-    userId: campaign.userId.toString(),
-      amount: valorClique,
-      referenceId: `click-${campaign._id}-${Date.now()}`,
-      source: "campaign",
-      description: "Clique em campanha",
-      metadata: {
-        campaignId: campaign._id,
-      },
-    });
-    console.log("DEPOIS DO ADD CREDIT");
-console.log("addCredit OK");
-console.log("✅ addCredit terminou");
+ console.log("➡️ Chamando addCredit...");
+
+const referenceId = `click-${campaign._id}-${Date.now()}`;
+
+console.log("💰 ADD CREDIT INICIO");
+
+console.log({
+  userId: campaign.userId.toString(),
+  amount: valorClique,
+  referenceId
+});
+
+await addCredit({
+  userId: campaign.userId.toString(),
+  amount: valorClique,
+  referenceId,
+  source: "campaign",
+  description: "Clique em campanha",
+  metadata: {
+    campaignId: campaign._id,
+  },
+});
+   console.log("✅ ADD CREDIT FINALIZADO");
+console.log({
+ userId: campaign.userId.toString(),
+ valorCreditado: valorClique,
+ referencia: referenceId
+});
+    console.log("3️⃣ Vai chamar rebuildWallet");
+console.log("🚨 ANTES DO REBUILD WALLET");
+const wallet = await rebuildWallet(
+  campaign.userId.toString()
+);
+console.log("🚨 DEPOIS DO REBUILD WALLET");
+console.log("4️⃣ RebuildWallet terminou");
+
+console.log("===== WALLET FINAL DO CLICK =====");
+console.log(wallet);
+console.log("===============================");
     return res.redirect(campaign.link);
 
   } catch (err) {

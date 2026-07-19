@@ -1,3 +1,6 @@
+console.log("########################################");
+console.log("🔥🔥🔥 DASHBOARD ROUTE NOVA CARREGADA");
+console.log("########################################");
 import express from "express";
 import User from "../models/User.js";
 import Campaign from "../models/Campaign.js";
@@ -101,6 +104,12 @@ router.get("/debug/ledger-total/:userId", async (req, res) => {
 router.get("/:userId", async (req, res) => {
   
   try {
+    console.log("==================================");
+console.log("🔥 DASHBOARD");
+console.log("==================================");
+
+console.log("USER:");
+console.log(req.params.userId);
     const { userId } = req.params;
 
 
@@ -120,6 +129,26 @@ router.get("/:userId", async (req, res) => {
     const campaigns = await Campaign.find({
       userId: user._id,
     });
+    console.log("==============================");
+console.log("CAMPANHAS ENCONTRADAS:");
+console.log(campaigns.length);
+
+campaigns.forEach((c) => {
+
+  console.log("----------------");
+
+  console.log("Nome:");
+  console.log(c.nome);
+
+  console.log("Clicks:");
+  console.log(c.clicks);
+
+  console.log("Ganhos:");
+  console.log(c.earnings);
+
+});
+
+console.log("==============================");
 
     // Busca carteira
     const wallet = await Wallet.findOne({
@@ -130,6 +159,19 @@ router.get("/:userId", async (req, res) => {
       (acc, c) => acc + (c.clicks || 0),
       0
     );
+    const totalEarnings = wallet?.totalEarned || 0;
+
+console.log("==============================");
+console.log("TOTAL CLICKS:");
+console.log(totalClicks);
+
+console.log("TOTAL GANHOS:");
+console.log(totalEarnings);
+
+console.log("SALDO DISPONÍVEL:");
+console.log(wallet?.availableBalance || 0);
+
+console.log("==============================");
 
     return res.json({
       user,

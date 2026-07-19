@@ -1,5 +1,5 @@
 import Ledger from "../../models/Ledger.js";
-
+import Wallet from "../../models/Wallet.js";
 export async function rebuildWallet(
   
     userId,
@@ -55,7 +55,15 @@ const lockedBalance = Number(
       pendingDebit
    ).toFixed(2)
 );
-
+console.log("=================================");
+console.log("🔥 REBUILD WALLET FINAL");
+console.log("USER:", userId);
+console.log("📦 LEDGER TOTAL:", ledger.length);
+console.log("💰 CREDIT TOTAL:", credit);
+console.log("💸 SAQUES CONFIRMADOS:", confirmedDebit);
+console.log("🔒 SAQUES BLOQUEADOS:", pendingDebit);
+console.log("💵 SALDO DISPONÍVEL:", availableBalance);
+console.log("=================================");
  console.log(
   `Wallet recalculada -> Saldo: ${availableBalance}`
 );
@@ -75,5 +83,14 @@ const lockedBalance = Number(
     session,
   }
 );
+
+console.log("===== WALLET ATUALIZADA =====");
+console.log({
+  userId: wallet.userId,
+  availableBalance: wallet.availableBalance,
+  lockedBalance: wallet.lockedBalance,
+  totalEarned: wallet.totalEarned,
+});
+console.log("=============================");
   return wallet;
 }
