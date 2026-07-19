@@ -40,7 +40,8 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+  const user = await User.findOne({ email }).select("+password");
+  console.log("PASSWORD BANCO:", user.password);
     if (!user) return res.status(400).json({ error: "Usuário não encontrado" });
 console.log("🔥 USER ENCONTRADO NO LOGIN:");
 console.log(JSON.stringify(user, null, 2));
