@@ -212,6 +212,8 @@ router.get("/r/:id", async (req, res) => {
   console.log("==================================");
   console.log("VERSAO NOVA 19/07 - ROUTA R");
   console.log("==================================");
+   console.log("🔥 ENTROU NA ROTA /campaigns/r");
+  console.log("ID:", req.params.id);
   try {
     const campaign = await Campaign.findById(req.params.id);
 console.log("Campanha encontrada:", campaign?.nome);
@@ -261,6 +263,66 @@ console.log("✅ addCredit terminou");
    console.error("Erro no redirecionamento da campanha:", err);
 
     return res.status(500).send("Erro interno");
+  }
+});
+
+/**
+ * Registrar clique sem redirecionar
+ */
+router.post("/:id/click", async (req, res) => {
+  console.log("==================================");
+  console.log("POST CLICK");
+  console.log("==================================");
+
+  try {
+    const campaign = await Campaign.findById(req.params.id);
+
+    if (!campaign) {
+      return res.status(404).json({
+        success: false,
+        error: "Campanha não encontrada",
+      });
+    }
+
+    campaign.clicks += 1;
+
+    const valorClique = 0.10;
+
+    campaign.earnings += valorClique;
+
+    await campaign.save();
+
+    await registerClick(
+      campaign.userId.toString(),
+      campaign._id.toString()
+    );
+
+    await addCredit({
+      userId: campaign.userId.toString(),
+      amount: valorClique,
+      referenceId: `click-${campaign._id}-${Date.now()}`,
+      source: "campaign",
+      description: "Clique em campanha",
+      metadata: {
+        campaignId: campaign._id,
+      },
+    });
+
+    return res.json({
+      success: true,
+      clicks: campaign.clicks,
+      earnings: campaign.earnings,
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    return res.status(500).json({
+      success: false,
+      error: err.message,
+    });
+
   }
 });
 
