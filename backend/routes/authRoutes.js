@@ -34,6 +34,8 @@ router.post("/register", async (req, res) => {
 
 /* LOGIN */
 router.post("/login", async (req, res) => {
+    console.log("🔥 ENTROU NA ROTA /auth/login");
+  console.log(req.body);
   try {
     const { email, password } = req.body;
 

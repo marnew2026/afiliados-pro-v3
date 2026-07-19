@@ -20,6 +20,7 @@ import adminDashboardRoutes from "./routes/adminDashboardRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import checkoutRoutes from "./routes/checkout.js";
 import webhookRoutes from "./routes/webhook.js";
+import authRoutes from "./routes/authRoutes.js";
 console.log("#################################");
 console.log("INDEX NOVO ATUAL  12/07  17H 45M   ");
 console.log("#################################");
@@ -63,6 +64,8 @@ app.use("/wallet", walletRoutes);
 app.use("/admin/dashboard", adminDashboardRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/checkout", checkoutRoutes);
+app.use("/auth", authRoutes);
+console.log("🔥🔥🔥 AUTH NOVA VERSAO 19-07 CARREGADA");
 console.log("✅ app.use('/checkout') registrado");
 app.get("/teste", (req, res) => {
   res.send("OK");
