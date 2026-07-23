@@ -214,7 +214,13 @@ router.get("/r/:id", async (req, res) => {
   console.log("==================================");
    console.log("🔥 ENTROU NA ROTA /campaigns/r");
   console.log("ID:", req.params.id);
-   
+   const ip =
+  req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+  req.socket.remoteAddress;
+
+console.log("IP:", ip);
+
+const campaign = await Campaign.findById(req.params.id);
 
   console.log("IP:", ip);
  const campaign = await Campaign.findById(req.params.id);
@@ -234,9 +240,6 @@ if (
     return res.redirect(campaign.link);
 }
 
-const ip =
-  req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
-  req.socket.remoteAddress;
 
 // últimos 30 minutos
 const limite = new Date(Date.now() - 30 * 60 * 1000);
@@ -305,7 +308,7 @@ console.log("Chamando registerClick...");
       campaign._id.toString()
     );
   console.log("registerClick OK");
-  
+
   await ClickLog.create({
     campaignId: campaign._id,
     userId: campaign.userId,
@@ -357,10 +360,7 @@ console.log("4️⃣ RebuildWallet terminou");
 console.log("===== WALLET FINAL DO CLICK =====");
 console.log(wallet);
 console.log("===============================");
-await ClickLog.create({
-    campaignId: campaign._id,
-    ip
-});
+
     return res.redirect(campaign.link);
 
   } catch (err) {
