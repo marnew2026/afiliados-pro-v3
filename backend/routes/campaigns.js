@@ -209,25 +209,25 @@ router.delete("/:id", protect, async (req, res) => {
  * Tracking de clique
  */
 router.get("/r/:id", async (req, res) => {
+
+  const ip =
+    req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+    req.socket.remoteAddress;
+
   console.log("==================================");
   console.log("VERSAO NOVA 19/07 - ROUTA R");
   console.log("==================================");
-   console.log("🔥 ENTROU NA ROTA /campaigns/r");
+  console.log("🔥 ENTROU NA ROTA /campaigns/r");
   console.log("ID:", req.params.id);
-   const ip =
-  req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
-  req.socket.remoteAddress;
-
-console.log("IP:", ip);
-
-const campaign = await Campaign.findById(req.params.id);
-
   console.log("IP:", ip);
- const campaign = await Campaign.findById(req.params.id);
 
-if (!campaign) {
-  return res.status(404).send("Campanha não encontrada");
-}
+  const campaign = await Campaign.findById(req.params.id);
+
+  if (!campaign) {
+    return res.status(404).send("Campanha não encontrada");
+  }
+
+
 const agora = Date.now();
 
 if (

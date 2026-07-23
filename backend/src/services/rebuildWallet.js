@@ -7,6 +7,7 @@ export async function rebuildWallet(
 ) {
   console.log("🔥 rebuildWallet EXECUTOU");
   console.log("USER:", userId);
+  console.log("######## REBUILD WALLET V3 ########");
  const ledger = await Ledger.find({ userId })
     .session(session)
     .lean();
@@ -75,13 +76,7 @@ console.log({
   totalEarned: credit,
   totalWithdrawn: confirmedDebit,
 });
-console.log("ANTES DO UPDATE");
-console.log({
-  availableBalance,
-  lockedBalance,
-  totalEarned: credit,
-  totalWithdrawn: confirmedDebit,
-});
+
 const wallet = await Wallet.findOneAndUpdate(
   { userId },
   {
@@ -99,9 +94,9 @@ const wallet = await Wallet.findOneAndUpdate(
   }
 );
 console.log("DEPOIS DO UPDATE");
+console.log("######## UPDATE EXECUTADO ########");
 console.log(wallet);
-console.log("DEPOIS DO UPDATE");
-console.log(wallet);
+
 
 console.log("===== WALLET ATUALIZADA =====");
 console.log({
