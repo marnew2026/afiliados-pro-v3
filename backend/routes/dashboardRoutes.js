@@ -102,6 +102,12 @@ router.get("/debug/ledger-total/:userId", async (req, res) => {
 });
 
 router.get("/:userId", async (req, res) => {
+  console.log("========================");
+console.log("DASHBOARD EXECUTOU");
+console.log(new Date());
+console.log(req.originalUrl);
+console.log(req.headers["user-agent"]);
+console.log("========================");
   
   try {
     console.log("==================================");
@@ -170,6 +176,8 @@ console.log(totalEarnings);
 
 console.log("SALDO DISPONÍVEL:");
 console.log(wallet?.availableBalance || 0);
+console.log("TOTAL SACADO:");
+console.log(wallet?.totalWithdrawn || 0);
 
 console.log("==============================");
 
@@ -177,12 +185,17 @@ console.log("==============================");
       user,
       campaigns: campaigns || [],
       wallet: {
-        availableBalance: wallet?.availableBalance || 0,
-      },
-      metrics: {
-        totalClicks,
-        totalEarnings: wallet?.totalEarned || 0,
-      },
+  availableBalance: wallet?.availableBalance || 0,
+  lockedBalance: wallet?.lockedBalance || 0,
+  totalEarned: wallet?.totalEarned || 0,
+  totalWithdrawn: wallet?.totalWithdrawn || 0,
+},
+
+metrics: {
+  totalClicks,
+  totalEarnings: wallet?.totalEarned || 0,
+  totalWithdrawn: wallet?.totalWithdrawn || 0,
+},
     });
 
   } catch (err) {

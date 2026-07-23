@@ -32,8 +32,9 @@ export async function processWithdrawQueue() {
     );
 
     if (!withdraw) {
-      return;
-    }
+  isProcessing = false;
+  return;
+}
 
     console.log("💸 PROCESSANDO SAQUE:", withdraw._id.toString());
 
@@ -48,24 +49,33 @@ export async function processWithdrawQueue() {
     });
 
     // Evita envio duplicado
-   const currentWithdraw = await Withdraw.findById(withdraw._id);
+const currentWithdraw = await Withdraw.findOne({
+  _id: withdraw._id,
+});
 
 if (!currentWithdraw) {
   console.log("⚠️ Saque não encontrado.");
   return;
 }
 
-if (currentWithdraw.status !== "processing") {
-  console.log("⚠️ Saque já mudou de estado.");
+if (["done", "paid"].includes(currentWithdraw.status)) {
+  console.log("✅ Saque já concluído.");
+  return;
+}
+
+if (currentWithdraw.status === "sent") {
+  console.log("⚠️ PIX já enviado. Aguardando confirmação do Asaas.");
   return;
 }
 
 if (currentWithdraw.asaasTransferId) {
-  console.log(
-    "⚠️ Transferência já registrada:",
-    currentWithdraw.asaasTransferId
-  );
+  console.log("⚠️ Transferência já registrada:");
+  console.log(currentWithdraw.asaasTransferId);
+  return;
+}
 
+if (currentWithdraw.status !== "processing") {
+  console.log("⚠️ Estado inesperado:", currentWithdraw.status);
   return;
 }
 

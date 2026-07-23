@@ -6,8 +6,8 @@ import { protect } from "../middlewares/authMiddleware.js";
 import { registerClick } from "../services/clickService.js";
 import { addCredit } from "../services/ledgerService.js";
 import { rebuildWallet } from "../src/services/rebuildWallet.js";
-
-
+import axios from "axios";
+import ClickLog from "../models/ClickLog.js";
 const router = express.Router();
 
 /**
@@ -39,14 +39,14 @@ if (!link) {
   });
 }
 
+
 // Aceita apenas URLs HTTP/HTTPS
 if (!/^https?:\/\/.+/i.test(link)) {
-  return res.status(400).json({
-    success: false,
-    error: "Link inválido. Informe uma URL iniciando com http:// ou https://."
-  });
+    return res.status(400).json({
+        success: false,
+        error: "Link inválido"
+    });
 }
-
     const user = await User.findById(userId);
 
    if (!user) {
@@ -214,20 +214,49 @@ router.get("/r/:id", async (req, res) => {
   console.log("==================================");
    console.log("🔥 ENTROU NA ROTA /campaigns/r");
   console.log("ID:", req.params.id);
-  try {
-const campaign = await Campaign.findById(req.params.id);
+   
 
-console.log("===== CAMPANHA ENCONTRADA =====");
-console.log({
-  id: campaign?._id,
-  nome: campaign?.nome,
-  clicksAntes: campaign?.clicks,
-  ganhosAntes: campaign?.earnings,
-});
-console.log("===============================");
-    if (!campaign) {
-      return res.status(404).send("Campanha não encontrada");
+  console.log("IP:", ip);
+ const campaign = await Campaign.findById(req.params.id);
+
+if (!campaign) {
+  return res.status(404).send("Campanha não encontrada");
+}
+const agora = Date.now();
+
+if (
+    campaign.lastClickIp === ip &&
+    campaign.lastClickAt &&
+    agora - new Date(campaign.lastClickAt).getTime() < 300000
+) {
+    console.log("Clique repetido ignorado.");
+
+    return res.redirect(campaign.link);
+}
+
+const ip =
+  req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+  req.socket.remoteAddress;
+
+// últimos 30 minutos
+const limite = new Date(Date.now() - 30 * 60 * 1000);
+
+const repetido = await Campaign.findOne({
+  _id: campaign._id,
+  lastClicks: {
+    $elemMatch: {
+      ip,
+      date: { $gte: limite }
     }
+  }
+});
+
+if (repetido) {
+  console.log("⚠️ Clique repetido:", ip);
+  return res.redirect(campaign.link);
+}
+  try {
+
 
     // Incrementa os cliques
     campaign.clicks += 1;
@@ -236,7 +265,19 @@ console.log("===============================");
     const valorClique = 0.10;
   console.log("Salvando campanha...");
     campaign.earnings += valorClique;
+    if (!campaign.lastClicks) {
+  campaign.lastClicks = [];
+}
 
+campaign.lastClicks.push({
+  ip,
+  date: new Date(),
+});
+
+// mantém somente os últimos 100 registros
+campaign.lastClicks = campaign.lastClicks.slice(-100);
+campaign.lastClickIp = ip;
+campaign.lastClickAt = new Date();
   await campaign.save();
 
 console.log("===== CAMPANHA APÓS SAVE =====");
@@ -264,6 +305,16 @@ console.log("Chamando registerClick...");
       campaign._id.toString()
     );
   console.log("registerClick OK");
+  
+  await ClickLog.create({
+    campaignId: campaign._id,
+    userId: campaign.userId,
+    ip: ip,
+    userAgent: req.headers["user-agent"] || "",
+    referer: req.headers.referer || "",
+});
+
+console.log("✅ ClickLog salvo");
 
  console.log("➡️ Chamando addCredit...");
 
@@ -287,6 +338,8 @@ await addCredit({
     campaignId: campaign._id,
   },
 });
+
+
    console.log("✅ ADD CREDIT FINALIZADO");
 console.log({
  userId: campaign.userId.toString(),
@@ -304,6 +357,10 @@ console.log("4️⃣ RebuildWallet terminou");
 console.log("===== WALLET FINAL DO CLICK =====");
 console.log(wallet);
 console.log("===============================");
+await ClickLog.create({
+    campaignId: campaign._id,
+    ip
+});
     return res.redirect(campaign.link);
 
   } catch (err) {
@@ -319,11 +376,12 @@ console.log("===============================");
 router.post("/:id/click", async (req, res) => {
   console.log("==================================");
   console.log("POST CLICK");
+    console.log("ID:", req.params.id);
   console.log("==================================");
 
   try {
     const campaign = await Campaign.findById(req.params.id);
-
+ console.log("Campanha encontrada:", !!campaign);
     if (!campaign) {
       return res.status(404).json({
         success: false,
@@ -336,14 +394,17 @@ router.post("/:id/click", async (req, res) => {
     const valorClique = 0.10;
 
     campaign.earnings += valorClique;
-
+    console.log("Salvando campanha...");
     await campaign.save();
-
+        console.log("Campanha salva");
+          console.log("Chamando registerClick...");
     await registerClick(
       campaign.userId.toString(),
       campaign._id.toString()
     );
+ console.log("registerClick OK");
 
+    console.log("Chamando addCredit...");
     await addCredit({
       userId: campaign.userId.toString(),
       amount: valorClique,
@@ -354,7 +415,16 @@ router.post("/:id/click", async (req, res) => {
         campaignId: campaign._id,
       },
     });
+    console.log("Chamando rebuildWallet...");
 
+const wallet = await rebuildWallet(
+  campaign.userId.toString()
+);
+
+console.log("Wallet reconstruída");
+
+console.log(wallet);
+ console.log("addCredit OK");
     return res.json({
       success: true,
       clicks: campaign.clicks,

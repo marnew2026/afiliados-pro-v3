@@ -68,13 +68,28 @@ console.log("=================================");
   `Wallet recalculada -> Saldo: ${availableBalance}`
 );
 
- const wallet = await Wallet.findOneAndUpdate(
+console.log("ANTES DO UPDATE");
+console.log({
+  availableBalance,
+  lockedBalance,
+  totalEarned: credit,
+  totalWithdrawn: confirmedDebit,
+});
+console.log("ANTES DO UPDATE");
+console.log({
+  availableBalance,
+  lockedBalance,
+  totalEarned: credit,
+  totalWithdrawn: confirmedDebit,
+});
+const wallet = await Wallet.findOneAndUpdate(
   { userId },
   {
     $set: {
       availableBalance,
       lockedBalance,
       totalEarned: credit,
+      totalWithdrawn: confirmedDebit,
     },
   },
   {
@@ -83,6 +98,10 @@ console.log("=================================");
     session,
   }
 );
+console.log("DEPOIS DO UPDATE");
+console.log(wallet);
+console.log("DEPOIS DO UPDATE");
+console.log(wallet);
 
 console.log("===== WALLET ATUALIZADA =====");
 console.log({
@@ -90,6 +109,7 @@ console.log({
   availableBalance: wallet.availableBalance,
   lockedBalance: wallet.lockedBalance,
   totalEarned: wallet.totalEarned,
+  totalWithdrawn: wallet.totalWithdrawn,
 });
 console.log("=============================");
   return wallet;

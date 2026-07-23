@@ -11,13 +11,39 @@ router.post("/create", async (req, res) => {
   console.log("BODY SAQUE:", req.body);
   try {
 
-    const {
+ const {
   userId,
-  amount,
+  amount: rawAmount,
   pixKey,
   withdrawId,
 } = req.body;
 
+const value = Number(rawAmount);
+
+if (!withdrawId) {
+    return res.status(400).json({
+        error: "withdrawId obrigatório.",
+    });
+}
+if (!userId) {
+  return res.status(400).json({
+    error: "userId obrigatório.",
+  });
+}
+
+
+
+if (Number.isNaN(value) || value <= 0) {
+  return res.status(400).json({
+    error: "Valor inválido.",
+  });
+}
+
+if (!pixKey || !String(pixKey).trim()) {
+  return res.status(400).json({
+    error: "PIX obrigatório.",
+  });
+}
 const user = await User.findById(userId);
 
 if (!user) {
@@ -39,26 +65,36 @@ if (existingWithdraw) {
 }
    const result = await lockWallet(userId, async (wallet, session) => {
 
-    const existing = await Withdraw.findOne({
-        userId,
-        status: {
-            $in: ["pending", "processing", "sent"],
-        },
-    }).session(session);
+   const BLOCKED_STATUS = [
+    "pending",
+    "processing",
+    "sent",
+    "created",
+    "waiting",
+];
 
-    if (existing) {
-        throw new Error("Já existe um saque em andamento.");
-    }
-console.log("WALLET:", wallet);
-console.log("AMOUNT:", amount);
-    if (Number(wallet?.availableBalance || 0) < Number(amount)) {
-        throw new Error("Saldo insuficiente");
-    }
+const existing = await Withdraw.findOne({
+    userId,
+    status: { $in: BLOCKED_STATUS },
+}).session(session);
+
+if (existing) {
+    throw new Error("Já existe um saque em processamento.");
+}
+console.log("WALLET BEFORE:", {
+  availableBalance: wallet.availableBalance,
+  lockedBalance: wallet.lockedBalance,
+});
+
+console.log("WITHDRAW VALUE:", value);
+    if (Number(wallet?.availableBalance || 0) < value) {
+    throw new Error("Saldo insuficiente");
+}
 
     const [newWithdraw] = await Withdraw.create(
         [{
             userId,
-            amount,
+          amount: value,
             pixKey,
             withdrawId,
             referenceId: withdrawId,
@@ -71,7 +107,7 @@ console.log("AMOUNT:", amount);
         {
             userId,
             type: "debit",
-            amount,
+             amount: value,
             status: "pending",
             referenceId: withdrawId,
             source: "withdraw",
