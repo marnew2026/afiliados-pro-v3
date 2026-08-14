@@ -77,7 +77,7 @@ const ledgerResult = await Ledger.updateOne(
 if (ledgerResult.matchedCount !== 1) {
   console.log("❌ Ledger não encontrado:", w.withdrawId);
 } else if (ledgerResult.modifiedCount === 1) {
-  console.log("✅ Ledger confirmado:", w.withdrawId);
+  console.log("🏆 SAQUE FINALIZADO COM SUCESSO:", w.withdrawId);
 } else {
   console.log("ℹ️ Ledger já estava confirmado:", w.withdrawId);
 }

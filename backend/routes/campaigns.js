@@ -8,6 +8,7 @@ import { addCredit } from "../services/ledgerService.js";
 import { rebuildWallet } from "../src/services/rebuildWallet.js";
 import axios from "axios";
 import ClickLog from "../models/ClickLog.js";
+import { toCents, toReais, fixMoney } from "../utils/money.js";
 const router = express.Router();
 
 /**
@@ -91,7 +92,16 @@ const campaigns = await Campaign.find({
   active: true,
 }).sort({ createdAt: -1 });
 
-return res.json(campaigns);
+const campaignsFixed = campaigns.map((campaign) => {
+  const data = campaign.toObject();
+
+  return {
+    ...data,
+    earnings: fixMoney(data.earnings || 0),
+  };
+});
+
+return res.json(campaignsFixed);
 
   } catch (err) {
     return res.status(500).json({
@@ -209,7 +219,7 @@ router.delete("/:id", protect, async (req, res) => {
  * Tracking de clique
  */
 router.get("/r/:id", async (req, res) => {
-
+console.time("CLICK_TOTAL");
   const ip =
     req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
     req.socket.remoteAddress;
@@ -267,7 +277,11 @@ if (repetido) {
     // Valor do clique (ajuste depois se desejar)
     const valorClique = 0.10;
   console.log("Salvando campanha...");
-    campaign.earnings += valorClique;
+ const earningsCents =
+  toCents(campaign.earnings || 0) +
+  toCents(valorClique);
+
+campaign.earnings = toReais(earningsCents);
     if (!campaign.lastClicks) {
   campaign.lastClicks = [];
 }
@@ -281,13 +295,27 @@ campaign.lastClicks.push({
 campaign.lastClicks = campaign.lastClicks.slice(-100);
 campaign.lastClickIp = ip;
 campaign.lastClickAt = new Date();
-  await campaign.save();
+  console.time("campaignSave");
+  console.log("ANTES DO SAVE");
+console.log(fixMoney(campaign.earnings || 0));
+await campaign.save();
+const campanhaBanco = await Campaign.findById(campaign._id);
+
+console.log("MEMÓRIA:", campaign.earnings);
+console.log("BANCO:", campanhaBanco.earnings);
+console.log("DEPOIS DO SAVE");
+console.log(fixMoney(campaign.earnings || 0));
+const teste = await Campaign.findById(campaign._id);
+
+console.log("MONGO:");
+console.log(teste.earnings);
+console.timeEnd("campaignSave");
 
 console.log("===== CAMPANHA APÓS SAVE =====");
 console.log({
   id: campaign._id,
   clicks: campaign.clicks,
-  earnings: campaign.earnings,
+  earnings: fixMoney(campaign.earnings || 0),
 })
 console.log({
   clicksDepois: campaign.clicks,
@@ -297,25 +325,29 @@ console.log("===============================");
 
 console.log("===== CAMPANHA APÓS SAVE =====");
 console.log("Clicks:", campaign.clicks);
-console.log("Ganhos:", campaign.earnings);
+console.log("Ganhos:", fixMoney(campaign.earnings || 0));
 console.log("==============================");
 
 console.log("Chamando registerClick...");
 
     // Registra o clique
-    await registerClick(
-      campaign.userId.toString(),
-      campaign._id.toString()
-    );
+    console.time("registerClick");
+await registerClick(
+  campaign.userId.toString(),
+  campaign._id.toString()
+);
+console.timeEnd("registerClick");
   console.log("registerClick OK");
 
-  await ClickLog.create({
-    campaignId: campaign._id,
-    userId: campaign.userId,
-    ip: ip,
-    userAgent: req.headers["user-agent"] || "",
-    referer: req.headers.referer || "",
+console.time("clickLog");
+await ClickLog.create({
+  campaignId: campaign._id,
+  userId: campaign.userId,
+  ip,
+  userAgent: req.headers["user-agent"] || "",
+  referer: req.headers.referer || "",
 });
+console.timeEnd("clickLog");
 
 console.log("✅ ClickLog salvo");
 
@@ -331,6 +363,7 @@ console.log({
   referenceId
 });
 
+console.time("addCredit");
 await addCredit({
   userId: campaign.userId.toString(),
   amount: valorClique,
@@ -341,6 +374,7 @@ await addCredit({
     campaignId: campaign._id,
   },
 });
+console.timeEnd("addCredit");
 
 
    console.log("✅ ADD CREDIT FINALIZADO");
@@ -351,6 +385,7 @@ console.log({
 });
     console.log("3️⃣ Vai chamar rebuildWallet");
 console.log("🚨 ANTES DO REBUILD WALLET");
+console.time("rebuildWallet");
 const wallet = await rebuildWallet(
   campaign.userId.toString()
 );
@@ -360,6 +395,7 @@ console.log("4️⃣ RebuildWallet terminou");
 console.log("===== WALLET FINAL DO CLICK =====");
 console.log(wallet);
 console.log("===============================");
+console.timeEnd("CLICK_TOTAL");
 
     return res.redirect(campaign.link);
 
@@ -374,75 +410,13 @@ console.log("===============================");
  * Registrar clique sem redirecionar
  */
 router.post("/:id/click", async (req, res) => {
-  console.log("==================================");
-  console.log("POST CLICK");
-    console.log("ID:", req.params.id);
-  console.log("==================================");
+  console.log("⚠️ POST /:id/click DESATIVADO — use GET /r/:id");
 
-  try {
-    const campaign = await Campaign.findById(req.params.id);
- console.log("Campanha encontrada:", !!campaign);
-    if (!campaign) {
-      return res.status(404).json({
-        success: false,
-        error: "Campanha não encontrada",
-      });
-    }
-
-    campaign.clicks += 1;
-
-    const valorClique = 0.10;
-
-    campaign.earnings += valorClique;
-    console.log("Salvando campanha...");
-    await campaign.save();
-        console.log("Campanha salva");
-          console.log("Chamando registerClick...");
-    await registerClick(
-      campaign.userId.toString(),
-      campaign._id.toString()
-    );
- console.log("registerClick OK");
-
-    console.log("Chamando addCredit...");
-    await addCredit({
-      userId: campaign.userId.toString(),
-      amount: valorClique,
-      referenceId: `click-${campaign._id}-${Date.now()}`,
-      source: "campaign",
-      description: "Clique em campanha",
-      metadata: {
-        campaignId: campaign._id,
-      },
-    });
-    console.log("Chamando rebuildWallet...");
-
-const wallet = await rebuildWallet(
-  campaign.userId.toString()
-);
-
-console.log("Wallet reconstruída");
-
-console.log(wallet);
- console.log("addCredit OK");
-    return res.json({
-      success: true,
-      clicks: campaign.clicks,
-      earnings: campaign.earnings,
-    });
-
-  } catch (err) {
-
-    console.error(err);
-
-    return res.status(500).json({
-      success: false,
-      error: err.message,
-    });
-
-  }
+  return res.status(410).json({
+    success: false,
+    error: "Rota antiga de clique desativada. Use /campaigns/r/:id",
+  });
 });
-
 /**
  * Gerar clique (sem redirecionar)
  */

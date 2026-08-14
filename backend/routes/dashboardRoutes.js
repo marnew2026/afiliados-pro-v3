@@ -8,6 +8,7 @@ import Wallet from "../models/Wallet.js";
 
 import Withdraw from "../models/Withdraw.js";
 import Ledger from "../models/Ledger.js";
+import { toCents, toReais, fixMoney } from "../utils/money.js";
 
 const router = express.Router();
 router.get("/debug/finance/:userId", async (req, res) => {
@@ -102,6 +103,17 @@ router.get("/debug/ledger-total/:userId", async (req, res) => {
 });
 
 router.get("/:userId", async (req, res) => {
+ 
+
+  console.log("=================================");
+  console.log("DASHBOARD CHAMADO");
+  console.log("HORÁRIO:", new Date().toLocaleTimeString());
+  console.log("USER:", req.params.userId);
+  console.log("ORIGIN:", req.headers.origin);
+  console.log("USER-AGENT:", req.headers["user-agent"]);
+  console.log("=================================");
+
+  // resto da rota...
   console.log("========================");
 console.log("DASHBOARD EXECUTOU");
 console.log(new Date());
@@ -149,8 +161,8 @@ campaigns.forEach((c) => {
   console.log("Clicks:");
   console.log(c.clicks);
 
-  console.log("Ganhos:");
-  console.log(c.earnings);
+console.log("Ganhos:");
+console.log(toReais(toCents(c.earnings || 0)));
 
 });
 
@@ -165,8 +177,29 @@ console.log("==============================");
       (acc, c) => acc + (c.clicks || 0),
       0
     );
-    const totalEarnings = wallet?.totalEarned || 0;
+const totalEarnings = toReais(
+  toCents(wallet?.totalEarned || 0)
+);
+console.log("===== TESTE FIX MONEY =====");
+console.log("RAW totalEarned:", wallet?.totalEarned);
+console.log("FIXED totalEarnings:", totalEarnings);
+console.log("TIPO:", typeof totalEarnings);
+console.log("===========================");
 
+const availableBalance = toReais(
+  toCents(wallet?.availableBalance || 0)
+);
+
+const lockedBalance = toReais(
+  toCents(wallet?.lockedBalance || 0)
+);
+
+const totalWithdrawn = toReais(
+  toCents(wallet?.totalWithdrawn || 0)
+);
+console.log("RAW totalWithdrawn:", wallet?.totalWithdrawn);
+console.log("FIXED totalWithdrawn:", totalWithdrawn);
+console.log("TIPO:", typeof totalWithdrawn);
 console.log("==============================");
 console.log("TOTAL CLICKS:");
 console.log(totalClicks);
@@ -175,28 +208,44 @@ console.log("TOTAL GANHOS:");
 console.log(totalEarnings);
 
 console.log("SALDO DISPONÍVEL:");
-console.log(wallet?.availableBalance || 0);
+console.log(availableBalance);
+
 console.log("TOTAL SACADO:");
-console.log(wallet?.totalWithdrawn || 0);
+console.log(totalWithdrawn);
 
 console.log("==============================");
+const campaignsFixed = campaigns.map((campaign) => {
+  const data = campaign.toObject();
 
-    return res.json({
-      user,
-      campaigns: campaigns || [],
-      wallet: {
-  availableBalance: wallet?.availableBalance || 0,
-  lockedBalance: wallet?.lockedBalance || 0,
-  totalEarned: wallet?.totalEarned || 0,
-  totalWithdrawn: wallet?.totalWithdrawn || 0,
+  return {
+    ...data,
+    earnings: toReais(toCents(data.earnings || 0)),
+  };
+});
+  return res.json({
+  user: {
+  _id: user._id,
+  email: user.email,
+  name: user.name,
+  isPro: user.isPro,
+  plan: user.plan,
+  status: user.status,
 },
+ campaigns: campaignsFixed,
 
-metrics: {
-  totalClicks,
-  totalEarnings: wallet?.totalEarned || 0,
-  totalWithdrawn: wallet?.totalWithdrawn || 0,
-},
-    });
+  wallet: {
+    availableBalance,
+    lockedBalance,
+    totalEarned: totalEarnings,
+    totalWithdrawn,
+  },
+
+  metrics: {
+    totalClicks,
+    totalEarnings,
+    totalWithdrawn,
+  },
+});
 
   } catch (err) {
    

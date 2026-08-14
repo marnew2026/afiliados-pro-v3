@@ -1,6 +1,6 @@
 import Ledger from "../models/Ledger.js";
-import Wallet from "../models/Wallet.js";
 
+import { safeCreateLedger } from "../src/services/safeCreateLedger.js";
 export function startConversionWorker(eventBus) {
   eventBus.on("conversion-event", async (data) => {
     const { userId, commission, campaignId } = data;
@@ -25,7 +25,7 @@ export function startConversionWorker(eventBus) {
     }
 
     // 🔥 3. cria ledger primeiro
-    await Ledger.create({
+  await safeCreateLedger({
   userId,
   amount: commission,
   type: "credit",

@@ -1,6 +1,6 @@
 import Ledger from "../models/Ledger.js";
-
-import Wallet from "../models/Wallet.js";
+import { safeCreateLedger } from "../src/services/safeCreateLedger.js";
+import { fixMoney } from "../utils/money.js";
 
 export async function addCredit({
   userId,
@@ -11,35 +11,28 @@ export async function addCredit({
   status = "confirmed",
   metadata = {},
 }) {
+  const valor = fixMoney(amount);
+
   console.log("💰 ADD CREDIT INICIO");
-  console.log({ userId, amount, referenceId });
-  // grava no Ledger
-  await Ledger.create({
+  console.log({
+    userId,
+    amountOriginal: amount,
+    amountCorrigido: valor,
+    referenceId,
+  });
+
+  await safeCreateLedger({
     userId,
     type: "credit",
-    amount,
+    amount: valor,
     source,
     referenceId,
     description,
     status,
     metadata,
   });
-console.log("✅ Ledger gravado");
-  // atualiza a Wallet
- await Wallet.findOneAndUpdate(
-    { userId },
-    {
-      $inc: {
-        availableBalance: amount,
-        totalEarned: amount,
-      },
-    },
-    {
-      new: true,
-      upsert: true,
-    }
-  );
 
+  console.log("✅ Ledger gravado");
 }
  
 export async function addDebit({
@@ -51,7 +44,7 @@ export async function addDebit({
   status = "pending",
   metadata = {},
 }) {
-  await Ledger.create({
+await safeCreateLedger({
     userId,
     type: "debit",
     amount,
@@ -78,5 +71,5 @@ export async function getBalance(userId) {
   const creditTotal = credits[0]?.total || 0;
   const debitTotal = debits[0]?.total || 0;
 
-  return creditTotal - debitTotal;
+return fixMoney(creditTotal - debitTotal);
 }

@@ -6,7 +6,10 @@ export async function protect(req, res, next) {
     console.log("🔥 PROTECT EXECUTOU");
 
   console.log("HEADERS AUTH:");
-  console.log(req.headers.authorization);
+  console.log(
+  "AUTH RECEBIDO:",
+  req.headers.authorization ? "SIM" : "NÃO"
+);
 
     const authHeader = req.headers.authorization;
 

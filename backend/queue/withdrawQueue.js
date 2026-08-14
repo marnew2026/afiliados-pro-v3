@@ -36,7 +36,7 @@ export async function processWithdrawQueue() {
   return;
 }
 
-    console.log("💸 PROCESSANDO SAQUE:", withdraw._id.toString());
+    console.log("💸 SAQUE INICIADO:", withdraw._id.toString());
 
     console.log("ASAAS TOKEN:");
     console.log(process.env.ASAAS_API_KEY);

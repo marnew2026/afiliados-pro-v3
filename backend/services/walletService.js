@@ -1,5 +1,5 @@
 import Ledger from "../models/Ledger.js";
-
+import { safeCreateLedger } from "../src/services/safeCreateLedger.js";
 export async function getWalletBalance(userId) {
   const result = await Ledger.aggregate([
     { $match: { userId } },
@@ -27,13 +27,13 @@ export async function addEarning(
   amount,
   referenceId = `manual-${Date.now()}`
 ) {
-  return Ledger.create({
-    userId,
-    amount,
-    type: "credit",
-    source: "campaign",
-    referenceId,
-    description: "Commission credit",
-    status: "confirmed",
-  });
+  return safeCreateLedger({
+  userId,
+  amount,
+  type: "credit",
+  source: "campaign",
+  referenceId,
+  description: "Commission credit",
+  status: "confirmed",
+});
 }
