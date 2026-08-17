@@ -19,8 +19,8 @@ router.post(
     console.log("================================");
     try {
       const sig = req.headers["stripe-signature"];
-    console.log("SECRET:", process.env.STRIPE_WEBHOOK_SECRET);
-    console.log("SIGNATURE:", req.headers["stripe-signature"]);
+
+
       const event = stripe.webhooks.constructEvent(
         req.body,
         sig,
@@ -44,7 +44,7 @@ console.log("EMAIL:", email);
 console.log("================================");
 
         /* FIREBASE */
-        
+
 
         /* MONGODB */
 const user = await User.findOneAndUpdate(

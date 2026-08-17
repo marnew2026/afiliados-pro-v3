@@ -5,7 +5,7 @@ import Campaign from "./models/Campaign.js";
 
 
 
-console.log("MONGO:", process.env.MONGO_URI);
+
 
 if (!process.env.MONGO_URI) {
   console.log("❌ MONGO_URI não encontrada");

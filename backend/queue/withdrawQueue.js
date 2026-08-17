@@ -38,8 +38,8 @@ export async function processWithdrawQueue() {
 
     console.log("💸 SAQUE INICIADO:", withdraw._id.toString());
 
-    console.log("ASAAS TOKEN:");
-    console.log(process.env.ASAAS_API_KEY);
+
+
 
     console.log("PIX PAYLOAD:");
     console.log({
@@ -134,7 +134,7 @@ console.log({
   withdrawId: saved.withdrawId,
 });
 
-console.log("✅ PIX ENVIADO:", pix.data.id);   
+console.log("✅ PIX ENVIADO:", pix.data.id);
 
 
 console.log("ASAAS ID SALVO:");
@@ -155,7 +155,7 @@ console.log(saved.asaasTransferId);
 
     if (withdraw) {
       // Consulta o estado REAL do saque no banco
-  
+
 
       // Só marca como failed se ainda estiver em processing
      // Marca como failed somente se ainda estiver em processing

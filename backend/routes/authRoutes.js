@@ -41,13 +41,11 @@ router.post("/login", async (req, res) => {
     const { email, password } = req.body;
 
   const user = await User.findOne({ email }).select("+password");
-  console.log("PASSWORD BANCO:", user.password);
-    if (!user) return res.status(400).json({ error: "Usuário não encontrado" });
-console.log("🔥 USER ENCONTRADO NO LOGIN:");
-console.log(JSON.stringify(user, null, 2));
 
- console.log("PASSWORD RECEBIDO:", password);
-console.log("PASSWORD BANCO:", user.password);
+    if (!user) return res.status(400).json({ error: "Usuário não encontrado" });
+
+
+
 
 if (!password) {
   return res.status(400).json({
@@ -61,8 +59,7 @@ if (!user.password) {
   });
 }
 
-console.log("PASSWORD RECEBIDA:", password);
-console.log("HASH BANCO:", user.password);
+
 
 const ok = await bcrypt.compare(
   password,
@@ -74,7 +71,7 @@ console.log("🔥 RESULTADO BCRYPT:", ok);
     console.log(ok);
     if (!ok) return res.status(400).json({ error: "Senha inválida" });
     console.log("🔥 GERANDO JWT");
-console.log("JWT SECRET EXISTE:", !!process.env.JWT_SECRET);
+
 
   const token = jwt.sign(
   {
@@ -85,7 +82,7 @@ console.log("JWT SECRET EXISTE:", !!process.env.JWT_SECRET);
     expiresIn: "30d",
   }
 );
-console.log("🔥 TOKEN GERADO");
+
 return res.json({
   token,
   user: {
