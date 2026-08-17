@@ -47,8 +47,6 @@ app.use("/stripe/webhook", webhookRoutes);
 app.use(express.json());
 app.use((req, res, next) => {
   console.log(req.method, req.originalUrl);
-   console.log("AUTH RECEBIDO NO INDEX:");
- console.log(req.headers.authorization);
   next();
 });
 // ROTAS

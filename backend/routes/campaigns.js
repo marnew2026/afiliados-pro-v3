@@ -229,7 +229,7 @@ console.time("CLICK_TOTAL");
   console.log("==================================");
   console.log("🔥 ENTROU NA ROTA /campaigns/r");
   console.log("ID:", req.params.id);
-  console.log("IP:", ip);
+
 
   const campaign = await Campaign.findById(req.params.id);
 
@@ -265,7 +265,7 @@ const repetido = await Campaign.findOne({
 });
 
 if (repetido) {
-  console.log("⚠️ Clique repetido:", ip);
+ console.log("⚠️ Clique repetido ignorado");
   return res.redirect(campaign.link);
 }
   try {
@@ -296,37 +296,9 @@ campaign.lastClicks = campaign.lastClicks.slice(-100);
 campaign.lastClickIp = ip;
 campaign.lastClickAt = new Date();
   console.time("campaignSave");
-  console.log("ANTES DO SAVE");
-console.log(fixMoney(campaign.earnings || 0));
+
 await campaign.save();
-const campanhaBanco = await Campaign.findById(campaign._id);
 
-console.log("MEMÓRIA:", campaign.earnings);
-console.log("BANCO:", campanhaBanco.earnings);
-console.log("DEPOIS DO SAVE");
-console.log(fixMoney(campaign.earnings || 0));
-const teste = await Campaign.findById(campaign._id);
-
-console.log("MONGO:");
-console.log(teste.earnings);
-console.timeEnd("campaignSave");
-
-console.log("===== CAMPANHA APÓS SAVE =====");
-console.log({
-  id: campaign._id,
-  clicks: campaign.clicks,
-  earnings: fixMoney(campaign.earnings || 0),
-})
-console.log({
-  clicksDepois: campaign.clicks,
-  ganhosDepois: campaign.earnings,
-});
-console.log("===============================");
-
-console.log("===== CAMPANHA APÓS SAVE =====");
-console.log("Clicks:", campaign.clicks);
-console.log("Ganhos:", fixMoney(campaign.earnings || 0));
-console.log("==============================");
 
 console.log("Chamando registerClick...");
 
