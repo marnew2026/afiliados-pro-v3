@@ -20,8 +20,12 @@ router.post("/webhooks", async (req, res) => {
 
     console.log("🔥 WEBHOOK ASAAS");
     console.log("🔥 ASAAS WEBHOOK ROUTE IMPORTADA");
-    const event = req.body.event;
-    const transfer = req.body.transfer;
+   const event = req.body.event;
+   const transfer = req.body.transfer;
+
+    console.log("🔎 EVENTO ASAAS RECEBIDO:", event);
+    console.log("🔎 TRANSFER ID:", transfer?.id);
+    console.log("🔎 TRANSFER STATUS:", transfer?.status);
     console.log("🔎 EVENTO ASAAS RECEBIDO:", event);
     console.log("🔎 TRANSFER ASAAS:", transfer?.id, transfer?.status);
 
