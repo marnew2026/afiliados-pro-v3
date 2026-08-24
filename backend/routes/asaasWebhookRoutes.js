@@ -22,6 +22,8 @@ router.post("/webhooks", async (req, res) => {
     console.log("🔥 ASAAS WEBHOOK ROUTE IMPORTADA");
     const event = req.body.event;
     const transfer = req.body.transfer;
+    console.log("🔎 EVENTO ASAAS RECEBIDO:", event);
+    console.log("🔎 TRANSFER ASAAS:", transfer?.id, transfer?.status);
 
     // restante do código...
 
@@ -44,7 +46,7 @@ if (!withdraw) {
 }
 
 if (!withdraw) {
-  console.log("❌ Transfer não encontrada:", transfer.id);
+ console.log("❌ Transferência não encontrada.");
   return res.sendStatus(200);
 }
 
@@ -121,17 +123,17 @@ if (!withdraw) {
         break;
 
       default:
-        console.log("Evento ignorado:", event);
+        console.log("ℹ️ Evento Asaas ignorado.");
     }
 
     return res.sendStatus(200);
 
-  } catch (err) {
+ } catch (err) {
 
-    console.error(err);
+  console.error("❌ Erro no processamento do webhook Asaas:", err.message);
 
-    return res.sendStatus(500);
-  }
+  return res.sendStatus(500);
+}
 });
 
 export default router;
