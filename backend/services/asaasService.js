@@ -4,12 +4,9 @@ import axios from "axios";
 dotenv.config();
 
 
-console.log("🔥 ASAAS URL:", process.env.ASAAS_URL);
 
-console.log(
-  "🔥 ASAAS TOKEN EXISTE:",
-  !!process.env.ASAAS_API_KEY
-);
+
+
 
 
 const api = axios.create({
@@ -28,14 +25,9 @@ export async function sendPixToAsaas({
   externalId,
 }) {
 
-  console.log("📤 ENVIANDO PIX ASAAS:");
 
-  console.log({
-    value,
-    pixAddressKey: pixKey,
-    pixAddressKeyType: pixKeyType,
-    externalReference: externalId,
-  });
+
+ 
 
 
   try {
@@ -52,35 +44,10 @@ export async function sendPixToAsaas({
 
     });
 
-
-    console.log(
-      "✅ ASAAS TRANSFER OK:",
-      res.data
-    );
-
-
     return res.data;
 
 
   } catch(err){
-
-
-    console.log(
-      "🔥 ASAAS ERRO STATUS:",
-      err.response?.status
-    );
-
-
-    console.log(
-      "🔥 ASAAS ERRO DATA:",
-      JSON.stringify(
-        err.response?.data,
-        null,
-        2
-      )
-    );
-
-
     throw err;
 
   }

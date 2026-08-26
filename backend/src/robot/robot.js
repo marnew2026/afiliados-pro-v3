@@ -8,7 +8,7 @@ export async function processUser(user) {
   const locked = await acquireLock(lockKey, 120);
 
   if (!locked) {
-    console.log("⛔ USER JÁ EM PROCESSAMENTO:", user.email);
+   
     return;
   }
 
@@ -23,7 +23,7 @@ export async function processUser(user) {
       }
     );
 
-    console.log("📦 JOB CRIADO (UNICO):", user.email);
+  
 
   } finally {
     await releaseLock(lockKey);

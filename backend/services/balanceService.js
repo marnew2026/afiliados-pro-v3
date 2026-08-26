@@ -32,14 +32,14 @@ export async function getBalance(userId) {
     },
   ]);
 
-  console.log("LEDGER CREDIT:", credit);
-  console.log("LEDGER DEBIT:", debit);
+  console.log("💰 LEDGER CREDIT PROCESSADO");
+  console.log("💰 LEDGER DEBIT PROCESSADO");
 
   const balance =
     (credit[0]?.total || 0) -
     (debit[0]?.total || 0);
 
-  console.log(
+   console.log(
     "LEDGER BALANCE:",
     userId,
     balance

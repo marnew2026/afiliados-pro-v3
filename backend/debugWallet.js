@@ -8,6 +8,6 @@ const wallet = await Wallet.findOne({
     userId: "6a341138e88c46dc47af06f5"
 });
 
-console.log(wallet);
+
 
 process.exit();

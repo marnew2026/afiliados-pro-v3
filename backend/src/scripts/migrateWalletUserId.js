@@ -17,10 +17,10 @@ for (const wallet of wallets) {
       wallet.userId = user._id.toString();
       await wallet.save();
 
-      console.log("Migrado:", wallet.userEmail);
+    
     }
   }
 }
 
-console.log("✔ MIGRAÇÃO FINALIZADA");
+console.log("✅ WALLET MIGRADA");
 process.exit();

@@ -3,7 +3,7 @@ import Wallet from "../models/Wallet.js";
 import { EVENTS } from "../events/eventTypes.js";
 
 eventBus.on(EVENTS.CONVERSION_CREATED, async (data) => {
-  console.log("🚨 EVENT RECEBIDO:", data);
+  console.log("🚨 EVENT RECEBIDO:", );
 
   const { userId, commission } = data;
 
@@ -16,10 +16,13 @@ eventBus.on(EVENTS.CONVERSION_CREATED, async (data) => {
     return;
   }
 
-  wallet.availableBalance += commission;
-  wallet.totalEarnings += commission;
+wallet.availableBalance += commission;
+wallet.totalEarnings += commission;
 
-  await wallet.save();
+wallet.availableBalance = Number(wallet.availableBalance.toFixed(2));
+wallet.totalEarnings = Number(wallet.totalEarnings.toFixed(2));
+
+await wallet.save();
 
   console.log("✅ SALDO ATUALIZADO:", wallet.availableBalance);
 });

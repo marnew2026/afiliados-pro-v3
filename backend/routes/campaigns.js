@@ -14,11 +14,19 @@ const router = express.Router();
 /**
  * Criar campanha
  */
-router.post("/create", async (req, res) => {
+router.post("/create", protect, async (req, res) => {
+  console.log("🔥 CREATE CAMPAIGN EXECUTOU");
+
+  console.log(
+    "AUTH:",
+    req.headers.authorization ? "SIM" : "NÃO"
+  );
   
   try {
 
-    let { nome, link, userId } = req.body;
+    let { nome, link } = req.body;
+
+const userId = req.user._id;
 
 // Remove espaços e quebras de linha
 nome = (nome || "").trim();
@@ -365,7 +373,7 @@ console.log("🚨 DEPOIS DO REBUILD WALLET");
 console.log("4️⃣ RebuildWallet terminou");
 
 console.log("===== WALLET FINAL DO CLICK =====");
-console.log(wallet);
+
 console.log("===============================");
 console.timeEnd("CLICK_TOTAL");
 
@@ -401,7 +409,7 @@ router.post("/title", async (req, res) => {
 
     console.log("================================");
     console.log("LINK RECEBIDO:");
-    console.log(link);
+   
     console.log("================================");
 
     if (!link) {

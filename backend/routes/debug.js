@@ -83,12 +83,12 @@ router.get("/rebuild-wallet/:userId", async (req, res) => {
     const { userId } = req.params;
 
     console.log("🔄 REBUILD WALLET DEBUG");
-    console.log("USER:", userId);
+    
 
     const wallet = await rebuildWallet(userId);
 
     console.log("✅ WALLET REBUILD OK");
-    console.log(wallet);
+   
 
     res.json({
       success: true,

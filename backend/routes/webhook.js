@@ -35,15 +35,15 @@ router.post(
       if (event.type === "checkout.session.completed") {
             console.log("✅ EVENTO CORRETO");
         const session = event.data.object;
-            console.log(session);
+            
         const email = session.customer_email;
 
      console.log("================================");
 console.log("💳 PAGAMENTO APROVADO");
-console.log("EMAIL:", email);
+
 console.log("================================");
 
-        /* FIREBASE */
+        
 
 
         /* MONGODB */
@@ -63,15 +63,15 @@ const user = await User.findOneAndUpdate(
 );
 
 if (!user) {
-  console.log("❌ Usuário não encontrado:", email);
+ 
 } else {
-  console.log("✅ Usuário atualizado:", user.email);
+
 }
 
 
 console.log("================================");
 console.log("USUÁRIO ATUALIZADO");
-console.log(user);
+
 console.log("================================");
 console.log("✅ MONGO PRO OK");;
       }

@@ -6,7 +6,7 @@ export async function trackPost(userId) {
   });
 }
 export function trackEvent(type, data = {}) {
-  console.log("📊 EVENT:", type, data);
+  console.log("📊 EVENT:", type);
 
   // futuro: salvar no Mongo ou Redis
 }

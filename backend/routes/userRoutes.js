@@ -4,49 +4,9 @@ import jwt from "jsonwebtoken";
 
 const router = express.Router();
 
-/* ===========================
-   BUSCAR PELO FIREBASE UID
-=========================== */
-
-router.get("/firebase/:firebaseUid", async (req, res) => {
-  try {
-    const { firebaseUid } = req.params;
-
-    const user = await User.findOne({
-      firebaseUid,
-    });
-
-    if (!user) {
-      return res.status(404).json({
-        error: "Usuário não encontrado",
-      });
-    }
-
-    return res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      firebaseUid: user.firebaseUid,
-      isPro: user.isPro,
-    });
-
-  } catch (err) {
-    console.log(err);
-
-    return res.status(500).json({
-      error: err.message,
-    });
-  }
-});
-
-/* ===========================
-   LOGIN PELO ID DO MONGO
-=========================== */
 
 
-/* ===========================
-   PRO
-=========================== */
+
 
 router.get("/pro/:userId", async (req, res) => {
   try {

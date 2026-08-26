@@ -4,13 +4,13 @@ import mongoose from "mongoose";
 export default async function dashboard(req, res) {
   try {
 
-    console.log("REQ USER:", req.user);
+    
 
     const wallet = await Wallet.findOne({
       userId: req.user.id,
     });
 
-    console.log("WALLET ENCONTRADA:", wallet);
+   
 
     const campaigns = await Campaign.find({
   userId: new mongoose.Types.ObjectId(req.user.id),

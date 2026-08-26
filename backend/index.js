@@ -6,13 +6,13 @@ import cron from "node-cron";
 import { Server } from "socket.io";
 import connectDB from "./config/db.js";
 import { connection } from "./src/lib/bullmqConnection.js";
-import debugRoutes from "./routes/debug.js";
+// import debugRoutes from "./routes/debug.js";
 import goRoutes from "./routes/go.js";
 import campaignsRoutes from "./routes/campaigns.js";
-import userRoutes from "./routes/userRoutes.js";
+// import userRoutes from "./routes/userRoutes.js";
 import withdrawRoutes from "./routes/withdrawRoutes.js";
 import { initWalletSocket } from "./src/realtime/walletEvents.js";
-import ledgerRoutes from "./routes/ledgerRoutes.js";
+// import ledgerRoutes from "./routes/ledgerRoutes.js";
 import adminWithdrawRoutes from "./routes/adminWithdrawRoutes.js";
 import asaasWebhookRoutes from "./routes/asaasWebhookRoutes.js";
 import walletRoutes from "./routes/walletRoutes.js";
@@ -46,16 +46,16 @@ app.use(cors());
 app.use("/stripe/webhook", webhookRoutes);
 app.use(express.json());
 app.use((req, res, next) => {
-  console.log(req.method, req.originalUrl);
+  console.log(req.method, req.path);
   next();
 });
 // ROTAS
-app.use("/ledger", ledgerRoutes);
+// app.use("/ledger", ledgerRoutes);
 app.use("/go", goRoutes);
 app.use("/campaigns", campaignsRoutes);
-app.use("/user", userRoutes);
+// app.use("/user", userRoutes);
 app.use("/withdraw", withdrawRoutes);
-app.use("/debug", debugRoutes);
+// app.use("/debug", debugRoutes);
 app.use("/adminWithdraw", adminWithdrawRoutes);
 app.use("/asaas", asaasWebhookRoutes);
 app.use("/wallet", walletRoutes);
@@ -65,9 +65,7 @@ app.use("/checkout", checkoutRoutes);
 app.use("/auth", authRoutes);
 console.log("🔥🔥🔥 AUTH NOVA VERSAO 19-07 CARREGADA");
 console.log("✅ app.use('/checkout') registrado");
-app.get("/teste", (req, res) => {
-  res.send("OK");
-});
+
 
 // ==========================
 // STRIPE RETORNOS
@@ -87,9 +85,7 @@ app.get("/cancel", (req, res) => {
   `);
 });
 
-app.post("/checkout/teste", (req, res) => {
-  res.json({ ok: true });
-});
+
 
 // ==========================
 // BOOTSTRAP

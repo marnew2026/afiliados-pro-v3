@@ -36,17 +36,13 @@ export async function processWithdrawQueue() {
   return;
 }
 
-    console.log("💸 SAQUE INICIADO:", withdraw._id.toString());
+   console.log("💸 SAQUE INICIADO");
 
 
 
 
-    console.log("PIX PAYLOAD:");
-    console.log({
-      pixAddressKey: withdraw.pixKey,
-      pixAddressKeyType: "EMAIL",
-      value: Number(withdraw.amount),
-    });
+    
+  
 
     // Evita envio duplicado
 const currentWithdraw = await Withdraw.findOne({
@@ -69,8 +65,8 @@ if (currentWithdraw.status === "sent") {
 }
 
 if (currentWithdraw.asaasTransferId) {
-  console.log("⚠️ Transferência já registrada:");
-  console.log(currentWithdraw.asaasTransferId);
+  console.log("⚠️ Transferência já registrada. Ignorando duplicação.");
+
   return;
 }
 
@@ -96,8 +92,8 @@ if (currentWithdraw.status !== "processing") {
   }
 );
 
-    console.log("ASAAS RESPONSE:");
-    console.log(JSON.stringify(pix.data, null, 2));
+    console.log("✅ ASAAS respondeu à transferência");
+   
 
    const sentResult = await Withdraw.updateOne(
   {
@@ -117,8 +113,8 @@ if (currentWithdraw.status !== "processing") {
   }
 );
 
-console.log("UPDATE RESULT:");
-console.log(sentResult);
+
+
 
 if (sentResult.modifiedCount !== 1) {
   console.log("⚠️ Outro processo já registrou esta transferência.");
@@ -127,31 +123,21 @@ if (sentResult.modifiedCount !== 1) {
 
 const saved = await Withdraw.findById(withdraw._id);
 
-console.log("DOCUMENTO ATUALIZADO:");
-console.log({
-  status: saved.status,
-  asaasTransferId: saved.asaasTransferId,
-  withdrawId: saved.withdrawId,
-});
 
-console.log("✅ PIX ENVIADO:", pix.data.id);
+
+
+
 
 
 console.log("ASAAS ID SALVO:");
-console.log(saved.asaasTransferId);
+
   } catch (err) {
-    console.log("🔥 ASAAS ERROR FULL:");
+    
 
-    console.log(
-      JSON.stringify(
-        err.response?.data,
-        null,
-        2
-      )
-    );
+   
 
-    console.log("STATUS:", err.response?.status);
-    console.log("MESSAGE:", err.message);
+    console.log("❌ ASAAS ERRO STATUS:", err.response?.status);
+    console.log("❌ ASAAS ERRO NO SAQUE");
 
     if (withdraw) {
       // Consulta o estado REAL do saque no banco

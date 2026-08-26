@@ -10,7 +10,7 @@ export async function postToMeta(message) {
       }
     );
 
-    console.log("✅ POST OK:", res.data.id);
+    console.log("✅ POST META OK");
   } catch (err) {
     console.error("❌ META ERROR:", err.response?.data || err.message);
   }

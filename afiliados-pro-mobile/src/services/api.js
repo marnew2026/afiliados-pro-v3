@@ -1,28 +1,26 @@
 import axios from "axios";
-import { getAuth } from "firebase/auth";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const api = axios.create({
-  baseURL:
-    "https://afiliados-pro-v3-2.onrender.com",
+  baseURL: "https://afiliados-pro-v3-2.onrender.com",
 });
 
-api.interceptors.request.use(
-  async (config) => {
+api.interceptors.request.use(async (config) => {
+  const token = await AsyncStorage.getItem("token");
 
-    const user =
-      getAuth().currentUser;
-
-    if (user) {
-
-      const token =
-        await user.getIdToken();
-
-      config.headers.Authorization =
-        `Bearer ${token}`;
-    }
-
-    return config;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-);
+
+  console.log(
+    "📡 API:",
+    config.method?.toUpperCase(),
+    config.url,
+    "| JWT:",
+    token ? "SIM" : "NÃO"
+  );
+
+  return config;
+});
 
 export default api;

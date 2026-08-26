@@ -21,11 +21,7 @@ password: {
   required: true,
 },
 
-  firebaseUid: {
-  type: String,
-  index: true,
-},
-
+ 
   plan: {
     type: String,
     enum: ["FREE", "PRO", "SCALE"],

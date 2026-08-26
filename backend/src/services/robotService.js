@@ -12,7 +12,7 @@ if (user.status === "done") return;
     user.status = "processing";
     await user.save();
 
-    console.log("🔥 PROCESSANDO USER:", user.email);
+   
 
     // 👉 SUA LÓGICA REAL DO ROBÔ AQUI
     // exemplo:
@@ -27,6 +27,6 @@ if (user.status === "done") return;
     user.status = "failed";
     await user.save();
 
-    console.log("❌ ERRO USER:", user.email, err.message);
+    
   }
 }

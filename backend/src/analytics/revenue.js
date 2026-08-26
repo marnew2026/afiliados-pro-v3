@@ -1,3 +1,3 @@
 export async function trackRevenue(tenantId, amount) {
-  console.log("💰 revenue:", tenantId, amount);
+  console.log("💰 REVENUE EVENT");
 }

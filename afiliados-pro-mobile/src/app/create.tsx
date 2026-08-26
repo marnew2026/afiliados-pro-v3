@@ -28,10 +28,31 @@ export default function CreateCampaign() {
   nome,
   link,
 });
+let nomeLimpo = nome.trim();
 
+// Remove o começo do compartilhamento do Mercado Livre
+nomeLimpo = nomeLimpo.replace(
+  /^Olha o que eu encontrei!\s*/i,
+  ""
+);
+
+// Remove o final
+nomeLimpo = nomeLimpo.replace(
+  /\s*no Mercado Livre\..*$/i,
+  ""
+);
+
+// Remove "Entra aqui:"
+nomeLimpo = nomeLimpo.replace(
+  /\s*Entra aqui:?/i,
+  ""
+);
+
+// Remove espaços duplicados
+nomeLimpo = nomeLimpo.replace(/\s+/g, " ").trim();
 const { data } = await api.post("/campaigns/create", {
   userId,
-  nome,
+  nome: nomeLimpo,
   link,
 });
 
@@ -61,10 +82,15 @@ const { data } = await api.post("/campaigns/create", {
       </Text>
 
       <TextInput
-        placeholder="Nome da campanha"
+  placeholder="Nome da campanha (preenchido automaticamente)"
         placeholderTextColor="#64748b"
         value={nome}
-        onChangeText={setNome}
+        
+         onChangeText={(texto) => {
+          console.log("NOME:", texto);
+           setNome(texto);
+       }}
+        
         style={{
           backgroundColor: "#1e293b",
           padding: 14,
@@ -78,7 +104,27 @@ const { data } = await api.post("/campaigns/create", {
         placeholder="Link afiliado"
         placeholderTextColor="#64748b"
         value={link}
-        onChangeText={setLink}
+       onChangeText={async (texto) => {
+  setLink(texto);
+
+  if (texto.length < 15) return;
+
+  try {
+    const { data } = await api.post("/campaigns/title", {
+      link: texto,
+    });
+
+   setNome((atual) => {
+  if (atual.trim() !== "") {
+    return atual;
+  }
+
+  return data.title;
+});
+  } catch (e) {
+    console.log("Não foi possível obter o título.");
+  }
+}}
         style={{
           backgroundColor: "#1e293b",
           padding: 14,

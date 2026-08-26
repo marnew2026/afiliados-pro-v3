@@ -8,7 +8,7 @@ import { rebuildWallet } from "../src/services/rebuildWallet.js";
 const router = express.Router();
 
 router.post("/webhooks", async (req, res) => {
-    console.log("🔥 WEBHOOK RECEBIDO");
+   
   const token = req.headers["asaas-access-token"];
 
   if (token !== process.env.ASAAS_WEBHOOK_TOKEN) {
@@ -19,14 +19,14 @@ router.post("/webhooks", async (req, res) => {
   try {
 
     console.log("🔥 WEBHOOK ASAAS");
-    console.log("🔥 ASAAS WEBHOOK ROUTE IMPORTADA");
+    
    const event = req.body.event;
    const transfer = req.body.transfer;
 
    console.log("🔎 EVENTO ASAAS RECEBIDO:", event);
-console.log("🔎 TRANSFER ID:", transfer?.id);
-console.log("🔎 TRANSFER STATUS:", transfer?.status);
-console.log("🔎 TRANSFER:", JSON.stringify(transfer, null, 2));
+console.log("🔎 TRANSFERÊNCIA ASAAS RECEBIDA");
+console.log("🔎 STATUS DA TRANSFERÊNCIA:", transfer?.status);
+
 
     // restante do código...
 

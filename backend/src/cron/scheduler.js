@@ -19,7 +19,7 @@ await new Promise((r) => setTimeout(r, 1500));
 
     for (const user of users) {
 
-      console.log("👤 USER:", user.email);
+      
 
       await seedUserCampaigns(user._id);
 
@@ -28,18 +28,7 @@ await new Promise((r) => setTimeout(r, 1500));
         active: true,
       });
 
-      console.log(
-        "📦 campanhas do usuário:",
-        campaigns.length
-      );
-      console.log(
-  "📦 NOMES:",
-  campaigns.map(c => c.nome)
-);
-console.log(
-  "📦 IDs:",
-  campaigns.map(c => c._id)
-);
+   
 
       if (!campaigns.length) {
         continue;
@@ -52,7 +41,7 @@ console.log(
 
         const text = await generatePost(random.link);
 
-        console.log("📝 TEXTO:", text);
+     
 
         const result = await publishPost(
           text + "\n\n👉 " + random.link
@@ -62,22 +51,15 @@ console.log(
 
       } catch (err) {
 
-        console.log("❌ META ERROR:");
+        
 
-        console.log(
-          err?.response?.data ||
-          err?.message ||
-          err
-        );
+       
       }
     }
 
   } catch (err) {
 
-    console.log(
-      "❌ ERRO ROBÔ:",
-      err.message
-    );
+    ;
 
   }
 }

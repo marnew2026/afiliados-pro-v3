@@ -2,8 +2,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase";
+
 
 import api from "../services/api";
 
@@ -12,72 +11,54 @@ export default function Login() {
   const [password, setPassword] = useState("");
 
 async function entrar() {
+
+
   try {
     if (!email || !password) {
       Alert.alert("Erro", "Preencha todos os campos");
       return;
     }
 
-    // 1) Login no Firebase
-    const result = await signInWithEmailAndPassword(
-  auth,
-  email,
-  password
-);
+  
 
+    const { data } = await api.post("/auth/login", {
+      email,
+      password,
+    });
 
-// 🔥 PEGA UID DO FIREBASE
-const firebaseUid = result.user.uid;
+    console.log("========== DEBUG LOGIN JWT ==========");
 
+    
 
-// 🔥 BUSCA USUÁRIO NO MONGO
-// 🔥 BUSCA USUÁRIO NO MONGO
-const response = await api.get(
-  `/users/firebase/${firebaseUid}`
-);
+    if (!data?.token) {
+      throw new Error("Backend não retornou token");
+    }
 
-console.log("🔥 RESPOSTA USUARIO MONGO:");
-console.log(response.data);
+   
 
+    
+   console.log("LOGIN USUÁRIO RECEBIDO: SIM");
+   console.log("====================================");
 
-// 🔥 SALVA O ID DO MONGO NO CELULAR
-await AsyncStorage.setItem(
-  "userId",
-  response.data._id
+ // 💾 SALVAR TOKEN
+await AsyncStorage.setItem("token", data.token);
+
+// 💾 SALVAR MONGO USER ID
+await AsyncStorage.setItem("userId", data.user._id);
+
+console.log("========== LOGIN PERSISTENTE ==========");
+
+console.log(
+  "TOKEN SALVO:",
+  (await AsyncStorage.getItem("token")) ? "SIM" : "NÃO"
 );
 
 console.log(
-  "USER ID GRAVADO:",
+  "USER ID SALVO:",
   await AsyncStorage.getItem("userId")
 );
 
-// 🔥 SALVA O ID DO MONGO NO CELULAR
-
-
-
-console.log("Firebase UID:", firebaseUid);
-console.log("Mongo UserId salvo:", response.data._id);
-
-    const firebaseUser = result.user;
-
-// 2) Login no backend
-const { data } = await api.post("/auth/firebase-login", {
-  email: firebaseUser.email,
-  firebaseUid: firebaseUser.uid,
-});
-
-    console.log("LOGIN BACKEND:", data);
-
-    // 3) Salva sessão
-    await AsyncStorage.multiSet([
-      ["token", data.token],
-      ["userId", data.user._id],
-    ]);
-    console.log("USER ID SALVO:", await AsyncStorage.getItem("userId"));
-    console.log("TOKEN SALVO:", await AsyncStorage.getItem("token"));
-    const token = await AsyncStorage.getItem("token");
-console.log("TOKEN:", token);
-    // 4) Dashboard
+console.log("=======================================");
     router.replace("/dashboard");
 
   } catch (err: any) {

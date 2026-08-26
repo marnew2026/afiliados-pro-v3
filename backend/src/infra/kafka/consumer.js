@@ -13,6 +13,6 @@ await consumer.subscribe({ topic: "SALE_CREATED" });
 await consumer.run({
   eachMessage: async ({ message }) => {
     const data = JSON.parse(message.value.toString());
-    console.log("PROCESSANDO:", data);
+   console.log("📦 Evento Kafka processado");
   },
 });

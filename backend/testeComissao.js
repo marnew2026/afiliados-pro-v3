@@ -29,7 +29,7 @@ async function main() {
     }
 
     console.log("Usuário:");
-    console.log(user.email);
+    
 
     const amount = 15.50;
 
@@ -60,8 +60,7 @@ console.log(ledger._id.toString());
 
 const wallet = await rebuildWallet(userId);
     console.log("================================");
-    console.log("WALLET");
-    console.log(wallet);
+    
     console.log("================================");
 
     console.log("✅ TESTE FINALIZADO");

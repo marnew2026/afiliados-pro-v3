@@ -7,50 +7,63 @@ import {
 
 import { useRouter } from "expo-router";
 import * as Linking from "expo-linking";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { getAuth } from "firebase/auth";
 import api from "../services/api";
 
 export default function Checkout() {
   const router = useRouter();
-  const auth = getAuth();
 
- async function abrirCheckout() {
-  console.log("🔥 BOTÃO PRO");
+  async function abrirCheckout() {
+    console.log("🔥 BOTÃO PRO");
 
-  try {
-    const email = auth.currentUser?.email;
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const userId = await AsyncStorage.getItem("userId");
 
-    if (!email) {
-      Alert.alert("Erro", "Usuário não autenticado");
-      return;
+      console.log("TOKEN EXISTE:", !!token);
+      console.log("USER ID:", userId);
+
+      if (!token || !userId) {
+        Alert.alert(
+          "Sessão expirada",
+          "Faça login novamente."
+        );
+        router.replace("/");
+        return;
+      }
+
+      const { data } = await api.post(
+        "/checkout/create-checkout"
+      );
+
+      console.log("RESPOSTA CHECKOUT:", data);
+
+      if (data.url) {
+        await Linking.openURL(data.url);
+      } else {
+        Alert.alert(
+          "Erro",
+          "Checkout não encontrado"
+        );
+      }
+
+    } catch (err: any) {
+      console.log("========== CHECKOUT ERROR ==========");
+      console.log("STATUS:", err.response?.status);
+      console.log("URL:", err.config?.url);
+      console.log("DATA:", err.response?.data);
+      console.log("MESSAGE:", err.message);
+      console.log("====================================");
+
+      Alert.alert(
+        "Erro",
+        err.response?.data?.error ||
+          "Falha ao abrir pagamento"
+      );
     }
-
-    console.log("EMAIL:", email);
-
-    const { data } = await api.post("/checkout/create-checkout", {
-      email,
-    });
-
-    console.log("RESPOSTA:", data);
-
-    if (data.url) {
-      await Linking.openURL(data.url);
-    } else {
-      Alert.alert("Erro", "Checkout não encontrado");
-    }
-
-  } catch (err: any) {
-    console.log("========== CHECKOUT ERROR ==========");
-    console.log("STATUS:", err.response?.status);
-    console.log("URL:", err.config?.url);
-    console.log("DATA:", err.response?.data);
-    console.log("MESSAGE:", err.message);
-    console.log("====================================");
-
-    Alert.alert("Erro", "Falha ao abrir pagamento");
   }
-}
+
   return (
     <View
       style={{

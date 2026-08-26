@@ -6,7 +6,7 @@ export async function safeCreateLedger(entry, session = null) {
   try {
     const ledger = await Ledger.create([entry], { session });
 
-    console.log("✅ Ledger criado:", ledger[0]._id);
+  console.log("✅ Ledger criado");
 
     return ledger[0];
 
@@ -14,7 +14,7 @@ export async function safeCreateLedger(entry, session = null) {
 
     if (err.code === 11000) {
 
-      console.log("⚠ Ledger duplicado ignorado:", entry.referenceId);
+     console.log("⚠ Ledger duplicado ignorado");
 
       return await Ledger.findOne({
         referenceId: entry.referenceId,

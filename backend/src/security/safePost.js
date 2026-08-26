@@ -10,6 +10,6 @@ export async function postToMeta(message) {
       }
     );
   } catch (err) {
-    console.log("META ERROR:", err.response?.data || err.message);
+  
   }
 }

@@ -30,7 +30,7 @@ export const withdrawWorker = new Worker(
   }
 
   if (withdraw.status === "paid") {
-    console.log("⚠️ WITHDRAW JÁ PROCESSADO:", withdrawId);
+  console.log("⚠️ WITHDRAW JÁ PROCESSADO");
     return;
   }
 
@@ -51,13 +51,10 @@ export const withdrawWorker = new Worker(
 
   await rebuildWallet(userId);
 
-  console.log("💸 WITHDRAW PROCESSADO:", {
-    userId,
-    amount,
-  });
+  console.log("💸 WITHDRAW PROCESSADO");
 
 } catch (error) {
-  console.error("❌ ERRO WITHDRAW WORKER:", error);
+  console.error("❌ ERRO WITHDRAW WORKER:", error.message);
 }
 
 },

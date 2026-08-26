@@ -14,10 +14,10 @@ const router = express.Router();
 router.get("/debug/finance/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
-    console.log("PARAM:", userId);
+   
     const user = await User.findById(userId);
   
-console.log("USER:", user);
+
    const mongoUserId = user._id.toString();
 
 const campaigns = await Campaign.find({
@@ -108,17 +108,12 @@ router.get("/:userId", async (req, res) => {
   console.log("=================================");
   console.log("DASHBOARD CHAMADO");
   console.log("HORÁRIO:", new Date().toLocaleTimeString());
-  console.log("USER:", req.params.userId);
-  console.log("ORIGIN:", req.headers.origin);
-  console.log("USER-AGENT:", req.headers["user-agent"]);
   console.log("=================================");
 
   // resto da rota...
   console.log("========================");
 console.log("DASHBOARD EXECUTOU");
 console.log(new Date());
-console.log(req.originalUrl);
-console.log(req.headers["user-agent"]);
 console.log("========================");
   
   try {
@@ -126,8 +121,8 @@ console.log("========================");
 console.log("🔥 DASHBOARD");
 console.log("==================================");
 
-console.log("USER:");
-console.log(req.params.userId);
+
+
     const { userId } = req.params;
 
 
@@ -151,20 +146,7 @@ console.log(req.params.userId);
 console.log("CAMPANHAS ENCONTRADAS:");
 console.log(campaigns.length);
 
-campaigns.forEach((c) => {
 
-  console.log("----------------");
-
-  console.log("Nome:");
-  console.log(c.nome);
-
-  console.log("Clicks:");
-  console.log(c.clicks);
-
-console.log("Ganhos:");
-console.log(toReais(toCents(c.earnings || 0)));
-
-});
 
 console.log("==============================");
 
@@ -181,9 +163,7 @@ const totalEarnings = toReais(
   toCents(wallet?.totalEarned || 0)
 );
 console.log("===== TESTE FIX MONEY =====");
-console.log("RAW totalEarned:", wallet?.totalEarned);
-console.log("FIXED totalEarnings:", totalEarnings);
-console.log("TIPO:", typeof totalEarnings);
+
 console.log("===========================");
 
 const availableBalance = toReais(
@@ -197,21 +177,19 @@ const lockedBalance = toReais(
 const totalWithdrawn = toReais(
   toCents(wallet?.totalWithdrawn || 0)
 );
-console.log("RAW totalWithdrawn:", wallet?.totalWithdrawn);
-console.log("FIXED totalWithdrawn:", totalWithdrawn);
-console.log("TIPO:", typeof totalWithdrawn);
+
 console.log("==============================");
 console.log("TOTAL CLICKS:");
-console.log(totalClicks);
+
 
 console.log("TOTAL GANHOS:");
-console.log(totalEarnings);
+
 
 console.log("SALDO DISPONÍVEL:");
-console.log(availableBalance);
+
 
 console.log("TOTAL SACADO:");
-console.log(totalWithdrawn);
+
 
 console.log("==============================");
 const campaignsFixed = campaigns.map((campaign) => {

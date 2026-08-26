@@ -1,7 +1,7 @@
 import Campaign from "../../models/Campaign.js";
 
 export async function seedUserCampaigns(userId) {
-  console.log("🔥 SEED INICIADO:", userId);
+  console.log("🔥 SEED INICIADO");
 
   const existing = await Campaign.find({ userId });
 

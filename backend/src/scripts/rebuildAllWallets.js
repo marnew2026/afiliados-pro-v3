@@ -18,7 +18,7 @@ const wallets = await Wallet.find();
 
 for (const wallet of wallets) {
 
-    console.log("Reconstruindo:", wallet.userId);
+    console.log("🔄 Reconstruindo wallet");
 
     await rebuildWallet(wallet.userId.toString());
 

@@ -1,9 +1,9 @@
 import { View, Text, TextInput, Button, Alert } from "react-native";
 import { useState } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { auth } from "../firebase";
+
 import api from "../services/api";
 import { useRouter } from "expo-router";
 
@@ -23,26 +23,22 @@ export default function Signup() {
   try {
     setLoading(true);
 
-    // 1) Cria usuário no Firebase
-    const credential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
 
-    const firebaseUser = credential.user;
 
     // 2) Registra/Login no backend
-    const { data } = await api.post("/auth/firebase-login", {
-      email: firebaseUser.email,
-      firebaseUid: firebaseUser.uid,
+    const { data } = await api.post("/auth/register", {
+      name,
+  email,
+  password,
+     
     });
 
     // 3) Salva sessão
-    await AsyncStorage.multiSet([
-      ["token", data.token],
-      ["userId", data.user._id],
-    ]);
+   await AsyncStorage.multiSet([
+  ["token", data.token],
+  ["userId", data.user._id],
+  ["email", data.user.email],
+]);
 
     // 4) Vai para o dashboard
     router.replace("/dashboard");

@@ -14,12 +14,7 @@ export async function addCredit({
   const valor = fixMoney(amount);
 
   console.log("💰 ADD CREDIT INICIO");
-  console.log({
-    userId,
-    amountOriginal: amount,
-    amountCorrigido: valor,
-    referenceId,
-  });
+  console.log("✅ Ledger gravado");
 
   await safeCreateLedger({
     userId,

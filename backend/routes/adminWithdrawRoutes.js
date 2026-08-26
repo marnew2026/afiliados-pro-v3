@@ -26,10 +26,10 @@ router.get("/", async (req, res) => {
     for (const item of withdrawals) {
       const user = await User.findById(item.userId).lean();
 
-console.log("USUARIO COMPLETO:");
-console.log(JSON.stringify(user, null, 2));
-        console.log("USER ENCONTRADO:");
-console.log(user);
+
+
+       
+
 
       item.user = user;
     }

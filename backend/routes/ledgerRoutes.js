@@ -11,7 +11,7 @@ router.get("/credit", async (req, res) => {
   try {
     const userId = "6a341138e88c46dc47af06f5";
 
-    console.log("🧪 TEST LEDGER USER:", userId);
+   console.log("🧪 TEST LEDGER EXECUTADO");
 
     const ledger = await safeCreateLedger({
       userId,
@@ -26,7 +26,7 @@ router.get("/credit", async (req, res) => {
 
     const wallet = await rebuildWallet(userId);
 
-    console.log("💰 WALLET REBUILD:", wallet?.availableBalance);
+   console.log("💰 WALLET REBUILD CONCLUÍDO");
 
     return res.json({
       ok: true,
@@ -34,7 +34,8 @@ router.get("/credit", async (req, res) => {
       wallet,
     });
   } catch (err) {
-    console.error("💥 ERROR LEDGER TEST:", err);
+    console.error("💥 ERROR LEDGER TEST:", err.message);
+
     return res.status(500).json({ error: err.message });
   }
 });
@@ -42,7 +43,7 @@ router.get("/debit", async (req, res) => {
   try {
     const userId = "6a341138e88c46dc47af06f5";
 
-    console.log("🧪 TEST DEBIT USER:", userId);
+    console.log("🧪 TEST DEBIT EXECUTADO");
 
     const ledger = await safeCreateLedger({
       userId,
@@ -57,7 +58,7 @@ router.get("/debit", async (req, res) => {
 
     const wallet = await rebuildWallet(userId);
 
-    console.log("💰 WALLET REBUILD:", wallet?.availableBalance);
+    console.log("💰 WALLET REBUILD CONCLUÍDO");
 
     return res.json({
       ok: true,
@@ -65,7 +66,7 @@ router.get("/debit", async (req, res) => {
       wallet,
     });
   } catch (err) {
-    console.error("💥 ERROR DEBIT TEST:", err);
+    console.error("💥 ERROR DEBIT TEST:", err.message);
 
     return res.status(500).json({
       error: err.message,

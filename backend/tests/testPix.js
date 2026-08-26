@@ -13,7 +13,7 @@ async function testPix() {
     });
 
     console.log("✅ PIX ENVIADO COM SUCESSO");
-    console.log(response);
+    
 
   } catch (err) {
     console.log("❌ ERRO AO ENVIAR PIX:");

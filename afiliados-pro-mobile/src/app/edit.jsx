@@ -9,8 +9,7 @@ import {
 import { useState } from "react";
 import { useRouter } from "expo-router";
 
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase";
+
 
 export default function Edit() {
   const router = useRouter();
@@ -18,21 +17,69 @@ export default function Edit() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  async function login() {
-    try {
-      await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+ async function login() {
+  try {
 
-     router.replace("/dashboard");
-    } catch (err) {
-      console.log(err);
-      Alert.alert("Erro login");
+    const { data } = await api.post("/auth/login", {
+      email,
+      password,
+    });
+
+    console.log("LOGIN MONGO:");
+    console.log(data);
+
+
+    if (!data.token) {
+      throw new Error("Token não retornado");
     }
-  }
 
+
+    await AsyncStorage.setItem(
+      "token",
+      data.token
+    );
+
+
+    await AsyncStorage.setItem(
+      "userId",
+      data.user._id
+    );
+
+    await AsyncStorage.setItem(
+  "email",
+  data.user.email
+);
+
+
+  
+    console.log(
+      await AsyncStorage.getItem("token")
+    );
+
+
+    console.log("USER ID SALVO:");
+    console.log(
+      await AsyncStorage.getItem("userId")
+    );
+
+
+    router.replace("/dashboard");
+
+
+} catch (err) {
+
+    console.log(
+      "LOGIN ERROR:",
+      err?.response?.data || err.message
+    );
+
+    Alert.alert(
+      "Erro",
+      err?.response?.data?.error ||
+      "Falha no login"
+    );
+  }
+}
   return (
     <View style={{ padding: 20 }}>
       <Text>Email</Text>

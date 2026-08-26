@@ -15,7 +15,7 @@ export async function postToMeta(payload) {
     return res.data;
 
   } catch (err) {
-    console.log("❌ META ERROR:", err.response?.data);
+    
     return null;
   }
 }

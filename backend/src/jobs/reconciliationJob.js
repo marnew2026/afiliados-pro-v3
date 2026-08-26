@@ -30,9 +30,9 @@ export async function reconciliationJob() {
       const status = res.data.status;
       console.log("================================");
 console.log("RECONCILIATION");
-console.log("Withdraw:", w.withdrawId);
+
 console.log("Status:", status);
-console.log(JSON.stringify(res.data, null, 2));
+
 console.log("================================");
       if (status === "DONE") {
 
@@ -75,11 +75,11 @@ const ledgerResult = await Ledger.updateOne(
 );
 
 if (ledgerResult.matchedCount !== 1) {
-  console.log("❌ Ledger não encontrado:", w.withdrawId);
+  console.log("❌ Ledger não encontrado");
 } else if (ledgerResult.modifiedCount === 1) {
-  console.log("🏆 SAQUE FINALIZADO COM SUCESSO:", w.withdrawId);
+  console.log("🏆 SAQUE FINALIZADO COM SUCESSO");
 } else {
-  console.log("ℹ️ Ledger já estava confirmado:", w.withdrawId);
+  console.log("ℹ️ Ledger já estava FAILED");
 }
 
 await rebuildWallet(w.userId);
@@ -125,16 +125,16 @@ else if (status === "FAILED") {
   );
 
   if (ledgerResult.matchedCount !== 1) {
-    console.log("❌ Ledger não encontrado:", w.withdrawId);
+    console.log("❌ Ledger não encontrado");
   } else if (ledgerResult.modifiedCount === 1) {
-    console.log("⚠️ Ledger marcado como FAILED:", w.withdrawId);
+    console.log("⚠️ Ledger marcado como FAILED");
   } else {
-    console.log("ℹ️ Ledger já estava FAILED:", w.withdrawId);
+    console.log("ℹ️ Ledger já estava FAILED");
   }
 
   await rebuildWallet(w.userId);
 
-  console.log("✅ SAQUE DEVOLVIDO:", w._id.toString());
+  console.log("✅ SAQUE DEVOLVIDO");
 }
   
     } catch (err) {
@@ -143,19 +143,13 @@ else if (status === "FAILED") {
 
   console.log("RECONCILIATION ERROR");
 
-  console.log("Withdraw:", w._id.toString());
+ console.log("Saque em reconciliação");
 
-  console.log("Asaas ID:", w.asaasTransferId);
+  
 
   console.log("HTTP:", err.response?.status);
 
-  console.log(
-    JSON.stringify(
-      err.response?.data,
-      null,
-      2
-    )
-  );
+ 
 
   console.log("Message:", err.message);
 

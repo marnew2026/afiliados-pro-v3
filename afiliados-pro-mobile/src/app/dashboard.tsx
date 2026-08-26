@@ -1,28 +1,50 @@
+import {
+  Ionicons,
+  MaterialCommunityIcons,
+  Feather,
+} from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useEffect, useState, useCallback } from "react";
-
-import * as Clipboard from "expo-clipboard";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { AppState } from "react-native";
+import { copyToClipboard } from "../utils/copyToClipboard";
+import { formatMoney } from "../utils/formatMoney";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
+  Linking,
   ActivityIndicator,
-  RefreshControl,
   Alert,
+  RefreshControl,
 } from "react-native";
+import { useFocusEffect } from "expo-router";
+import DashboardHeader from "../components/dashboard/DashboardHeader";
+import SummaryCards from "../components/dashboard/SummaryCards";
+import DashboardCard from "../components/dashboard/DashboardCard";
+import CampaignCardV2 from "../components/dashboard/CampaignCardV2";
+import useDashboard from "../hooks/useDashboard";
+import PerformanceCard from "../components/dashboard/PerformanceCard";
+import BalanceCard from "../components/dashboard/BalanceCard";
+import HomeHeader from "../components/dashboard/HomeHeader";
+import StatsCards from "../components/dashboard/StatsCards";
 
+
+import Kael from "../components/kael/Kael";
 import api from "../services/api";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../firebase";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import useDashboardService from "../hooks/useDashboardService";
 type Campaign = {
   _id: string;
   nome: string;
   link: string;
+  active: boolean;
   clicks?: number;
   sales?: number;
   earnings?: number;
+  createdAt?: string;
+  status?: string;
 };
 
 type DashboardState = {
@@ -31,63 +53,84 @@ type DashboardState = {
   availableBalance: number;
   totalClicks: number;
   isPro: boolean;
+
+  user?: {
+    _id: string;
+    name: string;
+    email: string;
+    plan: string;
+    isPro: boolean;
+  };
+
 };
 
 export default function Dashboard() {
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+ const {
+  loading,
+  setLoading,
 
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  refreshing,
+  setRefreshing,
 
-  const [dashboard, setDashboard] = useState<DashboardState>({
-    totalEarnings: 0,
-    totalWithdrawn: 0,
-    availableBalance: 0,
-    totalClicks: 0,
-    isPro: false,
-  });
+  campaigns,
+  setCampaigns,
+
+  dashboard,
+  setDashboard,
+
+  formatMoney,
+} = useDashboard();
+const firstFocus = useRef(true);
 
 
 
-  // 🔥 FORMAT MONEY
-  const formatMoney = (value: any) => {
-    const num = Number(value);
-    if (!isFinite(num)) return "0.00";
-    return num.toFixed(2);
-  };
 
   // 🔥 LOAD DASHBOARD
+  const { loadDashboard: loadDashboardService } = useDashboardService();
 const loadDashboard = useCallback(async (userId: string) => {
+  const token = await AsyncStorage.getItem("token");
+
+
+  console.log("🔥 LOAD DASHBOARD EXECUTOU");
+ 
   if (!userId) return;
 
   try {
-    const [dashboardRes, walletRes] = await Promise.all([
-      api.get(`/dashboard/${userId}`),
-      api.get(`/wallet/${userId}`),
-    ]);
+  const dashboardRes = await api.get(`/dashboard/${userId}`);
 
-    const dashboardData = dashboardRes.data;
-    const walletData = walletRes.data;
+const dashboardData = dashboardRes.data;
     console.log("🔥 DASHBOARD API:");
-    console.log(JSON.stringify(dashboardData, null, 2));
+   
 
-    console.log("🔥 WALLET API:");
-    console.log(JSON.stringify(walletData, null, 2));
+  
 
     console.log("🔥 USER ID:");
-    console.log(userId);
-    setDashboard({
-      totalEarnings: dashboardData.metrics?.totalEarnings || 0,
-      totalWithdrawn: 0,
-      availableBalance:
-        walletData.wallet?.availableBalance || 0,
-      totalClicks:
-        dashboardData.metrics?.totalClicks || 0,
-      isPro:
-        dashboardData.user?.isPro || false,
-    });
+    
+setDashboard({
+  totalEarnings:
+    dashboardData.wallet?.totalEarned || 0,
 
+  totalWithdrawn:
+    dashboardData.wallet?.totalWithdrawn || 0,
+
+  availableBalance:
+    dashboardData.wallet?.availableBalance || 0,
+
+  totalClicks:
+    dashboardData.metrics?.totalClicks || 0,
+
+  isPro:
+    dashboardData.user?.isPro || false,
+
+  user: dashboardData.user,
+});
+
+console.log("========== CAMPANHAS ==========");
+console.log("TOTAL:", dashboardData.campaigns?.length);
+
+console.log("===============================");
     setCampaigns(dashboardData.campaigns || []);
+
 
   } catch (err: any) {
 
@@ -97,7 +140,7 @@ const loadDashboard = useCallback(async (userId: string) => {
 
   console.log("Status:", err.response?.status);
 
-  console.log("Data:", err.response?.data);
+ 
 
   console.log("URL:", err.config?.url);
 
@@ -110,118 +153,100 @@ const loadDashboard = useCallback(async (userId: string) => {
 }, []);
 
   // 🔥 AUTH LISTENER
- useEffect(() => {
+ // 🔥 AUTH MONGO + JWT
+useEffect(() => {
 
-  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+  console.log("🚀 DASHBOARD MONTADO");
 
-    console.log("🔥 AUTH USER:", user?.uid);
+  async function initDashboard() {
 
+    try {
 
-    if (!user) {
+      const token = await AsyncStorage.getItem("token");
+      const userId = await AsyncStorage.getItem("userId");
 
-      setDashboard({
-        totalEarnings: 0,
-        totalWithdrawn: 0,
-        availableBalance: 0,
-        totalClicks: 0,
-        isPro:false,
-      });
+      console.log("==============================");
+      console.log("🔐 INICIANDO DASHBOARD");
+      console.log("TOKEN EXISTE:", token ? "SIM" : "NÃO");
+      console.log("USER ID:", userId);
+      console.log("==============================");
 
-      setCampaigns([]);
-
-      setLoading(false);
-
-      return;
-    }
-
-
-    console.log(
-      "📦 USER ID STORAGE:",
-      await AsyncStorage.getItem("userId")
-    );
-
-
-    let userId = await AsyncStorage.getItem("userId");
-
-
-    // recuperação automática Mongo
-    if (!userId) {
-
-      console.log(
-        "⚠️ Mongo ID não encontrado. Recuperando..."
-      );
-
-
-      try {
-
-       const response = await api.get(
-  `/user/firebase/${user.uid}`
-);
-
+      if (!token || !userId) {
 
         console.log(
-          "🔥 RESPOSTA MONGO:",
-          response.data
+          "❌ SESSÃO NÃO ENCONTRADA"
         );
 
-
-        if (response.data?._id) {
-
-  userId = response.data._id;
-
-  await AsyncStorage.setItem(
-    "userId",
-    response.data._id
-  );
-
-  console.log(
-    "✅ Mongo UserId recuperado:",
-    response.data._id
-  );
-
-} else {
-
-  console.log(
-    "❌ RESPOSTA SEM ID:",
-    response.data
-  );
-
-}
-
-        console.log(
-          "✅ Mongo UserId recuperado:",
-          userId
-        );
-
-
-      } catch(error:any){
-
-        console.log(
-          
-          "❌ ERRO:",
-          error.response?.data || error.message
-        );
-
+        return;
       }
 
-    }
-
-setLoading(false);
-    if(userId){
+      console.log(
+        "✅ SESSÃO MONGO ENCONTRADA"
+      );
 
       await loadDashboard(userId);
 
+    } catch (error: any) {
+
+      console.log(
+        "❌ ERRO AO INICIAR DASHBOARD:",
+        error.message
+      );
+
     }
 
+  }
 
+  initDashboard();
+
+}, [loadDashboard]);
+
+useFocusEffect(
+  useCallback(() => {
+
+    if (firstFocus.current) {
+      firstFocus.current = false;
+      return;
+    }
+
+    async function reload() {
+      const userId = await AsyncStorage.getItem("userId");
+
+      if (userId) {
+       console.log("🔄 RECARREGANDO DASHBOARD");
+
+setLoading(true);
+
+await loadDashboard(userId);
+      }
+    }
+
+    reload();
+
+  }, [loadDashboard])
+);
+
+useEffect(() => {
+  const subscription = AppState.addEventListener("change", async (state) => {
+   if (state === "active") {
+  const userId = await AsyncStorage.getItem("userId");
+
+  if (userId) {
+    console.log("🔄 App voltou para frente. Atualizando dashboard...");
+
+    setRefreshing(true);
+
+    try {
+      await loadDashboard(userId);
+    } finally {
+      setRefreshing(false);
+    }
+  }
+}
   });
 
-
-  return unsubscribe;
-
-
-}, []);
-
+  return () => subscription.remove();
+}, [loadDashboard]);
   // 🔥 REFRESH
   async function handleRefresh() {
     setRefreshing(true);
@@ -240,14 +265,12 @@ if (userId) {
     }
   }
 
-  // 🔥 COPY LINK
-  async function copiar(link: string) {
-    await Clipboard.setStringAsync(link);
-    Alert.alert("Sucesso", "Link copiado!");
-  }
+ 
 
   const d = dashboard;
   const list = campaigns;
+  
+
 
   // 🔥 LOADING UI
   if (loading) {
@@ -260,173 +283,431 @@ if (userId) {
           backgroundColor: "#0f172a",
         }}
       >
-        <ActivityIndicator size="large" color="#fff" />
+        
+         <Kael state="working" />
       </View>
     );
   }
 
-  return (
-    <ScrollView
-      showsVerticalScrollIndicator={false}
-      style={{ flex: 1, backgroundColor: "#0f172a" }}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-      }
-    >
-      <View style={{ padding: 20 }}>
-        <Text style={{ color: "#fff", fontSize: 30, fontWeight: "bold" }}>
-          🚀 Dashboard
-        </Text>
+ return (
+  <>
+    {refreshing && <Kael state="working" />}
 
-        {/* CARD */}
+    <ScrollView
+  showsVerticalScrollIndicator={false}
+  style={{ flex: 1, backgroundColor: "#0f172a" }}
+  refreshControl={
+    <RefreshControl
+      refreshing={refreshing}
+      onRefresh={handleRefresh}
+         tintColor="#FFD700"
+      colors={["#FFD700"]}
+    />
+  }
+>
+  <View style={{ padding: 20 }}>
+    
+ <HomeHeader
+  name={d.user?.name}
+/>
+
+<Kael />
+
+    <BalanceCard
+  balance={d.availableBalance}
+  formatMoney={formatMoney}
+  onWithdraw={() => router.push("/saque" as any)}
+  onCampaign={() => router.push("/create" as any)}
+/>
+
+
+<SummaryCards
+  isPro={d.isPro}
+  totalCampaigns={list.length}
+  totalClicks={d.totalClicks}
+  totalEarnings={d.totalEarnings}
+  availableBalance={d.availableBalance}
+  formatMoney={formatMoney}
+/>
+
+
+      {/* TOTAL SACADO */}
+    <View
+  style={{
+    backgroundColor:"#2a2110",
+    padding:20,
+    borderRadius:24,
+    marginTop:16,
+
+    borderWidth:1,
+    borderColor:"#D4AF37",
+
+    shadowColor:"#D4AF37",
+    shadowOpacity:0.18,
+    shadowRadius:8,
+    elevation:6,
+  }}
+>
+
         <View
           style={{
-            backgroundColor: "#1e293b",
-            padding: 20,
-            borderRadius: 16,
-            marginTop: 20,
+            flexDirection:"row",
+            alignItems:"center",
           }}
         >
-          <Text style={{ color: "#94a3b8" }}>💰 Total ganho</Text>
-          <Text style={{ color: "#fff", fontSize: 28 }}>
-            R$ {formatMoney(d.totalEarnings)}
-          </Text>
 
-          <Text style={{ color: "#94a3b8", marginTop: 10 }}>💸 Sacado</Text>
-          <Text style={{ color: "#fff", fontSize: 22 }}>
-            R$ {formatMoney(d.totalWithdrawn)}
-          </Text>
+       
 
-          <Text style={{ color: "#94a3b8", marginTop: 10 }}>👆 Clicks</Text>
-          <Text style={{ color: "#fff", fontSize: 22 }}>
-            {d.totalClicks}
-          </Text>
+      <Text
+  style={{
+    color:"#FFD700",
+    fontSize:18,
+    fontWeight:"bold",
+  }}
+>
+  💰💰 Total Sacado 💰💰
+</Text>
 
-          <Text style={{ color: "#94a3b8", marginTop: 10 }}>📈 Disponível</Text>
-          <Text style={{ color: "#22c55e", fontSize: 28 }}>
-            R$ {formatMoney(d.availableBalance)}
-          </Text>
         </View>
 
-        {/* ACTIONS */}
-        <TouchableOpacity
-          onPress={() => router.push("/create" as any)}
-          style={{
-            backgroundColor: "#2563eb",
-            padding: 16,
-            borderRadius: 12,
-            marginTop: 20,
-          }}
-        >
-          <Text style={{ color: "#fff", textAlign: "center" }}>
-            ➕ Nova campanha
-          </Text>
-        </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => {
-            if (Number(d.availableBalance || 0) <= 0) {
-              Alert.alert("Erro", "Sem saldo disponível");
-              return;
-            }
-            router.push("/saque" as any);
-          }}
-          style={{
-            backgroundColor: "#16a34a",
-            padding: 16,
-            borderRadius: 12,
-            marginTop: 10,
-          }}
-        >
-          <Text style={{ color: "#fff", textAlign: "center" }}>
-            💸 Saque PIX
-          </Text>
-        </TouchableOpacity>
+     <Text
+  style={{
+    color:"#FFD700",
+    fontSize:28,
+    fontWeight:"bold",
+    marginTop:8,
+  }}
+>
+  {formatMoney(d.totalWithdrawn)}
+</Text>
 
-        <TouchableOpacity
-          onPress={() => {
-            if (d?.isPro) {
-              Alert.alert("Info", "Você já é PRO");
-              return;
-            }
-            router.push("/checkout" as any);
-          }}
-          style={{
-            backgroundColor: "#f59e0b",
-            padding: 16,
-            borderRadius: 12,
-            marginTop: 10,
-          }}
-        >
-          <Text style={{ color: "#fff", textAlign: "center" }}>
-            ⭐ PRO
-          </Text>
-        </TouchableOpacity>
+      </View>
 
-        <TouchableOpacity
-          onPress={() => router.push("/admin" as any)}
-          style={{
-            backgroundColor: "#ef4444",
-            padding: 16,
-            borderRadius: 12,
-            marginTop: 10,
-          }}
-        >
-          <Text style={{ color: "#fff", textAlign: "center" }}>
-            🛠 Admin
-          </Text>
-        </TouchableOpacity>
+        {/* AÇÕES */}
+      <View
+        style={{
+          flexDirection:"row",
+          flexWrap:"wrap",
+          justifyContent:"space-between",
+          marginTop:22,
+        }}
+      >
 
-        {/* CAMPAIGNS */}
-        <Text
-          style={{
-            color: "#fff",
-            fontSize: 22,
-            fontWeight: "bold",
-            marginTop: 20,
-          }}
-        >
-          📢 Campanhas
-        </Text>
 
-        {list.map((item) => (
-          <View
-            key={item._id}
+       {/* CAMPANHAS */}
+<TouchableOpacity
+  onPress={() => router.push("/campanhas" as any)}
+         style={{
+  width:"48%",
+  backgroundColor:"#1e3a8a",   // mantém exatamente esse azul
+
+  borderRadius:22,
+
+  paddingVertical:20,
+  paddingHorizontal:16,
+
+  marginBottom:16,
+
+  borderWidth:1,
+  borderColor:"#2563eb",      
+
+  shadowColor:"#22c55e",
+  shadowOpacity:0.10,
+  shadowRadius:6,
+
+  elevation:4,
+}}
+        >
+
+        <Ionicons
+  name="add-circle"
+  size={34}
+  color="#60a5fa"
+/>
+
+          <Text
             style={{
-              backgroundColor: "#1e293b",
-              padding: 15,
-              borderRadius: 12,
-              marginTop: 10,
+              color:"#fff",
+              fontSize:18,
+              fontWeight:"bold",
+              marginTop:12,
             }}
           >
-            <Text style={{ color: "#fff", fontWeight: "bold" }}>
-              {item.nome}
-            </Text>
+        Campanhas
+          </Text>
 
-            <Text style={{ color: "#94a3b8" }}>
-              Cliques: {Number(item?.clicks ?? 0)}
-            </Text>
+          <Text
+            style={{
+              color:"#cbd5e1",
+              fontSize:13,
+              marginTop:6,
+            }}
+          >
+           🚀 Crie, edite e acompanhe suas campanhas.
+          </Text>
 
-            <Text style={{ color: "#22c55e" }}>
-              R$ {formatMoney(item?.earnings)}
-            </Text>
+        </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => copiar(item.link)}
-              style={{
-                backgroundColor: "#2563eb",
-                padding: 10,
-                borderRadius: 8,
-                marginTop: 10,
-              }}
-            >
-              <Text style={{ color: "#fff", textAlign: "center" }}>
-                Copiar link
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ))}
+
+
+        {/* SAQUE */}
+        <TouchableOpacity
+          onPress={()=>{
+            if(Number(d.availableBalance || 0) <= 0){
+              Alert.alert(
+                "Erro",
+                "Sem saldo disponível"
+              );
+              return;
+            }
+
+            router.push("/saque" as any);
+          }}
+       style={{
+  width:"48%",
+  backgroundColor:"#14532d",
+
+  borderRadius:22,
+
+  paddingVertical:20,
+  paddingHorizontal:16,
+
+  marginBottom:16,
+
+  borderWidth:1,
+  borderColor:"#4ade80",
+
+  shadowColor:"#4ade80",
+  shadowOpacity:0.12,
+  shadowRadius:6,
+
+  elevation:4,
+}}
+        >
+
+          <Ionicons
+            name="wallet"
+            size={34}
+            color="#4ade80"
+          />
+
+
+          <Text
+            style={{
+              color:"#fff",
+              fontSize:18,
+              fontWeight:"bold",
+              marginTop:12,
+            }}
+          >
+            Saque PIX
+          </Text>
+
+
+          <Text
+            style={{
+              color:"#cbd5e1",
+              fontSize:13,
+              marginTop:6,
+            }}
+          >
+            💸 Transfira seu dinheiro quando quiser.
+          </Text>
+
+        </TouchableOpacity>
+
+
+
+
+        {/* PLANO PRO */}
+        <TouchableOpacity
+          onPress={() => {
+
+  if (d.isPro) {
+Alert.alert(
+  "👑 Benefícios PRO",
+  "Sua assinatura está ativa.\n\nTodos os recursos já estão liberados."
+);
+    return;
+  }
+
+  router.push("/checkout" as any);
+
+}}
+          style={{
+  width:"48%",
+  backgroundColor:"#78350f",
+
+  borderRadius:22,
+
+  paddingVertical:20,
+  paddingHorizontal:16,
+
+  marginBottom:16,
+
+  borderWidth:1,
+  borderColor:"#fbbf24",
+
+  shadowColor:"#fbbf24",
+  shadowOpacity:0.12,
+  shadowRadius:6,
+
+  elevation:4,
+}}
+        >
+
+          <Ionicons
+            name="diamond"
+            size={34}
+            color="#fbbf24"
+          />
+
+
+         <Text
+  style={{
+    color:"#fff",
+    fontSize:18,
+    fontWeight:"bold",
+    marginTop:12,
+  }}
+>
+  {d.isPro ? "Benefícios PRO" : "Plano PRO"}
+</Text>
+
+
+          <Text
+  style={{
+    color:"#fde68a",
+    fontSize:13,
+    marginTop:6,
+  }}
+>
+  {d.isPro
+    ? "Todos os recursos premium estão disponíveis."
+    : "⭐ Experimente o máximo do Afiliados Pro."}
+</Text>
+
+
+        </TouchableOpacity>
+
+
+
+
+        {/* ADMIN */}
+        <TouchableOpacity
+          onPress={()=>{
+            router.push("/admin" as any);
+          }}
+         style={{
+  width:"48%",
+  backgroundColor:"#7f1d1d",
+
+  borderRadius:22,
+
+  paddingVertical:20,
+  paddingHorizontal:16,
+
+  marginBottom:16,
+
+  borderWidth:1,
+  borderColor:"#f87171",
+
+  shadowColor:"#f87171",
+  shadowOpacity:0.12,
+  shadowRadius:6,
+
+  elevation:4,
+}}
+        >
+
+          <Ionicons
+            name="settings"
+            size={34}
+            color="#f87171"
+          />
+
+
+          <Text
+            style={{
+              color:"#fff",
+              fontSize:18,
+              fontWeight:"bold",
+              marginTop:12,
+            }}
+          >
+           Painel Financeiro
+          </Text>
+
+
+          <Text
+            style={{
+              color:"#fecaca",
+              fontSize:13,
+              marginTop:6,
+            }}
+          >
+       Saques, extrato e movimentações.
+          </Text>
+
+
+        </TouchableOpacity>
+
+
       </View>
+        {/* ATIVIDADE RECENTE */}
+<View
+  style={{
+    backgroundColor: "#172554",
+    borderRadius: 22,
+    padding: 18,
+    marginTop: 25,
+    borderWidth: 1,
+    borderColor: "#22c55e",
+  }}
+>
+  <Text
+    style={{
+      color: "#fff",
+      fontSize: 22,
+      fontWeight: "bold",
+      marginBottom: 15,
+    }}
+  >
+    📈 Atividade Recente
+  </Text>
+</View>
+
+    <StatsCards
+  balance={d.availableBalance}
+  totalEarned={d.totalEarnings}
+  campaigns={campaigns.length}
+  clicks={d.totalClicks}
+  isPro={d.isPro}
+  withdrawn={d.totalWithdrawn}
+  formatMoney={formatMoney}
+/>
+
+
+
+{false && (
+  <>
+    {list.map((item) => (
+      <CampaignCardV2
+        key={item._id}
+        item={item}
+        copiar={copyToClipboard}
+        formatMoney={formatMoney}
+        loadDashboard={loadDashboard}
+      />
+    ))}
+  </>
+)}
+
+
+    </View>
+
     </ScrollView>
-  );
+  </>
+);
 }

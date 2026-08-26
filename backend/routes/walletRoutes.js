@@ -36,7 +36,7 @@ if (!wallet) {
     });
 
   } catch (err) {
-    console.log("🔥 WALLET ERROR:", err);
+    console.error("🔥 WALLET ERROR:", err.message);
 
     return res.status(500).json({
       error: err.message,

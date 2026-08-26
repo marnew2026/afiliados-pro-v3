@@ -7,8 +7,7 @@ import Withdraw from "../models/Withdraw.js";
 import { lockWallet } from "../src/lib/walletLock.js";
 const router = express.Router();
 router.post("/create", async (req, res) => {
-   console.log("BODY RECEBIDO:", req.body);
-  console.log("BODY SAQUE:", req.body);
+console.log("💸 SOLICITAÇÃO DE SAQUE RECEBIDA");
   try {
 
  const {
@@ -81,12 +80,9 @@ const existing = await Withdraw.findOne({
 if (existing) {
     throw new Error("Já existe um saque em processamento.");
 }
-console.log("WALLET BEFORE:", {
-  availableBalance: wallet.availableBalance,
-  lockedBalance: wallet.lockedBalance,
-});
 
-console.log("WITHDRAW VALUE:", value);
+
+console.log("💸 VALOR DO SAQUE VALIDADO");
     if (Number(wallet?.availableBalance || 0) < value) {
     throw new Error("Saldo insuficiente");
 }

@@ -6,7 +6,7 @@ import Ledger from "../../models/Ledger.js";
 dotenv.config({
   path: "./.env",
 });
-console.log("MONGO_URI:");
+
 
 
 await mongoose.connect(process.env.MONGO_URI);
