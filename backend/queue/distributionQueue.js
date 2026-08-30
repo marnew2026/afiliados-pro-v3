@@ -11,6 +11,7 @@ export const distributionQueue = new Queue(
 export async function scheduleDistribution({
   distributionId,
   scheduledAt,
+  attempts = 3,
 }) {
   if (!distributionId) {
     throw new Error("distributionId não informado.");
@@ -39,7 +40,7 @@ export async function scheduleDistribution({
 
       delay,
 
-      attempts: 3,
+      attempts,
 
       backoff: {
         type: "exponential",

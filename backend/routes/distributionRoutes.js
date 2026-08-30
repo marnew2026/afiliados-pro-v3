@@ -338,4 +338,147 @@ router.patch("/:id/cancel", protect, async (req, res) => {
     });
   }
 });
+/**
+ * Reprocessar divulgação que falhou
+ */
+router.patch("/:id/retry", protect, async (req, res) => {
+  try {
+    const distributionId = req.params.id;
+    const userId = req.user._id;
+
+    const MAX_TOTAL_ATTEMPTS = 5;
+
+    const distribution = await Distribution.findOne({
+      _id: distributionId,
+      userId,
+    }).lean();
+
+    if (!distribution) {
+      return res.status(404).json({
+        success: false,
+        error: "Divulgação não encontrada.",
+      });
+    }
+
+    if (distribution.status !== "failed") {
+      return res.status(409).json({
+        success: false,
+        error:
+          "Somente divulgações com falha podem ser reprocessadas.",
+      });
+    }
+
+    if (distribution.attempts >= MAX_TOTAL_ATTEMPTS) {
+      return res.status(409).json({
+        success: false,
+        error:
+          "Limite máximo de tentativas atingido.",
+      });
+    }
+
+    const existingJob = await distributionQueue.getJob(
+      String(distributionId)
+    );
+
+    if (existingJob) {
+      const jobState = await existingJob.getState();
+
+      if (jobState === "failed") {
+        await existingJob.remove();
+      } else {
+        return res.status(409).json({
+          success: false,
+          error:
+            "Já existe uma execução ativa ou pendente para esta divulgação.",
+        });
+      }
+    }
+
+    const remainingAttempts =
+      MAX_TOTAL_ATTEMPTS - distribution.attempts;
+
+    const retryAttempts = Math.min(
+      3,
+      remainingAttempts
+    );
+
+    const retryAt = new Date();
+
+    const scheduledDistribution =
+      await Distribution.findOneAndUpdate(
+        {
+          _id: distributionId,
+          userId,
+          status: "failed",
+          attempts: {
+            $lt: MAX_TOTAL_ATTEMPTS,
+          },
+        },
+        {
+          $set: {
+            status: "scheduled",
+            scheduledAt: retryAt,
+            lastError: null,
+          },
+        },
+        {
+          new: true,
+        }
+      );
+
+    if (!scheduledDistribution) {
+      return res.status(409).json({
+        success: false,
+        error:
+          "A divulgação não está mais disponível para retry.",
+      });
+    }
+
+    try {
+      const queueResult = await scheduleDistribution({
+        distributionId,
+        scheduledAt: retryAt,
+        attempts: retryAttempts,
+      });
+
+      return res.status(200).json({
+        success: true,
+        distribution: scheduledDistribution,
+        retry: {
+          jobId: queueResult.jobId,
+          attemptsAllowed: retryAttempts,
+          maxTotalAttempts: MAX_TOTAL_ATTEMPTS,
+        },
+      });
+    } catch (queueError) {
+      await Distribution.findOneAndUpdate(
+        {
+          _id: distributionId,
+          userId,
+          status: "scheduled",
+        },
+        {
+          $set: {
+            status: "failed",
+            lastError:
+              "Falha ao reagendar divulgação.",
+          },
+        }
+      );
+
+      throw queueError;
+    }
+  } catch (error) {
+    console.error(
+      "ERRO RETRY DISTRIBUTION:",
+      error.message
+    );
+
+    return res.status(500).json({
+      success: false,
+      error:
+        "Erro interno ao reprocessar divulgação.",
+    });
+  }
+});
 export default router;
