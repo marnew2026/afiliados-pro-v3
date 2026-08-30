@@ -33,7 +33,7 @@ export async function sendTelegramMessage({
       {
         chat_id: destinationId,
         text: message,
-        disable_web_page_preview: false,
+        disable_web_page_preview: true,
       },
       {
         timeout: 15000,
