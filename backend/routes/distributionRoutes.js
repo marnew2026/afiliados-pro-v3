@@ -5,7 +5,10 @@ import Distribution from "../models/Distribution.js";
 import ChannelConnection from "../models/ChannelConnection.js";
 
 import { protect } from "../middlewares/authMiddleware.js";
-import { scheduleDistribution } from "../queue/distributionQueue.js";
+import {
+  distributionQueue,
+  scheduleDistribution,
+} from "../queue/distributionQueue.js";
 
 const router = express.Router();
 
@@ -247,6 +250,91 @@ router.get("/:id", protect, async (req, res) => {
     return res.status(500).json({
       success: false,
       error: "Erro interno ao consultar divulgação.",
+    });
+  }
+});
+/**
+ * Cancelar divulgação agendada
+ */
+router.patch("/:id/cancel", protect, async (req, res) => {
+  try {
+    const distributionId = req.params.id;
+    const userId = req.user._id;
+
+    const existingDistribution =
+      await Distribution.findOne({
+        _id: distributionId,
+        userId,
+      }).lean();
+
+    if (!existingDistribution) {
+      return res.status(404).json({
+        success: false,
+        error: "Divulgação não encontrada.",
+      });
+    }
+
+    if (existingDistribution.status !== "scheduled") {
+      return res.status(409).json({
+        success: false,
+        error:
+          "Somente divulgações agendadas podem ser canceladas.",
+      });
+    }
+
+    const cancelledDistribution =
+      await Distribution.findOneAndUpdate(
+        {
+          _id: distributionId,
+          userId,
+          status: "scheduled",
+        },
+        {
+          $set: {
+            status: "cancelled",
+          },
+        },
+        {
+          new: true,
+        }
+      ).lean();
+
+    if (!cancelledDistribution) {
+      return res.status(409).json({
+        success: false,
+        error:
+          "A divulgação não está mais disponível para cancelamento.",
+      });
+    }
+
+    try {
+      const job = await distributionQueue.getJob(
+        String(distributionId)
+      );
+
+      if (job) {
+        await job.remove();
+      }
+    } catch (queueError) {
+      console.warn(
+        "AVISO CANCEL DISTRIBUTION QUEUE:",
+        queueError.message
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      distribution: cancelledDistribution,
+    });
+  } catch (error) {
+    console.error(
+      "ERRO CANCEL DISTRIBUTION:",
+      error.message
+    );
+
+    return res.status(500).json({
+      success: false,
+      error: "Erro interno ao cancelar divulgação.",
     });
   }
 });
