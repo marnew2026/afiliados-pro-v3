@@ -2,6 +2,7 @@
 import Distribution from "../../models/Distribution.js";
 import ChannelConnection from "../../models/ChannelConnection.js";
 import { sendTelegramMessage } from "./TelegramAdapter.js";
+import { decryptCredential } from "../../utils/credentialCrypto.js";
 
 export async function publishDistribution(distributionId) {
   const distribution =
@@ -90,10 +91,14 @@ export async function publishDistribution(distributionId) {
     let result;
 
     if (distribution.channel === "telegram") {
+      const botToken = decryptCredential(
+        connection.credential
+      );
+
       result = await sendTelegramMessage({
-        botToken: connection.credential,
+        botToken,
         destinationId: distribution.destinationId,
-       text: `${distribution.content.text}\n\n${distribution.content.trackingUrl}`,
+        text: `${distribution.content.text}\n\n${distribution.content.trackingUrl}`,
       });
     } else {
       throw new Error(

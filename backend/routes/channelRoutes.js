@@ -1,6 +1,7 @@
 import express from "express";
 import axios from "axios";
 
+import { encryptCredential } from "../utils/credentialCrypto.js";
 import ChannelConnection from "../models/ChannelConnection.js";
 import { protect } from "../middlewares/authMiddleware.js";
 
@@ -99,7 +100,7 @@ router.post("/telegram/connect", protect, async (req, res) => {
               telegramChat.title ||
               telegramChat.username ||
               "",
-            credential: botToken,
+            credential: encryptCredential(botToken),
             active: true,
             connectedAt: new Date(),
           },

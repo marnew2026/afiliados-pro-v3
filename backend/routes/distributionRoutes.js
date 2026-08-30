@@ -47,13 +47,19 @@ router.post("/", protect, async (req, res) => {
       });
     }
 
-    if (cleanText.length > 4096) {
+    const trackingUrl =
+      `${process.env.BASE_URL}/campaigns/r/${campaignId}`;
+
+    const telegramMessage =
+      `${cleanText}\n\n${trackingUrl}`;
+
+    if (telegramMessage.length > 4096) {
       return res.status(400).json({
         success: false,
-        error: "Texto excede o limite de 4096 caracteres.",
+        error:
+          "Mensagem final excede o limite de 4096 caracteres do Telegram.",
       });
     }
-
     const campaign = await Campaign.findOne({
       _id: campaignId,
       userId,
@@ -102,7 +108,7 @@ router.post("/", protect, async (req, res) => {
 
       content: {
         text: cleanText,
-     trackingUrl: `${process.env.BASE_URL}/campaigns/r/${campaign._id}`,
+        trackingUrl,
       },
 
       scheduledAt: publishAt,
