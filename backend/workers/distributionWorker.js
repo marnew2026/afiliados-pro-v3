@@ -3,7 +3,7 @@ import { connection } from "../src/lib/bullmqConnection.js";
 import { publishDistribution } from "../services/distribution/DistributionService.js";
 
 export const distributionWorker = new Worker(
-  "distributions",
+  process.env.DISTRIBUTION_QUEUE_NAME || "distributions",
 
   async (job) => {
     const { distributionId } = job.data;

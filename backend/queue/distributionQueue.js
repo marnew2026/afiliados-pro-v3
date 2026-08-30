@@ -2,7 +2,7 @@ import { Queue } from "bullmq";
 import { connection } from "../src/lib/bullmqConnection.js";
 
 export const distributionQueue = new Queue(
-  "distributions",
+  process.env.DISTRIBUTION_QUEUE_NAME || "distributions",
   {
     connection,
   }
