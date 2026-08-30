@@ -160,4 +160,94 @@ router.post("/", protect, async (req, res) => {
   }
 });
 
+
+/**
+ * Listar divulgações do usuário autenticado
+ */
+router.get("/", protect, async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const status = String(req.query.status || "").trim();
+
+    const filter = {
+      userId,
+    };
+
+    const allowedStatuses = [
+      "draft",
+      "scheduled",
+      "processing",
+      "published",
+      "failed",
+      "cancelled",
+    ];
+
+    if (status) {
+      if (!allowedStatuses.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          error: "Status inválido.",
+        });
+      }
+
+      filter.status = status;
+    }
+
+    const distributions = await Distribution.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(100)
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      total: distributions.length,
+      distributions,
+    });
+  } catch (error) {
+    console.error(
+      "ERRO LIST DISTRIBUTIONS:",
+      error.message
+    );
+
+    return res.status(500).json({
+      success: false,
+      error: "Erro interno ao listar divulgações.",
+    });
+  }
+});
+
+/**
+ * Consultar uma divulgação do usuário autenticado
+ */
+router.get("/:id", protect, async (req, res) => {
+  try {
+    const distribution = await Distribution.findOne({
+      _id: req.params.id,
+      userId: req.user._id,
+    }).lean();
+
+    if (!distribution) {
+      return res.status(404).json({
+        success: false,
+        error: "Divulgação não encontrada.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      distribution,
+    });
+  } catch (error) {
+    console.error(
+      "ERRO GET DISTRIBUTION:",
+      error.message
+    );
+
+    return res.status(500).json({
+      success: false,
+      error: "Erro interno ao consultar divulgação.",
+    });
+  }
+});
 export default router;
