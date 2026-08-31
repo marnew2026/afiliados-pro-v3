@@ -653,6 +653,52 @@ Alert.alert(
 
         </TouchableOpacity>
 
+        {/* CENTRAL DE DIVULGACAO */}
+        <TouchableOpacity
+          onPress={() => router.push("/divulgacao" as any)}
+          style={{
+            width:"48%",
+            backgroundColor:"#4c1d95",
+            borderRadius:22,
+            paddingVertical:20,
+            paddingHorizontal:16,
+            marginBottom:16,
+            borderWidth:1,
+            borderColor:"#8b5cf6",
+            shadowColor:"#8b5cf6",
+            shadowOpacity:0.12,
+            shadowRadius:6,
+            elevation:4,
+          }}
+        >
+          <Ionicons
+            name="megaphone"
+            size={34}
+            color="#c4b5fd"
+          />
+
+          <Text
+            style={{
+              color:"#fff",
+              fontSize:18,
+              fontWeight:"bold",
+              marginTop:12,
+            }}
+          >
+            Central de Divulgação
+          </Text>
+
+          <Text
+            style={{
+              color:"#ddd6fe",
+              fontSize:13,
+              marginTop:6,
+            }}
+          >
+            Automatize e acompanhe suas divulgações.
+          </Text>
+        </TouchableOpacity>
+
 
       </View>
         {/* ATIVIDADE RECENTE */}
