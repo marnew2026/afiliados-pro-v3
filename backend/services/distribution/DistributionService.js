@@ -64,30 +64,30 @@ export async function publishDistribution(distributionId) {
     );
   }
 
+  try {
   const campaign = await Campaign.findOne({
     _id: distribution.campaignId,
     userId: distribution.userId,
     active: true,
   });
 
-  if (!campaign) {
+    if (!campaign) {
     throw new Error("Campanha nÃ£o encontrada ou inativa.");
   }
 
-  const connection = await ChannelConnection.findOne({
+    const connection = await ChannelConnection.findOne({
     userId: distribution.userId,
     provider: distribution.channel,
     destinationId: distribution.destinationId,
     active: true,
   }).select("+credential");
 
-  if (!connection) {
+    if (!connection) {
     throw new Error("ConexÃ£o do canal nÃ£o encontrada ou inativa.");
   }
 
 
 
-  try {
     let result;
 
     if (distribution.channel === "telegram") {
