@@ -170,4 +170,7 @@ process.on("unhandledRejection", (err) => {
 
 bootstrap()
   .then(() => console.log("✅ BOOTSTRAP OK"))
-  .catch((err) => console.error("💥 FATAL:", err));
+  .catch((err) => {
+    console.error("FATAL:", err);
+    process.exit(1);
+  });
