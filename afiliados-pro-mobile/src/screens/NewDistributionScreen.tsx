@@ -19,6 +19,10 @@ import {
   useDistributionChannels,
 } from "../hooks/useDistributionChannels";
 
+import {
+  createDistribution,
+} from "../services/distributionService";
+
 export default function NewDistributionScreen() {
   const router = useRouter();
   const {
@@ -43,33 +47,102 @@ const telegramConnection = connections.find(
   const [selectedCampaignId, setSelectedCampaignId] = useState("");
   const [text, setText] = useState("");
   const [scheduleMode, setScheduleMode] = useState<"now" | "later">("now");
-
+  const [submitting, setSubmitting] = useState(false);
  const canContinue = useMemo(() => {
   return selectedCampaignId.length > 0 && text.trim().length >= 10;
 }, [selectedCampaignId, text]);
 
-  function handleValidate() {
-    if (!selectedCampaignId) {
-      Alert.alert(
-        "Campanha obrigatória",
-        "Informe uma campanha para continuar."
-      );
-      return;
-    }
-
-    if (text.trim().length < 10) {
-      Alert.alert(
-        "Texto muito curto",
-        "Digite pelo menos 10 caracteres para a divulgação."
-      );
-      return;
-    }
-
-    Alert.alert(
-      "Validação concluída",
-      "A divulgação está pronta para a próxima etapa de integração. Nenhuma publicação foi enviada."
-    );
+async function handlePublish() {
+  if (submitting) {
+    return;
   }
+
+  if (!selectedCampaignId) {
+    Alert.alert(
+      "Campanha obrigatória",
+      "Informe uma campanha para continuar."
+    );
+    return;
+  }
+
+  if (text.trim().length < 10) {
+    Alert.alert(
+      "Texto muito curto",
+      "Digite pelo menos 10 caracteres para a divulgação."
+    );
+    return;
+  }
+
+  if (!telegramConnection) {
+    Alert.alert(
+      "Telegram não conectado",
+      "Nenhum destino Telegram ativo foi encontrado."
+    );
+    return;
+  }
+
+  if (scheduleMode !== "now") {
+    Alert.alert(
+      "Agendamento ainda indisponível",
+      "Nesta etapa, use a opção Agora."
+    );
+    return;
+  }
+
+  Alert.alert(
+    "Confirmar publicação",
+    "A mensagem será publicada agora no Telegram conectado.",
+    [
+      {
+        text: "Cancelar",
+        style: "cancel",
+      },
+      {
+        text: "Publicar",
+        onPress: async () => {
+          try {
+            setSubmitting(true);
+
+            const result = await createDistribution({
+              campaignId: selectedCampaignId,
+              destinationId:
+                telegramConnection.destinationId,
+              text: text.trim(),
+            });
+
+            if (!result.success) {
+              throw new Error(
+                result.error ||
+                  "Não foi possível criar a divulgação."
+              );
+            }
+
+            Alert.alert(
+              "Divulgação enviada",
+              "A publicação foi enviada para processamento."
+            );
+
+            setText("");
+          } catch (err: any) {
+            console.log(
+              "CREATE DISTRIBUTION ERROR:",
+              err?.response?.data || err?.message
+            );
+
+            Alert.alert(
+              "Falha na divulgação",
+              err?.response?.data?.error ||
+                err?.message ||
+                "Não foi possível enviar a divulgação."
+            );
+          } finally {
+            setSubmitting(false);
+          }
+        },
+      },
+    ]
+  );
+}
 
   return (
     <SafeAreaView
@@ -170,7 +243,7 @@ const telegramConnection = connections.find(
               marginTop: 6,
             }}
           >
-            Nesta etapa o app apenas valida o conteúdo. Nenhuma divulgação será publicada.
+            Revise a campanha, o canal e o conteúdo antes de publicar.
           </Text>
         </View>
 
@@ -494,7 +567,8 @@ const telegramConnection = connections.find(
         )}
 
         <TouchableOpacity
-          onPress={handleValidate}
+         onPress={handlePublish}
+disabled={submitting || !canContinue}
           style={{
             backgroundColor: canContinue
               ? "#7c3aed"
@@ -511,7 +585,9 @@ const telegramConnection = connections.find(
               fontWeight: "900",
             }}
           >
-            Validar divulgação
+            {submitting
+  ? "Publicando..."
+  : "Publicar agora"}
           </Text>
         </TouchableOpacity>
 
@@ -523,7 +599,7 @@ const telegramConnection = connections.find(
             marginTop: 10,
           }}
         >
-          Nenhuma publicação será enviada nesta etapa.
+          A publicação só será enviada após sua confirmação.
         </Text>
       </ScrollView>
     </SafeAreaView>
