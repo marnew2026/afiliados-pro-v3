@@ -15,6 +15,10 @@ import {
   useDistributionCampaigns,
 } from "../hooks/useDistributionCampaigns";
 
+import {
+  useDistributionChannels,
+} from "../hooks/useDistributionChannels";
+
 export default function NewDistributionScreen() {
   const router = useRouter();
   const {
@@ -23,6 +27,18 @@ export default function NewDistributionScreen() {
   error: campaignsError,
   reload: reloadCampaigns,
 } = useDistributionCampaigns();
+  const {
+  connections,
+  loading: channelsLoading,
+  error: channelsError,
+  reload: reloadChannels,
+} = useDistributionChannels();
+
+const telegramConnection = connections.find(
+  (connection) =>
+    connection.provider === "telegram" &&
+    connection.active !== false
+);
 
   const [selectedCampaignId, setSelectedCampaignId] = useState("");
   const [text, setText] = useState("");
