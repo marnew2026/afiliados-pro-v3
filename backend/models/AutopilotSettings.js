@@ -53,6 +53,7 @@ const AutopilotSettingsSchema = new mongoose.Schema(
     runLockToken: {
       type: String,
       default: null,
+      select: false,
     },
 
     lastPublishedAt: {

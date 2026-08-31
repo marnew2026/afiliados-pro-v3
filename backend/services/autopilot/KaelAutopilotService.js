@@ -216,6 +216,26 @@ export async function runKaelAutopilotOnce(userId) {
       );
     }
 
+    // Revalida o estado imediatamente antes de criar a Distribution.
+    // Evita publicação caso o Autopilot tenha sido desligado
+    // ou alterado para modo assistido durante esta execução.
+    const stillAutomatic = await AutopilotSettings.exists({
+      userId,
+      enabled: true,
+      mode: "automatico",
+      channels: "telegram",
+      runLockToken: lockToken,
+      runLockedUntil: { $gt: new Date() },
+    });
+
+    if (!stillAutomatic) {
+      return {
+        success: true,
+        skipped: true,
+        reason: "autopilot_state_changed",
+      };
+    }
+
     const publishAt = new Date();
 
     const distribution = await Distribution.create({
