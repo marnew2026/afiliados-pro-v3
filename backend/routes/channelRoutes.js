@@ -144,5 +144,36 @@ router.post("/telegram/connect", protect, async (req, res) => {
     });
   }
 });
+router.get("/", protect, async (req, res) => {
+  try {
+    const userId = req.user._id;
 
+    const connections = await ChannelConnection.find({
+      userId,
+    })
+      .select(
+        "provider destinationId destinationName active connectedAt lastUsedAt createdAt updatedAt"
+      )
+      .sort({
+        createdAt: -1,
+      })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      total: connections.length,
+      connections,
+    });
+  } catch (error) {
+    console.error(
+      "ERRO LIST CHANNEL CONNECTIONS:",
+      error.message
+    );
+
+    return res.status(500).json({
+      success: false,
+      error: "Erro interno ao listar conexões.",
+    });
+  }
+});
 export default router;
