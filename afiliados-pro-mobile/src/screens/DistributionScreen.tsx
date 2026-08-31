@@ -139,17 +139,16 @@ export default function DistributionScreen() {
             Prepare, agende e acompanhe suas divulgações em um só lugar.
           </Text>
 
-          <TouchableOpacity
-            disabled
-            style={{
-              backgroundColor: "#ffffff",
-              borderRadius: 16,
-              paddingVertical: 14,
-              alignItems: "center",
-              marginTop: 20,
-              opacity: 0.65,
-            }}
-          >
+         <TouchableOpacity
+  onPress={() => router.push("/nova-divulgacao" as any)}
+  style={{
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 20,
+  }}
+>
             <Text
               style={{
                 color: "#4c1d95",
@@ -169,7 +168,7 @@ export default function DistributionScreen() {
               marginTop: 8,
             }}
           >
-            Integração será ativada na próxima etapa
+           Prepare sua divulgação antes de publicar
           </Text>
         </View>
 
