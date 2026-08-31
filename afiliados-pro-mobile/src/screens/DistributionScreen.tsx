@@ -1,5 +1,6 @@
-﻿import React from "react";
+import React from "react";
 import {
+  ActivityIndicator,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -9,8 +10,31 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
+import { useDistributions } from "../hooks/useDistributions";
+
 export default function DistributionScreen() {
   const router = useRouter();
+
+  const {
+    distributions,
+    loading,
+    error,
+    reload,
+  } = useDistributions();
+
+  const scheduledCount = distributions.filter(
+    (item) => item.status === "scheduled"
+  ).length;
+
+  const publishedCount = distributions.filter(
+    (item) => item.status === "published"
+  ).length;
+
+  const failedCount = distributions.filter(
+    (item) => item.status === "failed"
+  ).length;
+
+  const totalCount = distributions.length;
 
   return (
     <SafeAreaView
@@ -161,6 +185,72 @@ export default function DistributionScreen() {
           Visão geral
         </Text>
 
+        {loading && (
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 16,
+            }}
+          >
+            <ActivityIndicator
+              size="small"
+              color="#c4b5fd"
+            />
+
+            <Text
+              style={{
+                color: "#94a3b8",
+                fontSize: 13,
+                marginLeft: 10,
+              }}
+            >
+              Carregando divulgações...
+            </Text>
+          </View>
+        )}
+
+        {!loading && error && (
+          <View
+            style={{
+              backgroundColor: "#1e293b",
+              borderRadius: 16,
+              padding: 15,
+              marginBottom: 16,
+              borderWidth: 1,
+              borderColor: "#475569",
+            }}
+          >
+            <Text
+              style={{
+                color: "#fca5a5",
+                fontSize: 13,
+                lineHeight: 19,
+              }}
+            >
+              {error}
+            </Text>
+
+            <TouchableOpacity
+              onPress={reload}
+              style={{
+                marginTop: 12,
+                alignSelf: "flex-start",
+              }}
+            >
+              <Text
+                style={{
+                  color: "#c4b5fd",
+                  fontSize: 13,
+                  fontWeight: "900",
+                }}
+              >
+                Tentar novamente
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         <View
           style={{
             flexDirection: "row",
@@ -171,25 +261,25 @@ export default function DistributionScreen() {
           <StatusCard
             icon="time-outline"
             title="Agendadas"
-            value="0"
+            value={String(scheduledCount)}
           />
 
           <StatusCard
             icon="checkmark-circle-outline"
             title="Publicadas"
-            value="0"
+            value={String(publishedCount)}
           />
 
           <StatusCard
             icon="alert-circle-outline"
             title="Falhas"
-            value="0"
+            value={String(failedCount)}
           />
 
           <StatusCard
             icon="layers-outline"
             title="Total"
-            value="0"
+            value={String(totalCount)}
           />
         </View>
 
@@ -270,7 +360,7 @@ export default function DistributionScreen() {
                 fontWeight: "800",
               }}
             >
-              EM BREVE
+              CONECTADO
             </Text>
           </View>
         </View>
