@@ -47,6 +47,40 @@ export default function DistributionScreen() {
 
   const totalCount = distributions.length;
 
+const getAutopilotOperationalStatus = () => {
+  if (!autopilotSettings) {
+    return null;
+  }
+
+  if (!autopilotSettings.enabled) {
+    return {
+      label: "KAEL desativado",
+      description:
+        "Ative o KAEL quando quiser iniciar a operação configurada.",
+      icon: "pause-circle-outline" as const,
+    };
+  }
+
+  if (autopilotSettings.mode === "assistido") {
+    return {
+      label: "Modo assistido configurado",
+      description:
+        "O KAEL está ativo, mas não fará publicações autônomas neste modo.",
+      icon: "person-circle-outline" as const,
+    };
+  }
+
+  return {
+    label: "Modo automático configurado",
+    description:
+      "O KAEL está habilitado para operar conforme os limites definidos.",
+    icon: "flash-outline" as const,
+  };
+};
+
+const autopilotOperationalStatus =
+  getAutopilotOperationalStatus();
+
   return (
     <SafeAreaView
       style={{
@@ -681,7 +715,68 @@ export default function DistributionScreen() {
   >
     Tempo mínimo entre publicações automáticas
   </Text>
-</View>
+  </View>
+    {autopilotOperationalStatus && (
+  <View
+    style={{
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "#0f172a",
+      borderRadius: 14,
+      padding: 13,
+      marginTop: 14,
+      borderWidth: 1,
+      borderColor: autopilotSettings.enabled
+        ? "#4c1d95"
+        : "#334155",
+    }}
+  >
+    <View
+      style={{
+        width: 38,
+        height: 38,
+        borderRadius: 12,
+        backgroundColor: autopilotSettings.enabled
+          ? "#4c1d95"
+          : "#1e293b",
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: 11,
+      }}
+    >
+      <Ionicons
+        name={autopilotOperationalStatus.icon}
+        size={21}
+        color="#ffffff"
+      />
+    </View>
+
+    <View style={{ flex: 1 }}>
+      <Text
+        style={{
+          color: "#ffffff",
+          fontSize: 13,
+          fontWeight: "900",
+        }}
+      >
+        {autopilotOperationalStatus.label}
+      </Text>
+
+      <Text
+        style={{
+          color: "#94a3b8",
+          fontSize: 11,
+          lineHeight: 16,
+          marginTop: 3,
+        }}
+      >
+        {autopilotOperationalStatus.description}
+      </Text>
+    </View>
+  </View>
+)}
+
+
         <TouchableOpacity
   disabled={autopilotUpdating}
   onPress={async () => {
