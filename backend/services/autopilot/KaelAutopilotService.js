@@ -2,21 +2,8 @@ import Campaign from "../../models/Campaign.js";
 import ChannelConnection from "../../models/ChannelConnection.js";
 import Distribution from "../../models/Distribution.js";
 import AutopilotSettings from "../../models/AutopilotSettings.js";
-
-
+import { buildKaelContent } from "../content/KaelContentEngine.js";
 import crypto from "crypto";
-
-function buildKaelContent(campaign) {
-  const campaignName = String(campaign.nome || "").trim();
-
-  return [
-    "Oferta selecionada pelo KAEL",
-    "",
-    campaignName,
-    "",
-    "Confira os detalhes no link abaixo.",
-  ].join("\n");
-}
 
 export async function runKaelAutopilotOnce(userId) {
   if (!userId) {
@@ -202,7 +189,12 @@ export async function runKaelAutopilotOnce(userId) {
       };
     }
 
-    const text = buildKaelContent(campaign);
+    const kaelContent = buildKaelContent({
+      campaign,
+      channel: "telegram",
+    });
+
+    const text = kaelContent.text;
 
     const trackingUrl =
       `${process.env.BASE_URL}/campaigns/r/${campaign._id}`;
