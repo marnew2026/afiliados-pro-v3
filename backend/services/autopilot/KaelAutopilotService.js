@@ -242,6 +242,7 @@ export async function runKaelAutopilotOnce(userId) {
       userId,
       campaignId: campaign._id,
       channel: "telegram",
+      source: "autopilot",
       destinationId: connection.destinationId,
 
       content: {

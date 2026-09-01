@@ -23,6 +23,13 @@ const DistributionSchema = new mongoose.Schema(
       default: "telegram",
     },
 
+    source: {
+      type: String,
+      enum: ["manual", "autopilot"],
+      default: "manual",
+      index: true,
+    },
+
     destinationId: {
       type: String,
       required: true,
