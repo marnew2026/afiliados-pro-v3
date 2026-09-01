@@ -3,6 +3,7 @@ import Distribution from "../../models/Distribution.js";
 import ChannelConnection from "../../models/ChannelConnection.js";
 import { sendTelegramMessage } from "./TelegramAdapter.js";
 import { decryptCredential } from "../../utils/credentialCrypto.js";
+import { applyTelegramPolicy } from "../policies/TelegramPolicy.js";
 
 export async function publishDistribution(distributionId) {
   const distribution =
@@ -95,10 +96,19 @@ export async function publishDistribution(distributionId) {
         connection.credential
       );
 
+      const telegramContent = applyTelegramPolicy({
+        content: {
+          channel: "telegram",
+          text: distribution.content.text,
+        },
+        trackingUrl:
+          distribution.content.trackingUrl,
+      });
+
       result = await sendTelegramMessage({
         botToken,
         destinationId: distribution.destinationId,
-        text: `${distribution.content.text}\n\n${distribution.content.trackingUrl}`,
+        text: telegramContent.finalText,
       });
     } else {
       throw new Error(
