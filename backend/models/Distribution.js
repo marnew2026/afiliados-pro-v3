@@ -48,6 +48,46 @@ const DistributionSchema = new mongoose.Schema(
         required: true,
         trim: true,
       },
+      contentType: {
+        type: String,
+        enum: ["text", "short_video"],
+        default: "text",
+      },
+
+      caption: {
+        type: String,
+        default: "",
+        trim: true,
+      },
+
+      hashtags: {
+        type: [String],
+        default: [],
+      },
+
+      cta: {
+        type: String,
+        default: "",
+        trim: true,
+      },
+
+      media: {
+        type: {
+          type: String,
+          enum: ["video"],
+          default: undefined,
+        },
+
+        aspectRatio: {
+          type: String,
+          default: null,
+        },
+
+        required: {
+          type: Boolean,
+          default: false,
+        },
+      },
 
       trackingUrl: {
         type: String,
