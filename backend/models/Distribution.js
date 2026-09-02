@@ -18,7 +18,7 @@ const DistributionSchema = new mongoose.Schema(
 
     channel: {
       type: String,
-      enum: ["telegram"],
+      enum: ["telegram", "instagram"],
       required: true,
       default: "telegram",
     },

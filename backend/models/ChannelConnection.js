@@ -11,7 +11,7 @@ const ChannelConnectionSchema = new mongoose.Schema(
 
     provider: {
       type: String,
-      enum: ["telegram"],
+      enum: ["telegram", "instagram"],
       required: true,
       default: "telegram",
     },
