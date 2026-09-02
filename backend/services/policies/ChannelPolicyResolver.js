@@ -1,9 +1,11 @@
 import { applyTelegramPolicy } from "./TelegramPolicy.js";
 import { applyTikTokPolicy } from "./TikTokPolicy.js";
+import { applyInstagramPolicy } from "./InstagramPolicy.js";
 
 const CHANNEL_POLICIES = {
   telegram: applyTelegramPolicy,
   tiktok: applyTikTokPolicy,
+  instagram: applyInstagramPolicy,
 };
 
 export function applyChannelPolicy({
