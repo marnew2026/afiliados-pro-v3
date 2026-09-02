@@ -46,6 +46,16 @@ export async function publishInstagram({
     );
   }
 
+  const assetUrl = String(
+    content.media?.assetUrl || ""
+  ).trim();
+
+  if (!assetUrl) {
+    throw new Error(
+      "InstagramAdapter exige assetUrl para publicacao de video."
+    );
+  }
+
   throw new Error(
     "InstagramAdapter ainda nao possui publicacao real implementada."
   );
