@@ -1,3 +1,4 @@
+import { parseInstagramCredential } from "../connections/InstagramConnectionService.js";
 export async function publishInstagram({
   credential,
   destinationId,
@@ -30,6 +31,18 @@ export async function publishInstagram({
   if (content.contentType !== "short_video") {
     throw new Error(
       "InstagramAdapter exige conteudo do tipo short_video."
+    );
+  }
+
+  const instagramCredential =
+    parseInstagramCredential(credential);
+
+  if (
+    instagramCredential.instagramUserId !==
+    String(destinationId)
+  ) {
+    throw new Error(
+      "Destino nao corresponde a credencial do Instagram."
     );
   }
 
