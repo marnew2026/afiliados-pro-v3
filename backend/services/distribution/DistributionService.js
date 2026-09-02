@@ -92,7 +92,7 @@ export async function publishDistribution(distributionId) {
     let result;
 
     if (distribution.channel === "telegram") {
-      const botToken = decryptCredential(
+      const credential = decryptCredential(
         connection.credential
       );
 
@@ -111,9 +111,9 @@ export async function publishDistribution(distributionId) {
       );
 
       result = await channelAdapter({
-        botToken,
+        credential,
         destinationId: distribution.destinationId,
-        text: telegramContent.finalText,
+        content: telegramContent,
       });
     } else {
       throw new Error(

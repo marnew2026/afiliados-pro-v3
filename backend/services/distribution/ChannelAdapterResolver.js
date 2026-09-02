@@ -1,7 +1,17 @@
 import { sendTelegramMessage } from "./TelegramAdapter.js";
 
 const CHANNEL_ADAPTERS = {
-  telegram: sendTelegramMessage,
+  telegram: async ({
+    credential,
+    destinationId,
+    content,
+  }) => {
+    return sendTelegramMessage({
+      botToken: credential,
+      destinationId,
+      text: content?.finalText,
+    });
+  },
 };
 
 export function getChannelAdapter(channel) {
