@@ -69,3 +69,22 @@ export async function markMediaAssetFailed({
 
   return mediaAsset;
 }
+
+export async function findReadyCampaignVideo({
+  userId,
+  campaignId,
+}) {
+  const mediaAsset = await MediaAsset.findOne({
+    userId,
+    campaignId,
+    type: "video",
+    status: "ready",
+    assetUrl: {
+      $nin: ["", null],
+    },
+  }).sort({
+    updatedAt: -1,
+  });
+
+  return mediaAsset;
+}
