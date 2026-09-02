@@ -19,7 +19,20 @@ router.post("/", protect, async (req, res) => {
       destinationId,
       text,
       scheduledAt,
+      channel = "telegram",
     } = req.body;
+
+    const cleanChannel = String(channel)
+      .trim()
+      .toLowerCase();
+
+    if (cleanChannel !== "telegram") {
+      return res.status(400).json({
+        success: false,
+        error:
+          "Canal ainda nao disponivel para criacao manual.",
+      });
+    }
 
     const userId = req.user._id;
 
@@ -78,7 +91,7 @@ router.post("/", protect, async (req, res) => {
 
     const connection = await ChannelConnection.findOne({
       userId,
-      provider: "telegram",
+      provider: cleanChannel,
       destinationId: cleanDestinationId,
       active: true,
     });
@@ -106,7 +119,7 @@ router.post("/", protect, async (req, res) => {
     const distribution = await Distribution.create({
       userId,
       campaignId: campaign._id,
-      channel: "telegram",
+      channel: cleanChannel,
       destinationId: cleanDestinationId,
 
       content: {
