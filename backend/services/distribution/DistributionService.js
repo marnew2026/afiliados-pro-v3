@@ -123,7 +123,7 @@ export async function publishDistribution(distributionId) {
 
     distribution.status = "published";
     distribution.publishedAt = new Date();
-    distribution.externalMessageId = result.messageId;
+    distribution.externalMessageId = result.externalId;
     distribution.lastError = null;
 
     await distribution.save();

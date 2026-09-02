@@ -6,11 +6,17 @@ const CHANNEL_ADAPTERS = {
     destinationId,
     content,
   }) => {
-    return sendTelegramMessage({
+    const result = await sendTelegramMessage({
       botToken: credential,
       destinationId,
       text: content?.finalText,
     });
+
+    return {
+      success: result.success,
+      externalId: result.messageId,
+      providerData: result,
+    };
   },
 };
 
