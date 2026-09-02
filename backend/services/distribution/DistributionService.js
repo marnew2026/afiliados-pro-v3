@@ -1,7 +1,7 @@
 ﻿import Campaign from "../../models/Campaign.js";
 import Distribution from "../../models/Distribution.js";
 import ChannelConnection from "../../models/ChannelConnection.js";
-import { sendTelegramMessage } from "./TelegramAdapter.js";
+import { getChannelAdapter } from "./ChannelAdapterResolver.js";
 import { decryptCredential } from "../../utils/credentialCrypto.js";
 import { applyChannelPolicy } from "../policies/ChannelPolicyResolver.js";
 
@@ -106,7 +106,11 @@ export async function publishDistribution(distributionId) {
           distribution.content.trackingUrl,
       });
 
-      result = await sendTelegramMessage({
+      const channelAdapter = getChannelAdapter(
+        distribution.channel
+      );
+
+      result = await channelAdapter({
         botToken,
         destinationId: distribution.destinationId,
         text: telegramContent.finalText,
