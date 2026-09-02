@@ -31,6 +31,10 @@ export function normalizeShortVideoContent({
   const normalizedTrackingUrl =
     String(trackingUrl || "").trim();
 
+  const assetUrl = String(
+    content.media?.assetUrl || ""
+  ).trim();
+
   if (!caption) {
     throw new Error(
       "Legenda vazia para conteudo short_video."
@@ -47,6 +51,7 @@ export function normalizeShortVideoContent({
       type: "video",
       aspectRatio: "9:16",
       required: true,
+      assetUrl,
     },
   };
 }
