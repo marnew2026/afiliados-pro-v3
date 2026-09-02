@@ -87,6 +87,12 @@ const DistributionSchema = new mongoose.Schema(
           type: Boolean,
           default: false,
         },
+
+        assetUrl: {
+          type: String,
+          default: "",
+          trim: true,
+        },
       },
 
       trackingUrl: {
