@@ -238,7 +238,12 @@ export async function runKaelAutopilotOnce(userId) {
       destinationId: connection.destinationId,
 
       content: {
-        text,
+        contentType: kaelContent.contentType,
+        text: kaelContent.text,
+        caption: kaelContent.caption,
+        hashtags: kaelContent.hashtags,
+        cta: kaelContent.cta,
+        media: kaelContent.media,
         trackingUrl,
       },
 
