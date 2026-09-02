@@ -1,4 +1,5 @@
 import { sendTelegramMessage } from "./TelegramAdapter.js";
+import { publishInstagram } from "./InstagramAdapter.js";
 
 const CHANNEL_ADAPTERS = {
   telegram: async ({
@@ -18,6 +19,8 @@ const CHANNEL_ADAPTERS = {
       providerData: result,
     };
   },
+
+  instagram: publishInstagram,
 };
 
 export function getChannelAdapter(channel) {
