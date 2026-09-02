@@ -89,37 +89,29 @@ export async function publishDistribution(distributionId) {
 
 
 
-    let result;
+    const credential = decryptCredential(
+      connection.credential
+    );
 
-    if (distribution.channel === "telegram") {
-      const credential = decryptCredential(
-        connection.credential
-      );
-
-      const telegramContent = applyChannelPolicy({
+    const channelContent = applyChannelPolicy({
+      channel: distribution.channel,
+      content: {
         channel: distribution.channel,
-        content: {
-          channel: distribution.channel,
-          text: distribution.content.text,
-        },
-        trackingUrl:
-          distribution.content.trackingUrl,
-      });
+        text: distribution.content.text,
+      },
+      trackingUrl:
+        distribution.content.trackingUrl,
+    });
 
-      const channelAdapter = getChannelAdapter(
-        distribution.channel
-      );
+    const channelAdapter = getChannelAdapter(
+      distribution.channel
+    );
 
-      result = await channelAdapter({
-        credential,
-        destinationId: distribution.destinationId,
-        content: telegramContent,
-      });
-    } else {
-      throw new Error(
-        `Canal nÃ£o suportado: ${distribution.channel}`
-      );
-    }
+    const result = await channelAdapter({
+      credential,
+      destinationId: distribution.destinationId,
+      content: channelContent,
+    });
 
     distribution.status = "published";
     distribution.publishedAt = new Date();
