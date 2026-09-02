@@ -3,7 +3,7 @@ import Distribution from "../../models/Distribution.js";
 import ChannelConnection from "../../models/ChannelConnection.js";
 import { sendTelegramMessage } from "./TelegramAdapter.js";
 import { decryptCredential } from "../../utils/credentialCrypto.js";
-import { applyTelegramPolicy } from "../policies/TelegramPolicy.js";
+import { applyChannelPolicy } from "../policies/ChannelPolicyResolver.js";
 
 export async function publishDistribution(distributionId) {
   const distribution =
@@ -96,9 +96,10 @@ export async function publishDistribution(distributionId) {
         connection.credential
       );
 
-      const telegramContent = applyTelegramPolicy({
+      const telegramContent = applyChannelPolicy({
+        channel: distribution.channel,
         content: {
-          channel: "telegram",
+          channel: distribution.channel,
           text: distribution.content.text,
         },
         trackingUrl:
