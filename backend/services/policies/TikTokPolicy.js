@@ -1,5 +1,5 @@
+import { normalizeShortVideoContent } from "./ShortVideoPolicyBase.js";
 const TIKTOK_CHANNEL = "tiktok";
-const TIKTOK_ASPECT_RATIO = "9:16";
 
 export function applyTikTokPolicy({
   content,
@@ -23,42 +23,16 @@ export function applyTikTokPolicy({
     );
   }
 
-  const caption = String(
-    content.caption || ""
-  ).trim();
-
-  const cta = String(
-    content.cta || ""
-  ).trim();
-
-  const hashtags = Array.isArray(content.hashtags)
-    ? content.hashtags
-        .map((item) => String(item || "").trim())
-        .filter(Boolean)
-    : [];
-
-  const normalizedTrackingUrl =
-    String(trackingUrl || "").trim();
-
-  if (!caption) {
-    throw new Error(
-      "Legenda vazia para publicacao no TikTok."
-    );
-  }
+  const normalizedContent =
+    normalizeShortVideoContent({
+      content,
+      trackingUrl,
+    });
 
   return {
     channel: TIKTOK_CHANNEL,
     contentType: "short_video",
 
-    caption,
-    hashtags,
-    cta,
-    trackingUrl: normalizedTrackingUrl,
-
-    media: {
-      type: "video",
-      aspectRatio: TIKTOK_ASPECT_RATIO,
-      required: true,
-    },
+    ...normalizedContent,
   };
 }
