@@ -97,7 +97,12 @@ export async function publishDistribution(distributionId) {
       channel: distribution.channel,
       content: {
         channel: distribution.channel,
+        contentType: distribution.content.contentType,
         text: distribution.content.text,
+        caption: distribution.content.caption,
+        hashtags: distribution.content.hashtags,
+        cta: distribution.content.cta,
+        media: distribution.content.media,
       },
       trackingUrl:
         distribution.content.trackingUrl,
