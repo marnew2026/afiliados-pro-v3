@@ -3,11 +3,16 @@ import {
   markGenerationTaskSucceeded,
   markGenerationTaskFailed,
   claimGenerationTaskForProcessing,
+  reclaimStaleGenerationTask,
 } from "./MediaGenerationTaskService.js";
 
 import {
   processGeneratedMedia,
 } from "./KaelMediaGenerationPipeline.js";
+
+import {
+  getProcessingLeaseCutoff,
+} from "./MediaGenerationLeasePolicy.js";
 
 const ACTIVE_STATUSES = new Set([
   "PENDING",
@@ -21,6 +26,8 @@ export async function retrieveKaelMediaGeneration({
   taskSucceededMarker = markGenerationTaskSucceeded,
   taskFailedMarker = markGenerationTaskFailed,
   taskClaimer = claimGenerationTaskForProcessing,
+  taskReclaimer = reclaimStaleGenerationTask,
+  leaseCutoffResolver = getProcessingLeaseCutoff,
   mediaProcessor = processGeneratedMedia,
 }) {
   if (!generationTask?._id) {
@@ -42,6 +49,29 @@ export async function retrieveKaelMediaGeneration({
     throw new Error(
       "Provider de geracao de midia invalido."
     );
+  }
+
+  const wasProcessing =
+    generationTask.status === "PROCESSING";
+
+  if (wasProcessing) {
+    const staleBefore =
+      leaseCutoffResolver();
+
+    const reclaimedTask =
+      await taskReclaimer({
+        taskId: generationTask._id,
+        staleBefore,
+      });
+
+    if (!reclaimedTask) {
+      return {
+        status: "SKIPPED",
+        generationTask: null,
+        mediaAsset: null,
+        reason: "generation_task_processing",
+      };
+    }
   }
 
   const retrieval = await provider.retrieveGeneration({
@@ -112,9 +142,13 @@ export async function retrieveKaelMediaGeneration({
       "Provider concluiu a geracao sem resultado de midia."
     );
   }
-  const claimedTask = await taskClaimer({
-    taskId: generationTask._id,
-  });
+
+  const claimedTask =
+    wasProcessing
+      ? generationTask
+      : await taskClaimer({
+          taskId: generationTask._id,
+        });
 
   if (!claimedTask) {
     return {
@@ -124,6 +158,7 @@ export async function retrieveKaelMediaGeneration({
       reason: "generation_task_not_claimed",
     };
   }
+
   const processed = await mediaProcessor({
     userId: generationTask.userId,
     campaignId: generationTask.campaignId,
