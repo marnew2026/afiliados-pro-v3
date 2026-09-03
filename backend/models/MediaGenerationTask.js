@@ -16,6 +16,12 @@ const mediaGenerationTaskSchema = new mongoose.Schema(
       index: true,
     },
 
+    generationKey: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
     provider: {
       type: String,
       enum: ["runway"],
@@ -24,7 +30,7 @@ const mediaGenerationTaskSchema = new mongoose.Schema(
 
     externalTaskId: {
       type: String,
-      required: true,
+      default: null,
       trim: true,
       index: true,
     },
@@ -81,6 +87,27 @@ mediaGenerationTaskSchema.index({
   status: 1,
   updatedAt: 1,
 });
+
+mediaGenerationTaskSchema.index(
+  {
+    generationKey: 1,
+  },
+  {
+    unique: true,
+    partialFilterExpression: {
+      generationKey: {
+        $type: "string",
+      },
+      status: {
+        $in: [
+          "PENDING",
+          "RUNNING",
+          "PROCESSING",
+        ],
+      },
+    },
+  }
+);
 
 export const MediaGenerationTask =
   mongoose.models.MediaGenerationTask ||
