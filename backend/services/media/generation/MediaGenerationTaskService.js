@@ -81,3 +81,28 @@ export async function markGenerationTaskFailed({
     }
   );
 }
+export async function claimGenerationTaskForProcessing({
+  taskId,
+}) {
+  return MediaGenerationTask.findOneAndUpdate(
+    {
+      _id: taskId,
+      status: {
+        $in: [
+          "PENDING",
+          "RUNNING",
+        ],
+      },
+      mediaAssetId: null,
+    },
+    {
+      $set: {
+        status: "PROCESSING",
+      },
+    },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+}

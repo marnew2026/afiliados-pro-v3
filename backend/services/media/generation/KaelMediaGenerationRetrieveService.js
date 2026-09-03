@@ -2,6 +2,7 @@ import {
   updateGenerationTaskStatus,
   markGenerationTaskSucceeded,
   markGenerationTaskFailed,
+  claimGenerationTaskForProcessing,
 } from "./MediaGenerationTaskService.js";
 
 import {
@@ -19,6 +20,7 @@ export async function retrieveKaelMediaGeneration({
   taskStatusUpdater = updateGenerationTaskStatus,
   taskSucceededMarker = markGenerationTaskSucceeded,
   taskFailedMarker = markGenerationTaskFailed,
+  taskClaimer = claimGenerationTaskForProcessing,
   mediaProcessor = processGeneratedMedia,
 }) {
   if (!generationTask?._id) {
@@ -110,7 +112,18 @@ export async function retrieveKaelMediaGeneration({
       "Provider concluiu a geracao sem resultado de midia."
     );
   }
+  const claimedTask = await taskClaimer({
+    taskId: generationTask._id,
+  });
 
+  if (!claimedTask) {
+    return {
+      status: "SKIPPED",
+      generationTask: null,
+      mediaAsset: null,
+      reason: "generation_task_not_claimed",
+    };
+  }
   const processed = await mediaProcessor({
     userId: generationTask.userId,
     campaignId: generationTask.campaignId,

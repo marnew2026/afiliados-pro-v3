@@ -40,6 +40,7 @@ const mediaGenerationTaskSchema = new mongoose.Schema(
       enum: [
         "PENDING",
         "RUNNING",
+        "PROCESSING",
         "SUCCEEDED",
         "FAILED",
         "CANCELED",
