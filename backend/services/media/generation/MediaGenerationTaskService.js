@@ -81,6 +81,43 @@ export async function reserveGenerationTask({
   }
 }
 
+export async function attachGenerationProviderTask({
+  taskId,
+  externalTaskId,
+  status = "PENDING",
+}) {
+  if (!taskId) {
+    throw new Error(
+      "Tarefa de geracao para vinculo do provider nao informada."
+    );
+  }
+
+  const cleanExternalTaskId = String(
+    externalTaskId || ""
+  ).trim();
+
+  if (!cleanExternalTaskId) {
+    throw new Error(
+      "Identificador externo da geracao nao informado."
+    );
+  }
+
+  return MediaGenerationTask.findByIdAndUpdate(
+    taskId,
+    {
+      $set: {
+        externalTaskId: cleanExternalTaskId,
+        status,
+        lastError: null,
+      },
+    },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+}
+
 export async function updateGenerationTaskStatus({
   taskId,
   status,
