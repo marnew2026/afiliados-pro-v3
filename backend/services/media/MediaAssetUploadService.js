@@ -2,6 +2,7 @@ import {
   createPendingMediaAsset,
   markMediaAssetFailed,
   markMediaAssetReady,
+  reserveGeneratedMediaAsset,
 } from "./MediaAssetService.js";
 
 import {
@@ -26,6 +27,10 @@ export async function uploadMediaAsset({
   extension,
   body,
   contentType,
+  generatedAssetReserver =
+    reserveGeneratedMediaAsset,
+  storageFactory =
+    createR2StorageProvider,
 }) {
   const validatedInput = validateMediaAssetInput({
     type,
@@ -48,15 +53,36 @@ export async function uploadMediaAsset({
         extension: validatedInput.extension,
       });
 
-  const storage = createR2StorageProvider();
+  let mediaAsset;
 
-  const mediaAsset = await createPendingMediaAsset({
-    userId,
-    campaignId,
-    generationTaskId,
-    type: validatedInput.type,
-    source,
-  });
+  if (generationTaskId) {
+    const reservation =
+      await generatedAssetReserver({
+        userId,
+        campaignId,
+        generationTaskId,
+        type: validatedInput.type,
+      });
+
+    mediaAsset = reservation.mediaAsset;
+
+    if (
+      !reservation.acquired &&
+      mediaAsset.status === "ready" &&
+      mediaAsset.assetUrl
+    ) {
+      return mediaAsset;
+    }
+  } else {
+    mediaAsset = await createPendingMediaAsset({
+      userId,
+      campaignId,
+      type: validatedInput.type,
+      source,
+    });
+  }
+
+  const storage = storageFactory();
 
   let uploaded = null;
 
