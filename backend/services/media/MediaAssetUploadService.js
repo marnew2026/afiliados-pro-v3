@@ -8,15 +8,26 @@ import {
   createR2StorageProvider,
 } from "./storage/createR2StorageProvider.js";
 
+import {
+  buildMediaAssetKey,
+} from "./MediaAssetKeyService.js";
+
 export async function uploadMediaAsset({
   userId,
   campaignId,
   type,
   source,
-  key,
+  extension,
   body,
   contentType,
 }) {
+  const key = buildMediaAssetKey({
+    userId,
+    campaignId,
+    type,
+    extension,
+  });
+
   const storage = createR2StorageProvider();
 
   const mediaAsset = await createPendingMediaAsset({
