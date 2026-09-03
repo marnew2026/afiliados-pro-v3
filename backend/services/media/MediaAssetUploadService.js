@@ -9,6 +9,7 @@ import {
 } from "./storage/createR2StorageProvider.js";
 
 import {
+  buildGeneratedMediaAssetKey,
   buildMediaAssetKey,
 } from "./MediaAssetKeyService.js";
 
@@ -31,12 +32,21 @@ export async function uploadMediaAsset({
     extension,
     contentType,
   });
-  const key = buildMediaAssetKey({
-    userId,
-    campaignId,
-    type: validatedInput.type,
-    extension: validatedInput.extension,
-  });
+
+  const key = generationTaskId
+    ? buildGeneratedMediaAssetKey({
+        userId,
+        campaignId,
+        generationTaskId,
+        type: validatedInput.type,
+        extension: validatedInput.extension,
+      })
+    : buildMediaAssetKey({
+        userId,
+        campaignId,
+        type: validatedInput.type,
+        extension: validatedInput.extension,
+      });
 
   const storage = createR2StorageProvider();
 
