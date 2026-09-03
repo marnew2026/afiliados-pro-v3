@@ -8,12 +8,13 @@ import {
 
 export async function prepareGeneratedMediaAsset({
   generationResult,
+  downloader = downloadGeneratedMedia,
 }) {
   const result = validateMediaGenerationResult(
     generationResult
   );
 
-  const downloaded = await downloadGeneratedMedia({
+  const downloaded = await downloader({
     sourceUrl: result.sourceUrl,
   });
 
