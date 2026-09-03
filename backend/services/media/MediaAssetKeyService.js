@@ -89,3 +89,62 @@ export function buildMediaAssetKey({
     `${assetId}.${cleanExtension}`,
   ].join("/");
 }
+
+export function buildGeneratedMediaAssetKey({
+  userId,
+  campaignId,
+  generationTaskId,
+  type,
+  extension,
+}) {
+  const cleanUserId = normalizeSegment(
+    userId,
+    "userId"
+  );
+
+  const cleanCampaignId = normalizeSegment(
+    campaignId,
+    "campaignId"
+  );
+
+  const cleanGenerationTaskId = normalizeSegment(
+    generationTaskId,
+    "generationTaskId"
+  );
+
+  const cleanType = String(
+    type || ""
+  )
+    .trim()
+    .toLowerCase();
+
+  if (!ALLOWED_TYPES.has(cleanType)) {
+    throw new Error(
+      "Tipo invalido para chave de MediaAsset."
+    );
+  }
+
+  const cleanExtension = String(
+    extension || ""
+  )
+    .trim()
+    .toLowerCase()
+    .replace(/^\./, "");
+
+  if (!ALLOWED_EXTENSIONS.has(cleanExtension)) {
+    throw new Error(
+      "Extensao invalida para chave de MediaAsset."
+    );
+  }
+
+  return [
+    "users",
+    cleanUserId,
+    "campaigns",
+    cleanCampaignId,
+    "generations",
+    cleanGenerationTaskId,
+    cleanType,
+    `asset.${cleanExtension}`,
+  ].join("/");
+}
