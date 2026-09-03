@@ -16,6 +16,12 @@ const MediaAssetSchema = new mongoose.Schema(
       index: true,
     },
 
+    generationTaskId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "MediaGenerationTask",
+      default: null,
+    },
+
     type: {
       type: String,
       enum: ["image", "video"],
@@ -57,6 +63,20 @@ MediaAssetSchema.index({
   campaignId: 1,
   status: 1,
 });
+
+MediaAssetSchema.index(
+  {
+    generationTaskId: 1,
+  },
+  {
+    unique: true,
+    partialFilterExpression: {
+      generationTaskId: {
+        $type: "objectId",
+      },
+    },
+  }
+);
 
 export default mongoose.model(
   "MediaAsset",
