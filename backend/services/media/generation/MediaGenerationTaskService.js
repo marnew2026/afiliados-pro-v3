@@ -48,6 +48,7 @@ export async function markGenerationTaskSucceeded({
         status: "SUCCEEDED",
         mediaAssetId,
         lastError: null,
+        processingStartedAt: null,
       },
     },
     {
@@ -73,6 +74,7 @@ export async function markGenerationTaskFailed({
       $set: {
         status: "FAILED",
         lastError,
+        processingStartedAt: null,
       },
     },
     {
@@ -98,6 +100,7 @@ export async function claimGenerationTaskForProcessing({
     {
       $set: {
         status: "PROCESSING",
+        processingStartedAt: new Date(),
       },
     },
     {

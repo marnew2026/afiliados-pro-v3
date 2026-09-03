@@ -50,6 +50,12 @@ const mediaGenerationTaskSchema = new mongoose.Schema(
       index: true,
     },
 
+    processingStartedAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
+
     mediaAssetId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "MediaAsset",
