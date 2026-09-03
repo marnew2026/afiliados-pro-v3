@@ -98,7 +98,10 @@ export async function uploadMediaAsset({
       assetUrl: uploaded.assetUrl,
     });
   } catch (error) {
-    if (uploaded?.key) {
+    if (
+      uploaded?.key &&
+      !generationTaskId
+    ) {
       try {
         await storage.remove({
           key: uploaded.key,
