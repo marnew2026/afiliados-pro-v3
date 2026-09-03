@@ -5,18 +5,80 @@ import {
 export async function createGenerationTask({
   userId,
   campaignId,
+  generationKey,
   provider,
-  externalTaskId,
+  externalTaskId = null,
   mediaType,
 }) {
   return MediaGenerationTask.create({
     userId,
     campaignId,
+    generationKey,
     provider,
     externalTaskId,
     mediaType,
     status: "PENDING",
   });
+}
+
+export async function findActiveGenerationTaskByKey({
+  generationKey,
+}) {
+  return MediaGenerationTask.findOne({
+    generationKey,
+    status: {
+      $in: [
+        "PENDING",
+        "RUNNING",
+        "PROCESSING",
+      ],
+    },
+  });
+}
+
+export async function reserveGenerationTask({
+  userId,
+  campaignId,
+  generationKey,
+  provider,
+  mediaType,
+  taskCreator = createGenerationTask,
+  activeTaskFinder = findActiveGenerationTaskByKey,
+}) {
+  try {
+    const generationTask =
+      await taskCreator({
+        userId,
+        campaignId,
+        generationKey,
+        provider,
+        externalTaskId: null,
+        mediaType,
+      });
+
+    return {
+      reserved: true,
+      generationTask,
+    };
+  } catch (error) {
+    if (error?.code !== 11000) {
+      throw error;
+    }
+
+    const existingGenerationTask =
+      await activeTaskFinder({
+        generationKey,
+      });
+
+    if (!existingGenerationTask) {
+      throw error;
+    }
+
+    return {
+      reserved: false,
+      generationTask: existingGenerationTask,
+    };
+  }
 }
 
 export async function updateGenerationTaskStatus({
