@@ -13,6 +13,7 @@ export class RunwayMediaGenerationProvider extends MediaGenerationProvider {
   } = {}) {
     super();
 
+    this.providerName = "runway";
     this.apiSecret = String(
       apiSecret || ""
     ).trim();
