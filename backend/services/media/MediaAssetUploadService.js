@@ -12,6 +12,10 @@ import {
   buildMediaAssetKey,
 } from "./MediaAssetKeyService.js";
 
+import {
+  validateMediaAssetInput,
+} from "./MediaAssetInputValidator.js";
+
 export async function uploadMediaAsset({
   userId,
   campaignId,
@@ -21,11 +25,16 @@ export async function uploadMediaAsset({
   body,
   contentType,
 }) {
+  const validatedInput = validateMediaAssetInput({
+    type,
+    extension,
+    contentType,
+  });
   const key = buildMediaAssetKey({
     userId,
     campaignId,
-    type,
-    extension,
+    type: validatedInput.type,
+    extension: validatedInput.extension,
   });
 
   const storage = createR2StorageProvider();
@@ -33,7 +42,7 @@ export async function uploadMediaAsset({
   const mediaAsset = await createPendingMediaAsset({
     userId,
     campaignId,
-    type,
+    type: validatedInput.type,
     source,
   });
 
@@ -43,7 +52,7 @@ export async function uploadMediaAsset({
     uploaded = await storage.upload({
       key,
       body,
-      contentType,
+      contentType: validatedInput.contentType,
     });
 
     return await markMediaAssetReady({
