@@ -109,3 +109,33 @@ export async function claimGenerationTaskForProcessing({
     }
   );
 }
+export async function reclaimStaleGenerationTask({
+  taskId,
+  staleBefore,
+}) {
+  if (!(staleBefore instanceof Date)) {
+    throw new Error(
+      "Data limite para reclaim da geracao nao informada."
+    );
+  }
+
+  return MediaGenerationTask.findOneAndUpdate(
+    {
+      _id: taskId,
+      status: "PROCESSING",
+      mediaAssetId: null,
+      processingStartedAt: {
+        $lt: staleBefore,
+      },
+    },
+    {
+      $set: {
+        processingStartedAt: new Date(),
+      },
+    },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+}
