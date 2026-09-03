@@ -31,6 +31,10 @@ export async function uploadMediaAsset({
     reserveGeneratedMediaAsset,
   storageFactory =
     createR2StorageProvider,
+  readyMarker =
+    markMediaAssetReady,
+  failedMarker =
+    markMediaAssetFailed,
 }) {
   const validatedInput = validateMediaAssetInput({
     type,
@@ -93,7 +97,7 @@ export async function uploadMediaAsset({
       contentType: validatedInput.contentType,
     });
 
-    return await markMediaAssetReady({
+    return await readyMarker({
       mediaAssetId: mediaAsset._id,
       assetUrl: uploaded.assetUrl,
     });
@@ -112,7 +116,7 @@ export async function uploadMediaAsset({
     }
 
     try {
-      await markMediaAssetFailed({
+      await failedMarker({
         mediaAssetId: mediaAsset._id,
         error:
           error?.message ||
