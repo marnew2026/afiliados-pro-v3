@@ -9,6 +9,7 @@ import {
 export async function processGeneratedMedia({
   userId,
   campaignId,
+  generationTaskId,
   generationResult,
   downloader,
   uploader,
@@ -21,6 +22,7 @@ export async function processGeneratedMedia({
   const mediaAsset = await persistGeneratedMediaAsset({
     userId,
     campaignId,
+    generationTaskId,
     preparedAsset,
     uploader,
   });

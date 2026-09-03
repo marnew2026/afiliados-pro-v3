@@ -162,6 +162,7 @@ export async function retrieveKaelMediaGeneration({
   const processed = await mediaProcessor({
     userId: generationTask.userId,
     campaignId: generationTask.campaignId,
+    generationTaskId: generationTask._id,
     generationResult: retrieval.generationResult,
   });
 

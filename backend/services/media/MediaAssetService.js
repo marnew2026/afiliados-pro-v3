@@ -3,12 +3,14 @@ import MediaAsset from "../../models/MediaAsset.js";
 export async function createPendingMediaAsset({
   userId,
   campaignId,
+  generationTaskId = null,
   type,
   source,
 }) {
   return MediaAsset.create({
     userId,
     campaignId,
+    generationTaskId,
     type,
     source,
     status: "pending",

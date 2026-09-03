@@ -19,6 +19,7 @@ import {
 export async function uploadMediaAsset({
   userId,
   campaignId,
+  generationTaskId,
   type,
   source,
   extension,
@@ -42,6 +43,7 @@ export async function uploadMediaAsset({
   const mediaAsset = await createPendingMediaAsset({
     userId,
     campaignId,
+    generationTaskId,
     type: validatedInput.type,
     source,
   });

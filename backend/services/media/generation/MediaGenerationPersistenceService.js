@@ -5,6 +5,7 @@ import {
 export async function persistGeneratedMediaAsset({
   userId,
   campaignId,
+  generationTaskId,
   preparedAsset,
   uploader = uploadMediaAsset,
 }) {
@@ -17,6 +18,7 @@ export async function persistGeneratedMediaAsset({
   return await uploader({
     userId,
     campaignId,
+    generationTaskId,
     type: preparedAsset.mediaType,
     source: "kael",
     extension: preparedAsset.extension,
