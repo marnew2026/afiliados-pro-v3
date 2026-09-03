@@ -2,7 +2,9 @@ import Campaign from "../../models/Campaign.js";
 import ChannelConnection from "../../models/ChannelConnection.js";
 import Distribution from "../../models/Distribution.js";
 import AutopilotSettings from "../../models/AutopilotSettings.js";
-import { buildKaelContent } from "../content/KaelContentEngine.js";
+import {
+  buildKaelDistributionContent,
+} from "../distribution/KaelDistributionContentBuilder.js";
 import crypto from "crypto";
 
 export async function runKaelAutopilotOnce(userId) {
@@ -189,15 +191,18 @@ export async function runKaelAutopilotOnce(userId) {
       };
     }
 
-    const kaelContent = buildKaelContent({
-      campaign,
-      channel: "telegram",
-    });
-
-    const text = kaelContent.text;
-
     const trackingUrl =
       `${process.env.BASE_URL}/campaigns/r/${campaign._id}`;
+
+    const kaelContent =
+      await buildKaelDistributionContent({
+        userId,
+        campaign,
+        channel: "telegram",
+        trackingUrl,
+      });
+
+    const text = kaelContent.text;
 
     const finalTelegramMessage =
       `${text}\n\n${trackingUrl}`;
