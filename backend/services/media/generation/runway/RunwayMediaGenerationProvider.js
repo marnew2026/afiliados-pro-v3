@@ -2,6 +2,10 @@ import {
   MediaGenerationProvider,
 } from "../MediaGenerationProvider.js";
 
+import {
+  mapRunwayGenerationResult,
+} from "./RunwayGenerationResultMapper.js";
+
 export class RunwayMediaGenerationProvider extends MediaGenerationProvider {
   constructor({
     apiSecret,
@@ -108,10 +112,24 @@ export class RunwayMediaGenerationProvider extends MediaGenerationProvider {
 
     const task = await this.client.tasks.retrieve(taskId);
 
+    const status = String(
+      task?.status || ""
+    ).toUpperCase();
+
+    if (status === "SUCCEEDED") {
+      return {
+        status,
+        generationResult: mapRunwayGenerationResult({
+          externalTaskId: taskId,
+          task,
+        }),
+      };
+    }
+
     return {
       provider: "runway",
       externalTaskId: taskId,
-      status: String(task?.status || "").toUpperCase(),
+      status,
       output: Array.isArray(task?.output)
         ? task.output
         : [],
