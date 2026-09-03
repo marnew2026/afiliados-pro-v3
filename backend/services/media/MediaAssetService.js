@@ -90,3 +90,15 @@ export async function findReadyCampaignVideo({
 
   return mediaAsset;
 }
+
+export async function findMediaAssetByGenerationTask({
+  generationTaskId,
+}) {
+  if (!generationTaskId) {
+    return null;
+  }
+
+  return MediaAsset.findOne({
+    generationTaskId,
+  });
+}
