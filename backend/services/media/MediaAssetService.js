@@ -102,3 +102,52 @@ export async function findMediaAssetByGenerationTask({
     generationTaskId,
   });
 }
+
+export async function reserveGeneratedMediaAsset({
+  userId,
+  campaignId,
+  generationTaskId,
+  type,
+  assetCreator = MediaAsset.create.bind(MediaAsset),
+  assetFinder = findMediaAssetByGenerationTask,
+}) {
+  if (!generationTaskId) {
+    throw new Error(
+      "generationTaskId nao informado para reserva de MediaAsset."
+    );
+  }
+
+  try {
+    const mediaAsset = await assetCreator({
+      userId,
+      campaignId,
+      generationTaskId,
+      type,
+      source: "kael",
+      status: "pending",
+    });
+
+    return {
+      mediaAsset,
+      acquired: true,
+    };
+  } catch (error) {
+    if (error?.code !== 11000) {
+      throw error;
+    }
+
+    const mediaAsset =
+      await assetFinder({
+        generationTaskId,
+      });
+
+    if (!mediaAsset) {
+      throw error;
+    }
+
+    return {
+      mediaAsset,
+      acquired: false,
+    };
+  }
+}
