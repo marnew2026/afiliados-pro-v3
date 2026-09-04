@@ -36,6 +36,49 @@ export async function findActiveGenerationTaskByKey({
   });
 }
 
+export async function findRecoverableGenerationTasks({
+  userId,
+  staleBefore,
+  limit = 3,
+}) {
+  if (!userId) {
+    throw new Error(
+      "Usuario para recovery de geracao nao informado."
+    );
+  }
+
+  if (!(staleBefore instanceof Date)) {
+    throw new Error(
+      "Data limite para recovery de geracao nao informada."
+    );
+  }
+
+  return MediaGenerationTask.find({
+    userId,
+    mediaAssetId: null,
+    externalTaskId: {
+      $type: "string",
+      $ne: "",
+    },
+    $or: [
+      {
+        status: {
+          $in: ["PENDING", "RUNNING"],
+        },
+      },
+      {
+        status: "PROCESSING",
+        processingStartedAt: {
+          $lt: staleBefore,
+        },
+      },
+    ],
+  })
+    .sort({ updatedAt: 1, _id: 1 })
+    .limit(limit)
+    .lean();
+}
+
 export async function reserveGenerationTask({
   userId,
   campaignId,

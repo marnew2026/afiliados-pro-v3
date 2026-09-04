@@ -3,6 +3,9 @@ import express from "express";
 import { protect } from "../middlewares/authMiddleware.js";
 import AutopilotSettings from "../models/AutopilotSettings.js";
 import { runKaelAutopilotOnce } from "../services/autopilot/KaelAutopilotService.js";
+import {
+  runKaelMediaGenerationRecoveryOnce,
+} from "../services/media/generation/KaelMediaGenerationRecoveryService.js";
 
 const router = express.Router();
 
@@ -157,5 +160,36 @@ router.post("/run-once", protect, async (req, res) => {
     });
   }
 });
+
+router.post(
+  "/media-recovery/run-once",
+  protect,
+  async (req, res) => {
+    try {
+      const result =
+        await runKaelMediaGenerationRecoveryOnce({
+          userId: req.user._id,
+          limit: req.body?.limit ?? 3,
+        });
+
+      return res.json(result);
+    } catch (error) {
+      console.error(
+        "Erro ao executar recovery de midia do KAEL:",
+        error.message
+      );
+
+      const invalidLimit =
+        error.message.includes("Limite do recovery");
+
+      return res.status(invalidLimit ? 400 : 500).json({
+        success: false,
+        error: invalidLimit
+          ? error.message
+          : "Falha ao executar recovery de midia do KAEL.",
+      });
+    }
+  }
+);
 
 export default router;
