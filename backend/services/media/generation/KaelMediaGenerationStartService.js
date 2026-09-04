@@ -1,6 +1,12 @@
 import {
-  createGenerationTask,
+  attachGenerationProviderTask,
+  markGenerationTaskFailed,
+  reserveGenerationTask,
 } from "./MediaGenerationTaskService.js";
+
+import {
+  buildMediaGenerationKey,
+} from "./MediaGenerationKeyService.js";
 
 export async function startKaelMediaGeneration({
   userId,
@@ -8,7 +14,10 @@ export async function startKaelMediaGeneration({
   content,
   mediaType,
   provider,
-  taskCreator = createGenerationTask,
+  generationKeyBuilder = buildMediaGenerationKey,
+  taskReserver = reserveGenerationTask,
+  providerTaskAttacher = attachGenerationProviderTask,
+  taskFailureMarker = markGenerationTaskFailed,
 }) {
   if (!userId) {
     throw new Error(
@@ -31,32 +40,82 @@ export async function startKaelMediaGeneration({
     );
   }
 
-  const generation = await provider.startGeneration({
-    campaign,
-    content,
-    mediaType,
-  });
+  const providerName = String(
+    provider.providerName || ""
+  ).trim();
 
-  if (
-    !generation?.provider ||
-    !generation?.externalTaskId ||
-    !generation?.mediaType
-  ) {
+  if (!providerName) {
     throw new Error(
-      "Provider retornou tarefa de geracao invalida."
+      "Identificador do provider de geracao nao informado."
     );
   }
 
-  const generationTask = await taskCreator({
-    userId,
-    campaignId: campaign._id,
-    provider: generation.provider,
-    externalTaskId: generation.externalTaskId,
-    mediaType: generation.mediaType,
-  });
+  const generationKey =
+    generationKeyBuilder({
+      userId,
+      campaignId: campaign._id,
+      mediaType,
+      content,
+    });
 
-  return {
-    generation,
-    generationTask,
-  };
+  const reservation =
+    await taskReserver({
+      userId,
+      campaignId: campaign._id,
+      generationKey,
+      provider: providerName,
+      mediaType,
+    });
+
+  if (!reservation.reserved) {
+    return {
+      generation: null,
+      generationTask: reservation.generationTask,
+      reserved: false,
+    };
+  }
+
+  const reservedTask =
+    reservation.generationTask;
+
+  try {
+    const generation =
+      await provider.startGeneration({
+        campaign,
+        content,
+        mediaType,
+      });
+
+    if (
+      !generation?.provider ||
+      !generation?.externalTaskId ||
+      !generation?.mediaType
+    ) {
+      throw new Error(
+        "Provider retornou tarefa de geracao invalida."
+      );
+    }
+
+    const generationTask =
+      await providerTaskAttacher({
+        taskId: reservedTask._id,
+        externalTaskId:
+          generation.externalTaskId,
+        status:
+          generation.status || "PENDING",
+      });
+
+    return {
+      generation,
+      generationTask,
+      reserved: true,
+    };
+  } catch (error) {
+    await taskFailureMarker({
+      taskId: reservedTask._id,
+      error,
+    });
+
+    throw error;
+  }
 }
