@@ -54,6 +54,8 @@ export async function retrieveKaelMediaGeneration({
   const wasProcessing =
     generationTask.status === "PROCESSING";
 
+  let processingTask = generationTask;
+
   if (wasProcessing) {
     const staleBefore =
       leaseCutoffResolver();
@@ -72,6 +74,8 @@ export async function retrieveKaelMediaGeneration({
         reason: "generation_task_processing",
       };
     }
+
+    processingTask = reclaimedTask;
   }
 
   const retrieval = await provider.retrieveGeneration({
@@ -145,7 +149,7 @@ export async function retrieveKaelMediaGeneration({
 
   const claimedTask =
     wasProcessing
-      ? generationTask
+      ? processingTask
       : await taskClaimer({
           taskId: generationTask._id,
         });
@@ -160,9 +164,9 @@ export async function retrieveKaelMediaGeneration({
   }
 
   const processed = await mediaProcessor({
-    userId: generationTask.userId,
-    campaignId: generationTask.campaignId,
-    generationTaskId: generationTask._id,
+    userId: claimedTask.userId,
+    campaignId: claimedTask.campaignId,
+    generationTaskId: claimedTask._id,
     generationResult: retrieval.generationResult,
   });
 
@@ -177,7 +181,7 @@ export async function retrieveKaelMediaGeneration({
 
   const succeededTask =
     await taskSucceededMarker({
-      taskId: generationTask._id,
+      taskId: claimedTask._id,
       mediaAssetId: mediaAsset._id,
     });
 
