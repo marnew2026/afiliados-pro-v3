@@ -1,6 +1,5 @@
 import {
   encryptCredential,
-  decryptCredential,
 } from "../../utils/credentialCrypto.js";
 
 export function buildInstagramCredential({
@@ -36,12 +35,10 @@ export function buildInstagramCredential({
 }
 
 export function parseInstagramCredential(value) {
-  const decrypted = decryptCredential(value);
-
   let credential;
 
   try {
-    credential = JSON.parse(decrypted);
+    credential = JSON.parse(String(value || ""));
   } catch {
     throw new Error(
       "Credencial do Instagram possui formato invalido."
