@@ -85,6 +85,9 @@ export async function attachGenerationProviderTask({
   taskId,
   externalTaskId,
   status = "PENDING",
+  taskUpdater = MediaGenerationTask.findByIdAndUpdate.bind(
+    MediaGenerationTask
+  ),
 }) {
   if (!taskId) {
     throw new Error(
@@ -102,7 +105,7 @@ export async function attachGenerationProviderTask({
     );
   }
 
-  return MediaGenerationTask.findByIdAndUpdate(
+  return taskUpdater(
     taskId,
     {
       $set: {
