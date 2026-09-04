@@ -69,7 +69,7 @@ export class RunwayMediaGenerationProvider extends MediaGenerationProvider {
     const task = await this.client.imageToVideo.create({
       model: "gen4.5",
       promptText,
-      ratio: "720:1280",
+      ratio: "768:1280",
     });
 
     if (!task?.id) {
