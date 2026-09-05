@@ -4,8 +4,53 @@ import axios from "axios";
 import { encryptCredential } from "../utils/credentialCrypto.js";
 import ChannelConnection from "../models/ChannelConnection.js";
 import { protect } from "../middlewares/authMiddleware.js";
+import {
+  completeInstagramOAuth,
+  createInstagramAuthorizationUrl,
+} from "../services/connections/InstagramOAuthService.js";
 
 const router = express.Router();
+
+router.get("/instagram/oauth/start", protect, async (req, res) => {
+  try {
+    const authorizationUrl = createInstagramAuthorizationUrl({
+      userId: req.user._id,
+    });
+
+    return res.status(200).json({ success: true, authorizationUrl });
+  } catch (error) {
+    console.error("ERRO INSTAGRAM OAUTH START:", error.message);
+    return res.status(500).json({
+      success: false,
+      error: "Nao foi possivel iniciar a conexao com o Instagram.",
+    });
+  }
+});
+
+router.get("/instagram/oauth/callback", async (req, res) => {
+  try {
+    if (req.query.error) {
+      return res.status(400).send(
+        "<h1>Conexao cancelada</h1><p>O Instagram nao foi conectado.</p>"
+      );
+    }
+
+    const result = await completeInstagramOAuth({
+      code: req.query.code,
+      state: req.query.state,
+    });
+
+    const account = result.username ? `@${result.username}` : "sua conta";
+    return res.status(200).send(
+      `<h1>Instagram conectado</h1><p>${account} foi conectado com sucesso. Voce pode fechar esta janela.</p>`
+    );
+  } catch (error) {
+    console.error("ERRO INSTAGRAM OAUTH CALLBACK:", error.message);
+    return res.status(400).send(
+      "<h1>Falha na conexao</h1><p>Nao foi possivel conectar o Instagram. Volte ao Afiliados Pro e tente novamente.</p>"
+    );
+  }
+});
 
 router.post("/telegram/connect", protect, async (req, res) => {
   try {
