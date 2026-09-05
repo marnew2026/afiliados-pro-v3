@@ -8,8 +8,48 @@ import {
   completeInstagramOAuth,
   createInstagramAuthorizationUrl,
 } from "../services/connections/InstagramOAuthService.js";
+import {
+  uploadManualVideo,
+} from "../services/media/ManualVideoUploadService.js";
 
 const router = express.Router();
+
+router.post(
+  "/instagram/media-upload/:campaignId",
+  protect,
+  express.raw({ type: "video/mp4", limit: "20mb" }),
+  async (req, res) => {
+    try {
+      const mediaAsset = await uploadManualVideo({
+        userId: req.user._id,
+        campaignId: req.params.campaignId,
+        body: req.body,
+      });
+
+      return res.status(201).json({
+        success: true,
+        mediaAsset: {
+          id: mediaAsset._id,
+          campaignId: mediaAsset.campaignId,
+          type: mediaAsset.type,
+          status: mediaAsset.status,
+          assetUrl: mediaAsset.assetUrl,
+          source: mediaAsset.source,
+        },
+      });
+    } catch (error) {
+      console.error("ERRO INSTAGRAM MEDIA UPLOAD:", error.message);
+
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        error:
+          error.statusCode
+            ? error.message
+            : "Nao foi possivel enviar o video.",
+      });
+    }
+  }
+);
 
 router.get("/instagram/oauth/start", protect, async (req, res) => {
   try {
