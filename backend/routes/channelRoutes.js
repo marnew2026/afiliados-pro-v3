@@ -11,8 +11,58 @@ import {
 import {
   uploadManualVideo,
 } from "../services/media/ManualVideoUploadService.js";
+import {
+  completeFacebookOAuth,
+  createFacebookAuthorizationUrl,
+} from "../services/connections/FacebookOAuthService.js";
 
 const router = express.Router();
+
+router.get("/facebook/oauth/start", protect, async (req, res) => {
+  try {
+    const authorizationUrl = createFacebookAuthorizationUrl({
+      userId: req.user._id,
+    });
+
+    return res.status(200).json({ success: true, authorizationUrl });
+  } catch (error) {
+    console.error("ERRO FACEBOOK OAUTH START:", error.message);
+    return res.status(500).json({
+      success: false,
+      error: "Nao foi possivel iniciar a conexao com o Facebook.",
+    });
+  }
+});
+
+router.get("/facebook/oauth/callback", async (req, res) => {
+  try {
+    if (req.query.error) {
+      return res.status(400).send(
+        "<h1>Conexao cancelada</h1><p>O Facebook nao foi conectado.</p>"
+      );
+    }
+
+    const result = await completeFacebookOAuth({
+      code: req.query.code,
+      state: req.query.state,
+    });
+    const safePageName = String(result.pageName || "Pagina")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+
+    return res.status(200).send(
+      `<h1>Facebook conectado</h1><p>${safePageName} foi conectada com sucesso. Voce pode fechar esta janela.</p>`
+    );
+  } catch (error) {
+    console.error("ERRO FACEBOOK OAUTH CALLBACK:", error.message);
+    return res.status(400).send(
+      "<h1>Falha na conexao</h1><p>Nao foi possivel conectar a Pagina do Facebook. Volte ao Afiliados Pro e tente novamente.</p>"
+    );
+  }
+});
 
 router.post(
   "/instagram/media-upload/:campaignId",
