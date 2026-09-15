@@ -1,5 +1,6 @@
 import { sendTelegramMessage } from "./TelegramAdapter.js";
 import { publishInstagram } from "./InstagramAdapter.js";
+import { publishFacebook } from "./FacebookAdapter.js";
 
 const CHANNEL_ADAPTERS = {
   telegram: async ({
@@ -21,6 +22,7 @@ const CHANNEL_ADAPTERS = {
   },
 
   instagram: publishInstagram,
+  facebook: publishFacebook,
 };
 
 export function getChannelAdapter(channel) {

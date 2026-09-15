@@ -12,8 +12,46 @@ import {
 import {
   createInstagramDistribution,
 } from "../services/distribution/CreateInstagramDistributionService.js";
+import {
+  createFacebookDistribution,
+} from "../services/distribution/CreateFacebookDistributionService.js";
 
 const router = express.Router();
+
+router.post("/facebook", protect, async (req, res) => {
+  try {
+    const result = await createFacebookDistribution({
+      userId: req.user._id,
+      campaignId: req.body.campaignId,
+      mediaAssetId: req.body.mediaAssetId,
+      caption: req.body.caption,
+      hashtags: req.body.hashtags,
+      cta: req.body.cta,
+      scheduler: scheduleDistribution,
+    });
+
+    return res.status(201).json({
+      success: true,
+      distribution: {
+        id: result.distribution._id,
+        channel: result.distribution.channel,
+        source: result.distribution.source,
+        status: result.distribution.status,
+        scheduledAt: result.distribution.scheduledAt,
+      },
+      queue: result.queue,
+    });
+  } catch (error) {
+    console.error("ERRO CREATE FACEBOOK DISTRIBUTION:", error.message);
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      error:
+        error.statusCode
+          ? error.message
+          : "Nao foi possivel agendar o Reel no Facebook.",
+    });
+  }
+});
 
 router.post("/instagram", protect, async (req, res) => {
   try {
