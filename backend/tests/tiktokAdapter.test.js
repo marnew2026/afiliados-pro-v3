@@ -53,3 +53,34 @@ test("bloqueia publicacao quando destino difere da credencial", async () => {
     content: { channel: "tiktok", contentType: "short_video", caption: "Teste", media: { assetUrl: "https://cdn.example/video.mp4" } },
   }), /Destino nao corresponde/);
 });
+
+test("identifica a etapa e o erro seguro quando TikTok responde 403", async () => {
+  const httpClient = {
+    async post() {
+      const error = new Error("Request failed with status code 403");
+      error.response = {
+        status: 403,
+        data: {
+          error: {
+            code: "scope_not_authorized",
+            message: "The requested scope is not authorized",
+            log_id: "safe-log-id",
+          },
+        },
+      };
+      throw error;
+    },
+  };
+
+  await assert.rejects(publishTikTok({
+    credential: JSON.stringify({ accessToken: "token", refreshToken: "refresh", openId: "open-1" }),
+    destinationId: "open-1",
+    content: {
+      channel: "tiktok",
+      contentType: "short_video",
+      caption: "Teste",
+      media: { assetUrl: "https://cdn.example/video.mp4" },
+    },
+    httpClient,
+  }), /consulta do criador: HTTP 403, code scope_not_authorized, message The requested scope is not authorized, log_id safe-log-id/);
+});

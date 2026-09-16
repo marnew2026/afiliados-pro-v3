@@ -31,6 +31,23 @@ function assertTikTokOk(response, operation) {
   }
 }
 
+function requestFailure(error, operation) {
+  const status = Number(error?.response?.status || 0);
+  const apiError = error?.response?.data?.error;
+  const code = String(apiError?.code || "").trim();
+  const message = String(apiError?.message || "").trim();
+  const logId = String(apiError?.log_id || "").trim();
+  const details = [
+    status ? `HTTP ${status}` : "falha de rede",
+    code && `code ${code}`,
+    message && `message ${message}`,
+    logId && `log_id ${logId}`,
+  ].filter(Boolean).join(", ");
+  const wrapped = new Error(`${operation}: ${details}.`);
+  wrapped.cause = error;
+  return wrapped;
+}
+
 export async function publishTikTok({
   credential,
   destinationId,
@@ -64,11 +81,16 @@ export async function publishTikTok({
     Authorization: `Bearer ${parsedCredential.accessToken}`,
     "Content-Type": "application/json; charset=UTF-8",
   };
-  const creatorResponse = await httpClient.post(
-    `${baseUrl}/v2/post/publish/creator_info/query/`,
-    {},
-    { headers, timeout: 15000 }
-  );
+  let creatorResponse;
+  try {
+    creatorResponse = await httpClient.post(
+      `${baseUrl}/v2/post/publish/creator_info/query/`,
+      {},
+      { headers, timeout: 15000 }
+    );
+  } catch (error) {
+    throw requestFailure(error, "TikTok recusou a consulta do criador");
+  }
   assertTikTokOk(creatorResponse, "TikTok recusou a consulta do criador");
   const creator = creatorResponse.data?.data || {};
   const privacyOptions = Array.isArray(creator.privacy_level_options)
@@ -78,20 +100,27 @@ export async function publishTikTok({
     throw new Error("TikTok nao autorizou publicacao privada para esta conta.");
   }
 
-  const mediaResponse = await httpClient.get(assetUrl, {
-    responseType: "arraybuffer",
-    timeout: 120000,
-    maxContentLength: MAX_VIDEO_BYTES,
-    maxBodyLength: MAX_VIDEO_BYTES,
-  });
+  let mediaResponse;
+  try {
+    mediaResponse = await httpClient.get(assetUrl, {
+      responseType: "arraybuffer",
+      timeout: 120000,
+      maxContentLength: MAX_VIDEO_BYTES,
+      maxBodyLength: MAX_VIDEO_BYTES,
+    });
+  } catch (error) {
+    throw requestFailure(error, "Falha ao baixar o video para o TikTok");
+  }
   const video = Buffer.from(mediaResponse.data);
   if (!video.length || video.length > MAX_VIDEO_BYTES) {
     throw new Error("Video do TikTok possui tamanho invalido.");
   }
   const title = buildTitle(content);
-  const initResponse = await httpClient.post(
-    `${baseUrl}/v2/post/publish/video/init/`,
-    {
+  let initResponse;
+  try {
+    initResponse = await httpClient.post(
+      `${baseUrl}/v2/post/publish/video/init/`,
+      {
       post_info: {
         title,
         privacy_level: "SELF_ONLY",
@@ -107,32 +136,44 @@ export async function publishTikTok({
         chunk_size: video.length,
         total_chunk_count: 1,
       },
-    },
-    { headers, timeout: 30000 }
-  );
+      },
+      { headers, timeout: 30000 }
+    );
+  } catch (error) {
+    throw requestFailure(error, "TikTok recusou o inicio da publicacao");
+  }
   assertTikTokOk(initResponse, "TikTok recusou o inicio da publicacao");
   const publishId = String(initResponse.data?.data?.publish_id || "").trim();
   const uploadUrl = String(initResponse.data?.data?.upload_url || "").trim();
   if (!publishId || !uploadUrl.startsWith("https://")) {
     throw new Error("TikTok nao retornou os dados de upload.");
   }
-  await httpClient.put(uploadUrl, video, {
-    headers: {
-      "Content-Type": "video/mp4",
-      "Content-Length": String(video.length),
-      "Content-Range": `bytes 0-${video.length - 1}/${video.length}`,
-    },
-    timeout: 180000,
-    maxBodyLength: MAX_VIDEO_BYTES,
-  });
+  try {
+    await httpClient.put(uploadUrl, video, {
+      headers: {
+        "Content-Type": "video/mp4",
+        "Content-Length": String(video.length),
+        "Content-Range": `bytes 0-${video.length - 1}/${video.length}`,
+      },
+      timeout: 180000,
+      maxBodyLength: MAX_VIDEO_BYTES,
+    });
+  } catch (error) {
+    throw requestFailure(error, "TikTok recusou o upload do video");
+  }
 
   for (let attempt = 0; attempt < maxPollAttempts; attempt += 1) {
     if (attempt > 0) await sleep(pollIntervalMs);
-    const statusResponse = await httpClient.post(
-      `${baseUrl}/v2/post/publish/status/fetch/`,
-      { publish_id: publishId },
-      { headers, timeout: 15000 }
-    );
+    let statusResponse;
+    try {
+      statusResponse = await httpClient.post(
+        `${baseUrl}/v2/post/publish/status/fetch/`,
+        { publish_id: publishId },
+        { headers, timeout: 15000 }
+      );
+    } catch (error) {
+      throw requestFailure(error, "TikTok recusou a consulta do status");
+    }
     assertTikTokOk(statusResponse, "TikTok recusou a consulta do status");
     const status = String(statusResponse.data?.data?.status || "").trim();
     if (status === "PUBLISH_COMPLETE") {
