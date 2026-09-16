@@ -15,8 +15,55 @@ import {
   completeFacebookOAuth,
   createFacebookAuthorizationUrl,
 } from "../services/connections/FacebookOAuthService.js";
+import {
+  completeTikTokOAuth,
+  createTikTokAuthorizationUrl,
+} from "../services/connections/TikTokOAuthService.js";
 
 const router = express.Router();
+
+router.get("/tiktok/oauth/start", protect, async (req, res) => {
+  try {
+    const authorizationUrl = createTikTokAuthorizationUrl({
+      userId: req.user._id,
+    });
+    return res.status(200).json({ success: true, authorizationUrl });
+  } catch (error) {
+    console.error("ERRO TIKTOK OAUTH START:", error.message);
+    return res.status(500).json({
+      success: false,
+      error: "Nao foi possivel iniciar a conexao com o TikTok.",
+    });
+  }
+});
+
+router.get("/tiktok/oauth/callback", async (req, res) => {
+  try {
+    if (req.query.error) {
+      return res.status(400).send(
+        "<h1>Conexao cancelada</h1><p>O TikTok nao foi conectado.</p>"
+      );
+    }
+    const result = await completeTikTokOAuth({
+      code: req.query.code,
+      state: req.query.state,
+    });
+    const safeName = String(result.displayName || "Conta TikTok")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+    return res.status(200).send(
+      `<h1>TikTok conectado</h1><p>${safeName} foi conectado com sucesso. Voce pode fechar esta janela.</p>`
+    );
+  } catch (error) {
+    console.error("ERRO TIKTOK OAUTH CALLBACK:", error.message);
+    return res.status(400).send(
+      "<h1>Falha na conexao</h1><p>Nao foi possivel conectar o TikTok. Volte ao Afiliados Pro e tente novamente.</p>"
+    );
+  }
+});
 
 router.get("/facebook/oauth/start", protect, async (req, res) => {
   try {
