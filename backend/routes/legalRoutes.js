@@ -5,6 +5,7 @@ import {
   renderPrivacyPolicy,
   renderTermsOfService,
 } from "../services/legal/LegalPageService.js";
+import { deactivateInstagramConnection } from "../services/connections/InstagramDeauthorizationService.js";
 
 const router = express.Router();
 
@@ -38,5 +39,21 @@ router.get("/terms", (req, res) =>
 router.get("/data-deletion", (req, res) =>
   sendLegalPage(renderDataDeletion, req, res)
 );
+
+router.post("/instagram/deauthorize", async (req, res) => {
+  try {
+    await deactivateInstagramConnection({
+      signedRequest: req.body?.signed_request,
+    });
+
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("INSTAGRAM DEAUTH ERROR:", error.message);
+    return res.status(400).json({
+      success: false,
+      error: "invalid_deauthorization_request",
+    });
+  }
+});
 
 export default router;
