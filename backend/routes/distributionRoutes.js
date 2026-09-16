@@ -42,6 +42,10 @@ router.post("/tiktok", protect, async (req, res) => {
       hashtags: req.body.hashtags,
       cta: req.body.cta,
       deliveryMode: "direct",
+      privacyLevel: req.body.privacyLevel,
+      disableComment: req.body.disableComment,
+      disableDuet: req.body.disableDuet,
+      disableStitch: req.body.disableStitch,
       scheduler: scheduleDistribution,
     });
     return res.status(201).json({

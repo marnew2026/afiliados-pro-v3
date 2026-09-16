@@ -19,8 +19,26 @@ import {
   completeTikTokOAuth,
   createTikTokAuthorizationUrl,
 } from "../services/connections/TikTokOAuthService.js";
+import { decryptCredential } from "../utils/credentialCrypto.js";
+import { queryTikTokCreatorInfo } from "../services/connections/TikTokCreatorInfoService.js";
 
 const router = express.Router();
+
+router.get("/tiktok/creator-info", protect, async (req, res) => {
+  try {
+    const connection = await ChannelConnection.findOne({
+      userId: req.user._id,
+      provider: "tiktok",
+      active: true,
+    }).select("+credential");
+    if (!connection) return res.status(404).json({ success: false, error: "Conexao ativa do TikTok nao encontrada." });
+    const creator = await queryTikTokCreatorInfo({ credential: decryptCredential(connection.credential) });
+    return res.status(200).json({ success: true, creator });
+  } catch (error) {
+    console.error("ERRO TIKTOK CREATOR INFO:", error.message);
+    return res.status(502).json({ success: false, error: "Nao foi possivel consultar as opcoes atuais da conta TikTok." });
+  }
+});
 
 router.get("/tiktok/oauth/start", protect, async (req, res) => {
   try {

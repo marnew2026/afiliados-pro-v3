@@ -60,6 +60,16 @@ const DistributionSchema = new mongoose.Schema(
         default: "direct",
       },
 
+      privacyLevel: {
+        type: String,
+        enum: ["PUBLIC_TO_EVERYONE", "MUTUAL_FOLLOW_FRIENDS", "FOLLOWER_OF_CREATOR", "SELF_ONLY"],
+        default: "SELF_ONLY",
+      },
+
+      disableComment: { type: Boolean, default: true },
+      disableDuet: { type: Boolean, default: true },
+      disableStitch: { type: Boolean, default: true },
+
       caption: {
         type: String,
         default: "",

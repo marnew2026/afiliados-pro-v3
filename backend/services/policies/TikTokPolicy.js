@@ -33,6 +33,10 @@ export function applyTikTokPolicy({
     channel: TIKTOK_CHANNEL,
     contentType: "short_video",
     deliveryMode: content.deliveryMode === "draft" ? "draft" : "direct",
+    privacyLevel: content.privacyLevel || "SELF_ONLY",
+    disableComment: content.disableComment !== false,
+    disableDuet: content.disableDuet !== false,
+    disableStitch: content.disableStitch !== false,
 
     ...normalizedContent,
   };

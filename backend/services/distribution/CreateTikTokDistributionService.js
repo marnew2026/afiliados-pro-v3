@@ -17,6 +17,10 @@ export async function createTikTokDistribution({
   hashtags = [],
   cta = "Confira a oferta no link",
   deliveryMode = "direct",
+  privacyLevel = "SELF_ONLY",
+  disableComment = true,
+  disableDuet = true,
+  disableStitch = true,
   env = process.env,
   campaignModel = Campaign,
   connectionModel = ChannelConnection,
@@ -31,6 +35,7 @@ export async function createTikTokDistribution({
   const cleanCaption = String(caption || "").trim();
   const cleanCta = String(cta || "").trim();
   const cleanDeliveryMode = String(deliveryMode || "direct").trim().toLowerCase();
+  const cleanPrivacyLevel = String(privacyLevel || "SELF_ONLY").trim();
   const baseUrl = String(env.BASE_URL || "").trim().replace(/\/+$/, "");
 
   if (typeof scheduler !== "function") {
@@ -42,6 +47,10 @@ export async function createTikTokDistribution({
   if (!cleanCaption) throw requestError("Legenda do TikTok e obrigatoria.");
   if (!["direct", "draft"].includes(cleanDeliveryMode)) {
     throw requestError("Modo de entrega do TikTok invalido.");
+  }
+  const allowedPrivacyLevels = ["PUBLIC_TO_EVERYONE", "MUTUAL_FOLLOW_FRIENDS", "FOLLOWER_OF_CREATOR", "SELF_ONLY"];
+  if (!allowedPrivacyLevels.includes(cleanPrivacyLevel)) {
+    throw requestError("Privacidade do TikTok invalida.");
   }
   if (cleanCaption.length > 1800) {
     throw requestError("Legenda do TikTok excede o limite seguro.");
@@ -91,6 +100,10 @@ export async function createTikTokDistribution({
       text: cleanCaption,
       contentType: "short_video",
       deliveryMode: cleanDeliveryMode,
+      privacyLevel: cleanPrivacyLevel,
+      disableComment: disableComment !== false,
+      disableDuet: disableDuet !== false,
+      disableStitch: disableStitch !== false,
       caption: cleanCaption,
       hashtags: cleanHashtags,
       cta: cleanCta,

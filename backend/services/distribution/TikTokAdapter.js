@@ -82,6 +82,7 @@ export async function publishTikTok({
     "Content-Type": "application/json; charset=UTF-8",
   };
   const deliveryMode = content.deliveryMode === "draft" ? "draft" : "direct";
+  let creator = {};
   if (deliveryMode === "direct") {
     let creatorResponse;
     try {
@@ -94,12 +95,13 @@ export async function publishTikTok({
       throw requestFailure(error, "TikTok recusou a consulta do criador");
     }
     assertTikTokOk(creatorResponse, "TikTok recusou a consulta do criador");
-    const creator = creatorResponse.data?.data || {};
+    creator = creatorResponse.data?.data || {};
     const privacyOptions = Array.isArray(creator.privacy_level_options)
       ? creator.privacy_level_options
       : [];
-    if (!privacyOptions.includes("SELF_ONLY")) {
-      throw new Error("TikTok nao autorizou publicacao privada para esta conta.");
+    const requestedPrivacy = String(content.privacyLevel || "SELF_ONLY");
+    if (!privacyOptions.includes(requestedPrivacy)) {
+      throw new Error("TikTok nao autorizou a privacidade selecionada para esta conta.");
     }
   }
 
@@ -135,10 +137,10 @@ export async function publishTikTok({
       } : {
         post_info: {
           title,
-          privacy_level: "SELF_ONLY",
-          disable_duet: true,
-          disable_comment: true,
-          disable_stitch: true,
+          privacy_level: String(content.privacyLevel || "SELF_ONLY"),
+          disable_duet: creator.duet_disabled === true || content.disableDuet !== false,
+          disable_comment: creator.comment_disabled === true || content.disableComment !== false,
+          disable_stitch: creator.stitch_disabled === true || content.disableStitch !== false,
           brand_content_toggle: true,
           brand_organic_toggle: false,
         },
@@ -211,7 +213,7 @@ export async function publishTikTok({
           : publishId,
         publishId,
         status,
-        privacyLevel: "SELF_ONLY",
+        privacyLevel: String(content.privacyLevel || "SELF_ONLY"),
         distributionStatus: "published",
       };
     }

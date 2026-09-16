@@ -13,7 +13,7 @@ test("publica video privado do TikTok por FILE_UPLOAD e confirma status", async 
     async post(url, body, config) {
       calls.push({ method: "post", url, body, config });
       if (url.endsWith("/creator_info/query/")) {
-        return { data: { data: { privacy_level_options: ["SELF_ONLY"] }, error: { code: "ok" } } };
+        return { data: { data: { privacy_level_options: ["SELF_ONLY"], comment_disabled: false, duet_disabled: false, stitch_disabled: false }, error: { code: "ok" } } };
       }
       if (url.endsWith("/video/init/")) {
         return { data: { data: { publish_id: "pub-1", upload_url: "https://upload.example/video" }, error: { code: "ok" } } };
@@ -30,6 +30,7 @@ test("publica video privado do TikTok por FILE_UPLOAD e confirma status", async 
     destinationId: "open-1",
     content: {
       channel: "tiktok", contentType: "short_video", caption: "Oferta",
+      privacyLevel: "SELF_ONLY", disableComment: false, disableDuet: false, disableStitch: false,
       hashtags: ["achado"], trackingUrl: "https://example/r/1",
       media: { assetUrl: "https://cdn.example/video.mp4" },
     },
@@ -41,6 +42,9 @@ test("publica video privado do TikTok por FILE_UPLOAD e confirma status", async 
   const init = calls.find((call) => call.url?.endsWith("/video/init/"));
   assert.equal(init.body.post_info.privacy_level, "SELF_ONLY");
   assert.equal(init.body.post_info.brand_content_toggle, true);
+  assert.equal(init.body.post_info.disable_comment, false);
+  assert.equal(init.body.post_info.disable_duet, false);
+  assert.equal(init.body.post_info.disable_stitch, false);
   assert.equal(init.body.source_info.source, "FILE_UPLOAD");
   const upload = calls.find((call) => call.method === "put");
   assert.equal(upload.config.headers["Content-Range"], `bytes 0-${video.length - 1}/${video.length}`);
