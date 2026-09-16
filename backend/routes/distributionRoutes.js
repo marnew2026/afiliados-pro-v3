@@ -3,6 +3,7 @@ import express from "express";
 import Campaign from "../models/Campaign.js";
 import Distribution from "../models/Distribution.js";
 import ChannelConnection from "../models/ChannelConnection.js";
+import { listTikTokReviewOptions } from "../services/distribution/TikTokReviewOptionsService.js";
 
 import { protect } from "../middlewares/authMiddleware.js";
 import {
@@ -20,6 +21,16 @@ import {
 } from "../services/distribution/CreateTikTokDistributionService.js";
 
 const router = express.Router();
+
+router.get("/tiktok/options", protect, async (req, res) => {
+  try {
+    const result = await listTikTokReviewOptions({ userId: req.user._id });
+    return res.status(200).json({ success: true, ...result });
+  } catch (error) {
+    console.error("ERRO TIKTOK REVIEW OPTIONS:", error.message);
+    return res.status(500).json({ success: false, error: "Nao foi possivel carregar os videos do TikTok." });
+  }
+});
 
 router.post("/tiktok", protect, async (req, res) => {
   try {
