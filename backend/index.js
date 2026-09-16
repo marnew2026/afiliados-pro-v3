@@ -24,6 +24,7 @@ import authRoutes from "./routes/authRoutes.js";
 import distributionRoutes from "./routes/distributionRoutes.js";
 import channelRoutes from "./routes/channelRoutes.js";
 import autopilotRoutes from "./routes/autopilotRoutes.js";
+import legalRoutes from "./routes/legalRoutes.js";
 console.log("#################################");
 console.log("INDEX NOVO ATUAL  12/07  17H 45M   ");
 console.log("#################################");
@@ -69,6 +70,7 @@ app.use("/auth", authRoutes);
 app.use("/distribution", distributionRoutes);
 app.use("/channel", channelRoutes);
 app.use("/autopilot", autopilotRoutes);
+app.use("/legal", legalRoutes);
 console.log("🔥🔥🔥 AUTH NOVA VERSAO 19-07 CARREGADA");
 console.log("✅ app.use('/checkout') registrado");
 
