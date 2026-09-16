@@ -32,6 +32,7 @@ export function applyTikTokPolicy({
   return {
     channel: TIKTOK_CHANNEL,
     contentType: "short_video",
+    deliveryMode: content.deliveryMode === "draft" ? "draft" : "direct",
 
     ...normalizedContent,
   };

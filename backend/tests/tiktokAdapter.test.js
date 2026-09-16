@@ -84,3 +84,33 @@ test("identifica a etapa e o erro seguro quando TikTok responde 403", async () =
     httpClient,
   }), /consulta do criador: HTTP 403, code scope_not_authorized, message The requested scope is not authorized, log_id safe-log-id/);
 });
+
+test("envia video como rascunho e confirma entrega na caixa de entrada", async () => {
+  const calls = [];
+  const video = Buffer.from("draft-video");
+  const httpClient = {
+    async get(url) { calls.push({ method: "get", url }); return { data: video }; },
+    async post(url, body) {
+      calls.push({ method: "post", url, body });
+      if (url.endsWith("/inbox/video/init/")) {
+        return { data: { data: { publish_id: "draft-1", upload_url: "https://upload.example/draft" }, error: { code: "ok" } } };
+      }
+      return { data: { data: { status: "SEND_TO_USER_INBOX" }, error: { code: "ok" } } };
+    },
+    async put(url, body, config) { calls.push({ method: "put", url, body, config }); return { status: 201 }; },
+  };
+  const result = await publishTikTok({
+    credential: JSON.stringify({ accessToken: "token", refreshToken: "refresh", openId: "open-1" }),
+    destinationId: "open-1",
+    content: {
+      channel: "tiktok", contentType: "short_video", deliveryMode: "draft",
+      caption: "Revisar", media: { assetUrl: "https://cdn.example/video.mp4" },
+    },
+    httpClient, pollIntervalMs: 0,
+  });
+  assert.equal(result.status, "SEND_TO_USER_INBOX");
+  assert.equal(result.distributionStatus, "delivered");
+  assert.equal(result.requiresUserAction, true);
+  assert.ok(calls.some((call) => call.url?.endsWith("/inbox/video/init/")));
+  assert.ok(!calls.some((call) => call.url?.endsWith("/creator_info/query/")));
+});

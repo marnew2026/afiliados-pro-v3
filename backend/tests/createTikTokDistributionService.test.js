@@ -55,3 +55,19 @@ test("nao cria distribuicao sem conexao ativa do TikTok", async () => {
     caption: "Teste", env: { BASE_URL: "https://staging.example" }, ...deps,
   }), (error) => error.statusCode === 400);
 });
+
+test("cria envio de rascunho com modo draft", async () => {
+  const created = [];
+  const result = await createTikTokDistribution({
+    userId: "user-1", campaignId: "campaign-1", mediaAssetId: "asset-1",
+    caption: "Revisar no TikTok", deliveryMode: "draft",
+    env: { BASE_URL: "https://example.com" },
+    campaignModel: { async findOne() { return { _id: "campaign-1" }; } },
+    mediaAssetModel: { async findOne() { return { assetUrl: "https://cdn.example/video.mp4" }; } },
+    connectionModel: { async findOne() { return { destinationId: "open-1" }; } },
+    distributionModel: { async create(value) { created.push(value); return { _id: "dist-draft", ...value }; } },
+    async scheduler() { return { jobId: "dist-draft" }; },
+  });
+  assert.equal(created[0].content.deliveryMode, "draft");
+  assert.equal(result.distribution._id, "dist-draft");
+});

@@ -98,6 +98,7 @@ export async function publishDistribution(distributionId) {
       content: {
         channel: distribution.channel,
         contentType: distribution.content.contentType,
+        deliveryMode: distribution.content.deliveryMode || "direct",
         text: distribution.content.text,
         caption: distribution.content.caption,
         hashtags: distribution.content.hashtags,
@@ -118,8 +119,8 @@ export async function publishDistribution(distributionId) {
       content: channelContent,
     });
 
-    distribution.status = "published";
-    distribution.publishedAt = new Date();
+    distribution.status = result.distributionStatus || "published";
+    distribution.publishedAt = distribution.status === "published" ? new Date() : null;
     distribution.externalMessageId = result.externalId;
     distribution.lastError = null;
 

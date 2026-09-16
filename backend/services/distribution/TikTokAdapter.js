@@ -81,23 +81,26 @@ export async function publishTikTok({
     Authorization: `Bearer ${parsedCredential.accessToken}`,
     "Content-Type": "application/json; charset=UTF-8",
   };
-  let creatorResponse;
-  try {
-    creatorResponse = await httpClient.post(
-      `${baseUrl}/v2/post/publish/creator_info/query/`,
-      {},
-      { headers, timeout: 15000 }
-    );
-  } catch (error) {
-    throw requestFailure(error, "TikTok recusou a consulta do criador");
-  }
-  assertTikTokOk(creatorResponse, "TikTok recusou a consulta do criador");
-  const creator = creatorResponse.data?.data || {};
-  const privacyOptions = Array.isArray(creator.privacy_level_options)
-    ? creator.privacy_level_options
-    : [];
-  if (!privacyOptions.includes("SELF_ONLY")) {
-    throw new Error("TikTok nao autorizou publicacao privada para esta conta.");
+  const deliveryMode = content.deliveryMode === "draft" ? "draft" : "direct";
+  if (deliveryMode === "direct") {
+    let creatorResponse;
+    try {
+      creatorResponse = await httpClient.post(
+        `${baseUrl}/v2/post/publish/creator_info/query/`,
+        {},
+        { headers, timeout: 15000 }
+      );
+    } catch (error) {
+      throw requestFailure(error, "TikTok recusou a consulta do criador");
+    }
+    assertTikTokOk(creatorResponse, "TikTok recusou a consulta do criador");
+    const creator = creatorResponse.data?.data || {};
+    const privacyOptions = Array.isArray(creator.privacy_level_options)
+      ? creator.privacy_level_options
+      : [];
+    if (!privacyOptions.includes("SELF_ONLY")) {
+      throw new Error("TikTok nao autorizou publicacao privada para esta conta.");
+    }
   }
 
   let mediaResponse;
@@ -115,34 +118,47 @@ export async function publishTikTok({
   if (!video.length || video.length > MAX_VIDEO_BYTES) {
     throw new Error("Video do TikTok possui tamanho invalido.");
   }
-  const title = buildTitle(content);
+  const title = deliveryMode === "direct" ? buildTitle(content) : "";
   let initResponse;
   try {
     initResponse = await httpClient.post(
-      `${baseUrl}/v2/post/publish/video/init/`,
-      {
-      post_info: {
-        title,
-        privacy_level: "SELF_ONLY",
-        disable_duet: true,
-        disable_comment: true,
-        disable_stitch: true,
-        brand_content_toggle: true,
-        brand_organic_toggle: false,
-      },
-      source_info: {
+      deliveryMode === "draft"
+        ? `${baseUrl}/v2/post/publish/inbox/video/init/`
+        : `${baseUrl}/v2/post/publish/video/init/`,
+      deliveryMode === "draft" ? {
+        source_info: {
+          source: "FILE_UPLOAD",
+          video_size: video.length,
+          chunk_size: video.length,
+          total_chunk_count: 1,
+        },
+      } : {
+        post_info: {
+          title,
+          privacy_level: "SELF_ONLY",
+          disable_duet: true,
+          disable_comment: true,
+          disable_stitch: true,
+          brand_content_toggle: true,
+          brand_organic_toggle: false,
+        },
+        source_info: {
         source: "FILE_UPLOAD",
         video_size: video.length,
         chunk_size: video.length,
         total_chunk_count: 1,
-      },
+        },
       },
       { headers, timeout: 30000 }
     );
   } catch (error) {
-    throw requestFailure(error, "TikTok recusou o inicio da publicacao");
+    throw requestFailure(error, deliveryMode === "draft"
+      ? "TikTok recusou o envio do rascunho"
+      : "TikTok recusou o inicio da publicacao");
   }
-  assertTikTokOk(initResponse, "TikTok recusou o inicio da publicacao");
+  assertTikTokOk(initResponse, deliveryMode === "draft"
+    ? "TikTok recusou o envio do rascunho"
+    : "TikTok recusou o inicio da publicacao");
   const publishId = String(initResponse.data?.data?.publish_id || "").trim();
   const uploadUrl = String(initResponse.data?.data?.upload_url || "").trim();
   if (!publishId || !uploadUrl.startsWith("https://")) {
@@ -176,6 +192,16 @@ export async function publishTikTok({
     }
     assertTikTokOk(statusResponse, "TikTok recusou a consulta do status");
     const status = String(statusResponse.data?.data?.status || "").trim();
+    if (deliveryMode === "draft" && status === "SEND_TO_USER_INBOX") {
+      return {
+        success: true,
+        externalId: publishId,
+        publishId,
+        status,
+        distributionStatus: "delivered",
+        requiresUserAction: true,
+      };
+    }
     if (status === "PUBLISH_COMPLETE") {
       const postIds = statusResponse.data?.data?.publicaly_available_post_id;
       return {
@@ -186,6 +212,7 @@ export async function publishTikTok({
         publishId,
         status,
         privacyLevel: "SELF_ONLY",
+        distributionStatus: "published",
       };
     }
     if (status === "FAILED") {
@@ -193,5 +220,7 @@ export async function publishTikTok({
       throw new Error(`Publicacao do TikTok falhou: ${reason}.`);
     }
   }
-  throw new Error("TikTok ainda nao confirmou a publicacao apos o tempo limite.");
+  throw new Error(deliveryMode === "draft"
+    ? "TikTok ainda nao confirmou a entrega do rascunho apos o tempo limite."
+    : "TikTok ainda nao confirmou a publicacao apos o tempo limite.");
 }

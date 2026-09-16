@@ -54,6 +54,12 @@ const DistributionSchema = new mongoose.Schema(
         default: "text",
       },
 
+      deliveryMode: {
+        type: String,
+        enum: ["direct", "draft"],
+        default: "direct",
+      },
+
       caption: {
         type: String,
         default: "",
@@ -119,6 +125,7 @@ const DistributionSchema = new mongoose.Schema(
         "draft",
         "scheduled",
         "processing",
+        "delivered",
         "published",
         "failed",
         "cancelled",

@@ -30,6 +30,7 @@ router.post("/tiktok", protect, async (req, res) => {
       caption: req.body.caption,
       hashtags: req.body.hashtags,
       cta: req.body.cta,
+      deliveryMode: "direct",
       scheduler: scheduleDistribution,
     });
     return res.status(201).json({
@@ -50,6 +51,42 @@ router.post("/tiktok", protect, async (req, res) => {
       error: error.statusCode
         ? error.message
         : "Nao foi possivel agendar o video no TikTok.",
+    });
+  }
+});
+
+router.post("/tiktok/draft", protect, async (req, res) => {
+  try {
+    const result = await createTikTokDistribution({
+      userId: req.user._id,
+      campaignId: req.body.campaignId,
+      mediaAssetId: req.body.mediaAssetId,
+      caption: req.body.caption,
+      hashtags: req.body.hashtags,
+      cta: req.body.cta,
+      deliveryMode: "draft",
+      scheduler: scheduleDistribution,
+    });
+    return res.status(201).json({
+      success: true,
+      requiresUserAction: true,
+      nextStep: "Abra a notificacao na caixa de entrada do TikTok para revisar e publicar o rascunho.",
+      distribution: {
+        id: result.distribution._id,
+        channel: result.distribution.channel,
+        source: result.distribution.source,
+        status: result.distribution.status,
+        scheduledAt: result.distribution.scheduledAt,
+      },
+      queue: result.queue,
+    });
+  } catch (error) {
+    console.error("ERRO CREATE TIKTOK DRAFT DISTRIBUTION:", error.message);
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      error: error.statusCode
+        ? error.message
+        : "Nao foi possivel enviar o rascunho ao TikTok.",
     });
   }
 });
@@ -306,6 +343,7 @@ router.get("/", protect, async (req, res) => {
       "draft",
       "scheduled",
       "processing",
+      "delivered",
       "published",
       "failed",
       "cancelled",
