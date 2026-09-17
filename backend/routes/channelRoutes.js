@@ -204,12 +204,12 @@ router.get("/instagram/oauth/callback", async (req, res) => {
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#39;");
     return res.status(200).send(
-      `<h1>Instagram conectado</h1><p>${account} foi conectado com sucesso. Voce pode fechar esta janela.</p>`
+      `<h1>Instagram conectado</h1><p>${account} foi conectado com sucesso.</p><p><a href="/instagram-review">Voltar ao Afiliados Pro</a></p>`
     );
   } catch (error) {
     console.error("ERRO INSTAGRAM OAUTH CALLBACK:", error.message);
     return res.status(400).send(
-      "<h1>Falha na conexao</h1><p>Nao foi possivel conectar o Instagram. Volte ao Afiliados Pro e tente novamente.</p>"
+      '<h1>Falha na conexao</h1><p>Nao foi possivel conectar o Instagram.</p><p><a href="/instagram-review">Voltar ao Afiliados Pro</a></p>'
     );
   }
 });

@@ -13,6 +13,8 @@ test("pagina de revisao do Instagram exige login, mostra perfil e pede consentim
   assert.match(html, /\/channel\/instagram\/oauth\/start/);
   assert.match(html, /\/distribution\/instagram\/options/);
   assert.match(html, /\/distribution\/instagram/);
+  assert.match(html, /location\.assign\(data\.authorizationUrl\)/);
+  assert.doesNotMatch(html, /window\.open\(data\.authorizationUrl/);
   assert.match(html, /sessionStorage/);
   assert.doesNotMatch(
     html,
