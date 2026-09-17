@@ -4,6 +4,7 @@ import Campaign from "../models/Campaign.js";
 import Distribution from "../models/Distribution.js";
 import ChannelConnection from "../models/ChannelConnection.js";
 import { listTikTokReviewOptions } from "../services/distribution/TikTokReviewOptionsService.js";
+import { listInstagramReviewOptions } from "../services/distribution/InstagramReviewOptionsService.js";
 
 import { protect } from "../middlewares/authMiddleware.js";
 import {
@@ -29,6 +30,21 @@ router.get("/tiktok/options", protect, async (req, res) => {
   } catch (error) {
     console.error("ERRO TIKTOK REVIEW OPTIONS:", error.message);
     return res.status(500).json({ success: false, error: "Nao foi possivel carregar os videos do TikTok." });
+  }
+});
+
+router.get("/instagram/options", protect, async (req, res) => {
+  try {
+    const result = await listInstagramReviewOptions({
+      userId: req.user._id,
+    });
+    return res.status(200).json({ success: true, ...result });
+  } catch (error) {
+    console.error("ERRO INSTAGRAM REVIEW OPTIONS:", error.message);
+    return res.status(500).json({
+      success: false,
+      error: "Nao foi possivel carregar os videos do Instagram.",
+    });
   }
 });
 

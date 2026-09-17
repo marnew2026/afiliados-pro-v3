@@ -195,7 +195,14 @@ router.get("/instagram/oauth/callback", async (req, res) => {
       state: req.query.state,
     });
 
-    const account = result.username ? `@${result.username}` : "sua conta";
+    const account = String(
+      result.username ? `@${result.username}` : "sua conta"
+    )
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
     return res.status(200).send(
       `<h1>Instagram conectado</h1><p>${account} foi conectado com sucesso. Voce pode fechar esta janela.</p>`
     );
