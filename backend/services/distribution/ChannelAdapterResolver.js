@@ -2,6 +2,7 @@ import { sendTelegramMessage } from "./TelegramAdapter.js";
 import { publishInstagram } from "./InstagramAdapter.js";
 import { publishFacebook } from "./FacebookAdapter.js";
 import { publishTikTok } from "./TikTokAdapter.js";
+import { publishKwai } from "./KwaiAdapter.js";
 
 const CHANNEL_ADAPTERS = {
   telegram: async ({
@@ -25,6 +26,7 @@ const CHANNEL_ADAPTERS = {
   instagram: publishInstagram,
   facebook: publishFacebook,
   tiktok: publishTikTok,
+  kwai: publishKwai,
 };
 
 export function getChannelAdapter(channel) {
