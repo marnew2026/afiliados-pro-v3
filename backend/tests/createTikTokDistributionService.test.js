@@ -2,6 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createTikTokDistribution } from "../services/distribution/CreateTikTokDistributionService.js";
 
+const TIKTOK_OPERATIONAL_ENV = {
+  TIKTOK_API_APPROVAL_STATUS: "approved",
+  TIKTOK_ENABLED: "true",
+};
+
 function dependencies(overrides = {}) {
   let created;
   const distribution = {
@@ -30,7 +35,7 @@ test("cria video manual somente para conta TikTok conectada", async () => {
   const result = await createTikTokDistribution({
     userId: "user-1", campaignId: "campaign-1", mediaAssetId: "asset-1",
     caption: "Patinete eletrico.", hashtags: ["#Oferta", "Oferta"],
-    env: { BASE_URL: "https://staging.example/" }, ...deps,
+    env: { ...TIKTOK_OPERATIONAL_ENV, BASE_URL: "https://staging.example/" }, ...deps,
   });
   const created = deps.getCreated();
   assert.equal(created.channel, "tiktok");
@@ -44,7 +49,7 @@ test("bloqueia video de outro usuario ou campanha", async () => {
   const deps = dependencies({ mediaAssetModel: { async findOne() { return null; } } });
   await assert.rejects(createTikTokDistribution({
     userId: "user-1", campaignId: "campaign-1", mediaAssetId: "other",
-    caption: "Teste", env: { BASE_URL: "https://staging.example" }, ...deps,
+    caption: "Teste", env: { ...TIKTOK_OPERATIONAL_ENV, BASE_URL: "https://staging.example" }, ...deps,
   }), (error) => error.statusCode === 404);
 });
 
@@ -52,7 +57,7 @@ test("nao cria distribuicao sem conexao ativa do TikTok", async () => {
   const deps = dependencies({ connectionModel: { async findOne() { return null; } } });
   await assert.rejects(createTikTokDistribution({
     userId: "user-1", campaignId: "campaign-1", mediaAssetId: "asset-1",
-    caption: "Teste", env: { BASE_URL: "https://staging.example" }, ...deps,
+    caption: "Teste", env: { ...TIKTOK_OPERATIONAL_ENV, BASE_URL: "https://staging.example" }, ...deps,
   }), (error) => error.statusCode === 400);
 });
 
@@ -61,7 +66,7 @@ test("cria envio de rascunho com modo draft", async () => {
   const result = await createTikTokDistribution({
     userId: "user-1", campaignId: "campaign-1", mediaAssetId: "asset-1",
     caption: "Revisar no TikTok", deliveryMode: "draft",
-    env: { BASE_URL: "https://example.com" },
+    env: { ...TIKTOK_OPERATIONAL_ENV, BASE_URL: "https://example.com" },
     campaignModel: { async findOne() { return { _id: "campaign-1" }; } },
     mediaAssetModel: { async findOne() { return { assetUrl: "https://cdn.example/video.mp4" }; } },
     connectionModel: { async findOne() { return { destinationId: "open-1" }; } },

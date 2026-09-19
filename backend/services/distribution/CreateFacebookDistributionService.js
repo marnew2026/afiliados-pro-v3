@@ -2,6 +2,7 @@ import Campaign from "../../models/Campaign.js";
 import ChannelConnection from "../../models/ChannelConnection.js";
 import Distribution from "../../models/Distribution.js";
 import MediaAsset from "../../models/MediaAsset.js";
+import { assertIntegrationOperational } from "../readiness/IntegrationExecutionGate.js";
 
 function requestError(message, statusCode = 400) {
   const error = new Error(message);
@@ -24,6 +25,8 @@ export async function createFacebookDistribution({
   scheduler,
   now = () => new Date(),
 }) {
+  assertIntegrationOperational("facebook", env);
+
   const cleanUserId = String(userId || "").trim();
   const cleanCampaignId = String(campaignId || "").trim();
   const cleanMediaAssetId = String(mediaAssetId || "").trim();

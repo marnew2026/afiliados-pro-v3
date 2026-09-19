@@ -3,6 +3,7 @@ import ChannelConnection from "../../models/ChannelConnection.js";
 import Distribution from "../../models/Distribution.js";
 import MediaAsset from "../../models/MediaAsset.js";
 import { isKwaiEnabled } from "./KwaiAdapter.js";
+import { assertIntegrationOperational } from "../readiness/IntegrationExecutionGate.js";
 
 function requestError(message, statusCode = 400) {
   const error = new Error(message);
@@ -25,6 +26,8 @@ export async function createKwaiDistribution({
   scheduler,
   now = () => new Date(),
 }) {
+  assertIntegrationOperational("kwai", env);
+
   if (!isKwaiEnabled(env)) {
     throw requestError(
       "Integracao Kwai ainda nao liberada pela plataforma.",

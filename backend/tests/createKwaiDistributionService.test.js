@@ -68,6 +68,7 @@ test("cria video do Kwai quando a integracao for explicitamente habilitada", asy
     hashtags: ["#oferta", "oferta", "kwai"],
     env: {
       BASE_URL: "https://staging.example/",
+      KWAI_API_APPROVAL_STATUS: "approved",
       KWAI_ENABLED: "true",
     },
     ...deps,

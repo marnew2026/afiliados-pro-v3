@@ -5,6 +5,11 @@ import {
   createFacebookDistribution,
 } from "../services/distribution/CreateFacebookDistributionService.js";
 
+const FACEBOOK_OPERATIONAL_ENV = {
+  FACEBOOK_API_APPROVAL_STATUS: "approved",
+  FACEBOOK_ENABLED: "true",
+};
+
 function dependencies(overrides = {}) {
   let created;
   const distribution = {
@@ -45,7 +50,7 @@ test("cria Reel manual somente para Pagina conectada do usuario", async () => {
     caption: "Patinete eletrico dobravel.",
     hashtags: ["#PatineteEletrico", "oferta", "oferta"],
     cta: "Confira a oferta",
-    env: { BASE_URL: "https://staging.example/" },
+    env: { ...FACEBOOK_OPERATIONAL_ENV, BASE_URL: "https://staging.example/" },
     ...deps,
   });
 
@@ -76,7 +81,7 @@ test("bloqueia asset de outro usuario ou campanha", async () => {
       campaignId: "campaign-1",
       mediaAssetId: "asset-de-outro-usuario",
       caption: "Teste",
-      env: { BASE_URL: "https://staging.example" },
+      env: { ...FACEBOOK_OPERATIONAL_ENV, BASE_URL: "https://staging.example" },
       ...deps,
     }),
     (error) => error.statusCode === 404
@@ -98,7 +103,7 @@ test("nao cria distribuicao sem conexao ativa do Facebook", async () => {
       campaignId: "campaign-1",
       mediaAssetId: "asset-1",
       caption: "Teste",
-      env: { BASE_URL: "https://staging.example" },
+      env: { ...FACEBOOK_OPERATIONAL_ENV, BASE_URL: "https://staging.example" },
       ...deps,
     }),
     (error) => error.statusCode === 400

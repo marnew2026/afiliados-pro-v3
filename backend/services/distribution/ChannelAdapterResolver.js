@@ -3,6 +3,7 @@ import { publishInstagram } from "./InstagramAdapter.js";
 import { publishFacebook } from "./FacebookAdapter.js";
 import { publishTikTok } from "./TikTokAdapter.js";
 import { publishKwai } from "./KwaiAdapter.js";
+import { assertIntegrationOperational } from "../readiness/IntegrationExecutionGate.js";
 
 const CHANNEL_ADAPTERS = {
   telegram: async ({
@@ -51,5 +52,8 @@ export function getChannelAdapter(channel) {
     );
   }
 
-  return adapter;
+  return async (input) => {
+    assertIntegrationOperational(normalizedChannel, process.env);
+    return adapter(input);
+  };
 }

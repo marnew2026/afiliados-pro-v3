@@ -5,6 +5,11 @@ import {
   createInstagramDistribution,
 } from "../services/distribution/CreateInstagramDistributionService.js";
 
+const INSTAGRAM_OPERATIONAL_ENV = {
+  INSTAGRAM_API_APPROVAL_STATUS: "approved",
+  INSTAGRAM_ENABLED: "true",
+};
+
 function dependencies(overrides = {}) {
   let created;
   const distribution = {
@@ -45,7 +50,7 @@ test("cria um unico Reel manual com asset e conexao do proprio usuario", async (
     caption: "Patinete eletrico dobravel.",
     hashtags: ["#PatineteEletrico", "oferta", "oferta"],
     cta: "Confira a oferta",
-    env: { BASE_URL: "https://staging.example/" },
+    env: { ...INSTAGRAM_OPERATIONAL_ENV, BASE_URL: "https://staging.example/" },
     ...deps,
   });
 
@@ -73,7 +78,7 @@ test("bloqueia asset que nao pertence ao usuario e campanha", async () => {
       campaignId: "campaign-1",
       mediaAssetId: "asset-de-outro-usuario",
       caption: "Teste",
-      env: { BASE_URL: "https://staging.example" },
+      env: { ...INSTAGRAM_OPERATIONAL_ENV, BASE_URL: "https://staging.example" },
       ...deps,
     }),
     (error) => error.statusCode === 404
@@ -95,7 +100,7 @@ test("nao cria distribuicao sem conexao ativa do Instagram", async () => {
       campaignId: "campaign-1",
       mediaAssetId: "asset-1",
       caption: "Teste",
-      env: { BASE_URL: "https://staging.example" },
+      env: { ...INSTAGRAM_OPERATIONAL_ENV, BASE_URL: "https://staging.example" },
       ...deps,
     }),
     (error) => error.statusCode === 400
