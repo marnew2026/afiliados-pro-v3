@@ -53,6 +53,7 @@ type DashboardState = {
   availableBalance: number;
   totalClicks: number;
   isPro: boolean;
+  isAdmin: boolean;
 
   user?: {
     _id: string;
@@ -60,6 +61,7 @@ type DashboardState = {
     email: string;
     plan: string;
     isPro: boolean;
+    isAdmin?: boolean;
     accessSource?: string;
     proAccessEndsAt?: string | null;
     founderTrialClaimNumber?: number | null;
@@ -124,6 +126,9 @@ setDashboard({
 
   isPro:
     dashboardData.user?.isPro || false,
+
+  isAdmin:
+    dashboardData.user?.isAdmin === true,
 
   user: dashboardData.user,
 });
@@ -631,6 +636,7 @@ Alert.alert(
 
 
         {/* ADMIN */}
+        {d.isAdmin ? (
         <TouchableOpacity
           onPress={()=>{
             router.push("/admin" as any);
@@ -688,6 +694,7 @@ Alert.alert(
 
 
         </TouchableOpacity>
+        ) : null}
 
         {/* CENTRAL DE DIVULGACAO */}
         <TouchableOpacity

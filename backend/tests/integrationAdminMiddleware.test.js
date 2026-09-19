@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { requireIntegrationAdmin } from "../middlewares/integrationAdminMiddleware.js";
+import {
+  isIntegrationAdminEmail,
+  requireIntegrationAdmin,
+} from "../middlewares/integrationAdminMiddleware.js";
 
 function responseRecorder() {
   return {
@@ -64,3 +67,10 @@ test("autoriza email administrativo sem diferenciar maiusculas", () => {
   }
 });
 
+test("informa ao dashboard apenas o booleano de acesso administrativo", () => {
+  const env = { INTEGRATION_ADMIN_EMAILS: "admin@example.com,owner@example.com" };
+
+  assert.equal(isIntegrationAdminEmail("ADMIN@example.com", env), true);
+  assert.equal(isIntegrationAdminEmail("user@example.com", env), false);
+  assert.equal(isIntegrationAdminEmail("", env), false);
+});

@@ -13,6 +13,7 @@ import api from "../services/api";
 export default function Admin() {
 
   const [loading, setLoading] = useState(true);
+  const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [withdraws, setWithdraws] = useState<any[]>([]);
   const [stats, setStats] = useState({
   paid: 0,
@@ -31,10 +32,26 @@ const [filter, setFilter] = useState("all");
 
 
   useEffect(() => {
-  loadStats();
-    loadWithdraws();
-    
+    loadAdminData();
   }, []);
+
+async function loadAdminData() {
+  try {
+    setLoading(true);
+    const [statsResponse, withdrawalsResponse] = await Promise.all([
+      api.get("/adminWithdraw/stats"),
+      api.get("/adminWithdraw"),
+    ]);
+    setStats(statsResponse.data);
+    setWithdraws(withdrawalsResponse.data.withdrawals ?? []);
+    setAuthorized(true);
+  } catch (error: any) {
+    console.log(error.response?.data || error.message);
+    setAuthorized(false);
+  } finally {
+    setLoading(false);
+  }
+}
   
 async function loadStats() {
   try {
@@ -120,6 +137,18 @@ const failed = filteredWithdraws.filter(
         }}
       >
         <ActivityIndicator size="large" color="#fff" />
+      </View>
+    );
+  }
+
+  if (authorized === false) {
+    return (
+      <View style={{ flex: 1, backgroundColor: "#0f172a", justifyContent: "center", alignItems: "center", padding: 24 }}>
+        <Text style={{ color: "#fff", fontSize: 24, fontWeight: "bold", textAlign: "center" }}>Acesso administrativo restrito</Text>
+        <Text style={{ color: "#94a3b8", marginTop: 10, textAlign: "center" }}>Esta área está disponível somente para administradores autorizados.</Text>
+        <TouchableOpacity onPress={() => router.replace("/dashboard" as any)} style={{ backgroundColor: "#2563eb", borderRadius: 12, paddingVertical: 12, paddingHorizontal: 20, marginTop: 22 }}>
+          <Text style={{ color: "#fff", fontWeight: "bold" }}>Voltar ao painel</Text>
+        </TouchableOpacity>
       </View>
     );
   }

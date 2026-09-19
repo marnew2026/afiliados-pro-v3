@@ -5,11 +5,13 @@ function adminEmails(env = process.env) {
     .filter(Boolean);
 }
 
-export function requireIntegrationAdmin(req, res, next) {
-  const email = String(req.user?.email || "").trim().toLowerCase();
-  const allowedEmails = adminEmails();
+export function isIntegrationAdminEmail(email, env = process.env) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  return Boolean(normalizedEmail && adminEmails(env).includes(normalizedEmail));
+}
 
-  if (!email || !allowedEmails.includes(email)) {
+export function requireIntegrationAdmin(req, res, next) {
+  if (!isIntegrationAdminEmail(req.user?.email)) {
     return res.status(403).json({
       success: false,
       error: "Acesso administrativo nao autorizado.",
@@ -18,4 +20,3 @@ export function requireIntegrationAdmin(req, res, next) {
 
   return next();
 }
-

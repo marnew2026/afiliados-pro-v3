@@ -15,7 +15,10 @@ import {
 } from "../services/founding/UserAccessService.js";
 import { recordFounderActivitySafely } from "../services/founding/FounderActivityService.js";
 import { protect } from "../middlewares/authMiddleware.js";
-import { requireIntegrationAdmin } from "../middlewares/integrationAdminMiddleware.js";
+import {
+  isIntegrationAdminEmail,
+  requireIntegrationAdmin,
+} from "../middlewares/integrationAdminMiddleware.js";
 import { requireSelfParam } from "../middlewares/userOwnershipMiddleware.js";
 
 const router = express.Router();
@@ -216,6 +219,7 @@ const campaignsFixed = campaigns.map((campaign) => {
   _id: user._id,
   email: user.email,
   name: user.name,
+  isAdmin: isIntegrationAdminEmail(user.email),
   ...publicAccessDetails(user),
   status: user.status,
 },

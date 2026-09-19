@@ -6,6 +6,7 @@ export interface DashboardState {
   availableBalance: number;
   totalClicks: number;
   isPro: boolean;
+  isAdmin: boolean;
   user?: any;
 }
 
@@ -31,6 +32,7 @@ export default function useDashboard() {
     availableBalance: 0,
     totalClicks: 0,
     isPro: false,
+    isAdmin: false,
   });
 
   const formatMoney = useCallback((value: any) => {
