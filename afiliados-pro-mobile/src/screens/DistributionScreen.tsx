@@ -951,6 +951,69 @@ const autopilotOperationalStatus =
           Canais
         </Text>
 
+        <TouchableOpacity
+          onPress={() =>
+            router.push("/integration-readiness" as any)
+          }
+          style={{
+            backgroundColor: "#0f766e",
+            borderRadius: 16,
+            padding: 16,
+            marginBottom: 14,
+            borderWidth: 1,
+            borderColor: "#14b8a6",
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+        >
+          <View
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 14,
+              backgroundColor: "#115e59",
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: 13,
+            }}
+          >
+            <Ionicons
+              name="shield-checkmark-outline"
+              size={24}
+              color="#ccfbf1"
+            />
+          </View>
+
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                color: "#ffffff",
+                fontSize: 16,
+                fontWeight: "900",
+              }}
+            >
+              Centro de Prontidão
+            </Text>
+
+            <Text
+              style={{
+                color: "#ccfbf1",
+                fontSize: 12,
+                lineHeight: 18,
+                marginTop: 3,
+              }}
+            >
+              Consulte aprovação, testes e liberação dos canais
+            </Text>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={22}
+            color="#ccfbf1"
+          />
+        </TouchableOpacity>
+
         <View
           style={{
             backgroundColor: "#1e293b",
