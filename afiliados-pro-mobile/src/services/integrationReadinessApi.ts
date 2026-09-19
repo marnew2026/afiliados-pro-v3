@@ -1,8 +1,8 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { buildApiUrl } from "./apiEnvironment";
 
-const READINESS_URL =
-  "https://afiliados-pro-v4-staging.onrender.com/admin/integrations/readiness";
+const READINESS_URL = buildApiUrl("/admin/integrations/readiness");
 
 export type ApprovalStatus = "pending" | "approved" | "rejected";
 
@@ -56,4 +56,3 @@ export async function fetchIntegrationReadiness() {
 
   return data.readiness as IntegrationReadiness;
 }
-

@@ -14,6 +14,7 @@ import Animated, {
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../../services/api";
+import { buildApiUrl } from "../../services/apiEnvironment";
 
 type Props = {
   item: any;
@@ -379,8 +380,7 @@ elevation: 8,
   console.log("LINK ORIGINAL:");
   console.log(item.link);
 
-  const trackingUrl =
-    `https://afiliados-pro-v3-2.onrender.com/campaigns/r/${item._id}`;
+  const trackingUrl = buildApiUrl(`/campaigns/r/${item._id}`);
 
   console.log("LINK TRACKING:");
   console.log(trackingUrl);

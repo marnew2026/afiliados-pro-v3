@@ -1,8 +1,9 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL } from "./apiEnvironment";
 
 const api = axios.create({
-  baseURL: "https://afiliados-pro-v3-2.onrender.com",
+  baseURL: API_BASE_URL,
 });
 
 api.interceptors.request.use(async (config) => {

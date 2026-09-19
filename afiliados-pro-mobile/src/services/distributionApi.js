@@ -1,8 +1,9 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL } from "./apiEnvironment";
 
 const distributionApi = axios.create({
-  baseURL: "https://afiliados-pro-v4-staging.onrender.com",
+  baseURL: API_BASE_URL,
 });
 
 distributionApi.interceptors.request.use(async (config) => {

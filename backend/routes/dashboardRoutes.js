@@ -13,6 +13,7 @@ import {
   publicAccessDetails,
   refreshUserAccess,
 } from "../services/founding/UserAccessService.js";
+import { recordFounderActivitySafely } from "../services/founding/FounderActivityService.js";
 
 const router = express.Router();
 router.get("/debug/finance/:userId", async (req, res) => {
@@ -143,6 +144,7 @@ console.log("==================================");
     }
 
     await refreshUserAccess(user);
+    recordFounderActivitySafely({ user });
 
     // Busca campanhas
     const campaigns = await Campaign.find({

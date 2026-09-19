@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import { refreshUserAccess } from "../services/founding/UserAccessService.js";
+import { recordFounderActivitySafely } from "../services/founding/FounderActivityService.js";
 
 export async function protect(req, res, next) {
   try {
@@ -44,6 +45,7 @@ export async function protect(req, res, next) {
     await refreshUserAccess(user);
 
     req.user = user;
+    recordFounderActivitySafely({ user });
  
 
     

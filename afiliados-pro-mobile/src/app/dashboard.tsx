@@ -321,7 +321,8 @@ if (userId) {
 />
 
 {founderEndsAt ? (
-  <View
+  <TouchableOpacity
+    onPress={() => router.push("/founder-feedback" as any)}
     style={{
       backgroundColor: "#173d32",
       borderColor: "#34d399",
@@ -338,7 +339,10 @@ if (userId) {
     <Text style={{ color: "#d1fae5", fontSize: 13, marginTop: 6 }}>
       Seus recursos PRO estão liberados por mais {founderDaysRemaining} {founderDaysRemaining === 1 ? "dia" : "dias"}.
     </Text>
-  </View>
+    <Text style={{ color: "#5eead4", fontSize: 13, fontWeight: "bold", marginTop: 10 }}>
+      Enviar opinião →
+    </Text>
+  </TouchableOpacity>
 ) : null}
 
 <Kael />

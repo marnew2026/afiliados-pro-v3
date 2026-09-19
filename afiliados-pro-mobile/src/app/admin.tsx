@@ -159,6 +159,25 @@ const failed = filteredWithdraws.filter(
 >
   🛠 Painel Admin
 </Text>
+
+<TouchableOpacity
+  onPress={() => router.push("/beta-center" as any)}
+  style={{
+    backgroundColor: "#0f766e",
+    borderColor: "#5eead4",
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+  }}
+>
+  <Text style={{ color: "#fff", fontSize: 17, fontWeight: "bold" }}>
+    Centro da Beta
+  </Text>
+  <Text style={{ color: "#ccfbf1", marginTop: 5 }}>
+    Acompanhe ativação, retenção, conversão e opiniões dos fundadores.
+  </Text>
+</TouchableOpacity>
 <View
   style={{
     flexDirection: "row",
