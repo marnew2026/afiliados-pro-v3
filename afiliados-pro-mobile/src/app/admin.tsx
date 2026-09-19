@@ -193,6 +193,34 @@ valor={String(stats.totalWithdraws)}
   />
 </View>
 
+<TouchableOpacity
+  onPress={() => router.push("/integration-readiness" as any)}
+  style={{
+    backgroundColor: "#0f766e",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+  }}
+>
+  <Text
+    style={{
+      color: "#fff",
+      fontSize: 17,
+      fontWeight: "bold",
+    }}
+  >
+    Centro de Prontidão das Integrações
+  </Text>
+  <Text
+    style={{
+      color: "#ccfbf1",
+      marginTop: 5,
+    }}
+  >
+    Consulte Meta, TikTok, Kwai e Telegram com segurança
+  </Text>
+</TouchableOpacity>
+
  
  <TextInput
   placeholder="Pesquisar nome, email ou PIX..."
