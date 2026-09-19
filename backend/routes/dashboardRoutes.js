@@ -14,9 +14,12 @@ import {
   refreshUserAccess,
 } from "../services/founding/UserAccessService.js";
 import { recordFounderActivitySafely } from "../services/founding/FounderActivityService.js";
+import { protect } from "../middlewares/authMiddleware.js";
+import { requireIntegrationAdmin } from "../middlewares/integrationAdminMiddleware.js";
+import { requireSelfParam } from "../middlewares/userOwnershipMiddleware.js";
 
 const router = express.Router();
-router.get("/debug/finance/:userId", async (req, res) => {
+router.get("/debug/finance/:userId", protect, requireIntegrationAdmin, async (req, res) => {
   try {
     const { userId } = req.params;
    
@@ -56,7 +59,7 @@ const ledger = await Ledger.find({
 });
 
 
-router.get("/debug/ledger-total/:userId", async (req, res) => {
+router.get("/debug/ledger-total/:userId", protect, requireIntegrationAdmin, async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -107,7 +110,7 @@ router.get("/debug/ledger-total/:userId", async (req, res) => {
   }
 });
 
-router.get("/:userId", async (req, res) => {
+router.get("/:userId", protect, requireSelfParam("userId"), async (req, res) => {
  
 
   console.log("=================================");

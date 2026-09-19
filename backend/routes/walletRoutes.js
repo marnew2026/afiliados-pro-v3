@@ -1,10 +1,12 @@
 import express from "express";
 import Wallet from "../models/Wallet.js";
 import User from "../models/User.js";
+import { protect } from "../middlewares/authMiddleware.js";
+import { requireSelfParam } from "../middlewares/userOwnershipMiddleware.js";
 
 const router = express.Router();
 
-router.get("/:userId", async (req, res) => {
+router.get("/:userId", protect, requireSelfParam("userId"), async (req, res) => {
   try {
     const { userId } = req.params;
 

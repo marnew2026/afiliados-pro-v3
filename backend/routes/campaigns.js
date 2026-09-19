@@ -9,6 +9,7 @@ import { rebuildWallet } from "../src/services/rebuildWallet.js";
 import axios from "axios";
 import ClickLog from "../models/ClickLog.js";
 import { toCents, toReais, fixMoney } from "../utils/money.js";
+import { requireSelfParam } from "../middlewares/userOwnershipMiddleware.js";
 const router = express.Router();
 
 /**
@@ -90,7 +91,7 @@ if (!/^https?:\/\/.+/i.test(link)) {
 /**
  * Listar campanhas do usuário
  */
-router.get("/user/:userId", async (req, res) => {
+router.get("/user/:userId", protect, requireSelfParam("userId"), async (req, res) => {
   try {
 
    const { userId } = req.params;

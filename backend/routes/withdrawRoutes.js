@@ -5,8 +5,10 @@ import User from "../models/User.js";
 import Withdraw from "../models/Withdraw.js";
 
 import { lockWallet } from "../src/lib/walletLock.js";
+import { protect } from "../middlewares/authMiddleware.js";
+import { requireSelfBody } from "../middlewares/userOwnershipMiddleware.js";
 const router = express.Router();
-router.post("/create", async (req, res) => {
+router.post("/create", protect, requireSelfBody("userId"), async (req, res) => {
 console.log("💸 SOLICITAÇÃO DE SAQUE RECEBIDA");
   try {
 
@@ -53,6 +55,7 @@ if (!user) {
 
 const existingWithdraw = await Withdraw.findOne({
   withdrawId,
+  userId,
 });
 
 if (existingWithdraw) {
@@ -131,6 +134,7 @@ return res.json(result);
     if (err.code === 11000) {
       const withdraw = await Withdraw.findOne({
         withdrawId: req.body.withdrawId,
+        userId: req.user?._id,
       });
 
       return res.json({
