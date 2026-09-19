@@ -53,6 +53,8 @@ const user = await User.findOneAndUpdate(
     $set: {
       isPro: true,
       plan: "PRO",
+      accessSource: "STRIPE",
+      proAccessEndsAt: null,
       status: "done",
       lastProcessedAt: new Date(),
     },

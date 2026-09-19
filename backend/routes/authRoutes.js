@@ -3,6 +3,11 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
+import { grantFoundingAccess } from "../services/founding/FoundingCohortService.js";
+import {
+  publicAccessDetails,
+  refreshUserAccess,
+} from "../services/founding/UserAccessService.js";
 
 const router = express.Router();
 
@@ -39,16 +44,28 @@ router.post("/register", async (req, res) => {
       affiliateCode,
     });
 
+    try {
+      await grantFoundingAccess({ user });
+    } catch (founderError) {
+      console.error("ERRO FOUNDING COHORT:", founderError.message);
+    }
+
     console.log("✅ USUÁRIO CRIADO NO MONGO");
+
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "30d" }
+    );
 
     return res.status(201).json({
       message: "Usuário criado com sucesso",
+      token,
       user: {
         _id: user._id,
         name: user.name,
         email: user.email,
-        plan: user.plan,
-        isPro: user.isPro,
+        ...publicAccessDetails(user),
         role: user.role,
       },
     });
@@ -88,6 +105,8 @@ router.post("/login", async (req, res) => {
       });
     }
 
+    await refreshUserAccess(user);
+
     const ok = await bcrypt.compare(
       password,
       user.password.trim()
@@ -115,8 +134,7 @@ router.post("/login", async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
-        plan: user.plan,
-        isPro: user.isPro,
+        ...publicAccessDetails(user),
         role: user.role,
       },
     });

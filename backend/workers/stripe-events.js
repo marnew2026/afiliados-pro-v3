@@ -101,8 +101,11 @@ export const worker = new Worker(
       if (userId) {
         const user = await User.findById(userId);
 
-        if (user && !user.isPro) {
+        if (user) {
           user.isPro = true;
+          user.plan = "PRO";
+          user.accessSource = "STRIPE";
+          user.proAccessEndsAt = null;
           await user.save();
         }
       }

@@ -33,6 +33,27 @@ password: {
     default: false,
   },
 
+  accessSource: {
+    type: String,
+    enum: ["FREE", "FOUNDER_TRIAL", "STRIPE", "LEGACY"],
+    default: "FREE",
+  },
+
+  proAccessEndsAt: {
+    type: Date,
+    default: null,
+  },
+
+  founderTrialGrantedAt: {
+    type: Date,
+    default: null,
+  },
+
+  founderTrialClaimNumber: {
+    type: Number,
+    default: null,
+  },
+
   status: {
     type: String,
     enum: ["pending", "processing", "done", "failed"],

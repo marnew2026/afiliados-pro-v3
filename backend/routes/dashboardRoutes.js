@@ -9,6 +9,10 @@ import Wallet from "../models/Wallet.js";
 import Withdraw from "../models/Withdraw.js";
 import Ledger from "../models/Ledger.js";
 import { toCents, toReais, fixMoney } from "../utils/money.js";
+import {
+  publicAccessDetails,
+  refreshUserAccess,
+} from "../services/founding/UserAccessService.js";
 
 const router = express.Router();
 router.get("/debug/finance/:userId", async (req, res) => {
@@ -138,6 +142,8 @@ console.log("==================================");
       });
     }
 
+    await refreshUserAccess(user);
+
     // Busca campanhas
     const campaigns = await Campaign.find({
       userId: user._id,
@@ -205,8 +211,7 @@ const campaignsFixed = campaigns.map((campaign) => {
   _id: user._id,
   email: user.email,
   name: user.name,
-  isPro: user.isPro,
-  plan: user.plan,
+  ...publicAccessDetails(user),
   status: user.status,
 },
  campaigns: campaignsFixed,

@@ -60,6 +60,9 @@ type DashboardState = {
     email: string;
     plan: string;
     isPro: boolean;
+    accessSource?: string;
+    proAccessEndsAt?: string | null;
+    founderTrialClaimNumber?: number | null;
   };
 
 };
@@ -269,6 +272,12 @@ if (userId) {
 
   const d = dashboard;
   const list = campaigns;
+  const founderEndsAt = d.user?.accessSource === "FOUNDER_TRIAL"
+    ? d.user?.proAccessEndsAt
+    : null;
+  const founderDaysRemaining = founderEndsAt
+    ? Math.max(0, Math.ceil((new Date(founderEndsAt).getTime() - Date.now()) / 86400000))
+    : 0;
   
 
 
@@ -310,6 +319,27 @@ if (userId) {
  <HomeHeader
   name={d.user?.name}
 />
+
+{founderEndsAt ? (
+  <View
+    style={{
+      backgroundColor: "#173d32",
+      borderColor: "#34d399",
+      borderWidth: 1,
+      borderRadius: 18,
+      padding: 16,
+      marginTop: 14,
+      marginBottom: 4,
+    }}
+  >
+    <Text style={{ color: "#6ee7b7", fontSize: 17, fontWeight: "bold" }}>
+      Fundador Afiliados Pro #{d.user?.founderTrialClaimNumber || "—"}
+    </Text>
+    <Text style={{ color: "#d1fae5", fontSize: 13, marginTop: 6 }}>
+      Seus recursos PRO estão liberados por mais {founderDaysRemaining} {founderDaysRemaining === 1 ? "dia" : "dias"}.
+    </Text>
+  </View>
+) : null}
 
 <Kael />
 
@@ -527,7 +557,9 @@ if (userId) {
   if (d.isPro) {
 Alert.alert(
   "👑 Benefícios PRO",
-  "Sua assinatura está ativa.\n\nTodos os recursos já estão liberados."
+  founderEndsAt
+    ? `Seu acesso fundador está ativo por mais ${founderDaysRemaining} ${founderDaysRemaining === 1 ? "dia" : "dias"}.\n\nTodos os recursos já estão liberados.`
+    : "Sua assinatura está ativa.\n\nTodos os recursos já estão liberados."
 );
     return;
   }

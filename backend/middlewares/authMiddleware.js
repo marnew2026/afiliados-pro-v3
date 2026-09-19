@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import { refreshUserAccess } from "../services/founding/UserAccessService.js";
 
 export async function protect(req, res, next) {
   try {
@@ -39,6 +40,8 @@ export async function protect(req, res, next) {
         error: "Usuário não encontrado",
       });
     }
+
+    await refreshUserAccess(user);
 
     req.user = user;
  

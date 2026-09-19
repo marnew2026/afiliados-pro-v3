@@ -10,12 +10,13 @@ import { useRouter } from "expo-router";
 export default function Signup() {
   const router = useRouter();
 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
  const handleSignup = async () => {
-  if (!email || !password) {
+  if (!name.trim() || !email.trim() || !password) {
     Alert.alert("Preencha todos os campos");
     return;
   }
@@ -27,9 +28,9 @@ export default function Signup() {
 
     // 2) Registra/Login no backend
     const { data } = await api.post("/auth/register", {
-      name,
-  email,
-  password,
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      password,
      
     });
 
@@ -66,6 +67,14 @@ export default function Signup() {
       <Text style={{ fontSize: 22, marginBottom: 20 }}>
         Criar conta
       </Text>
+
+      <TextInput
+        placeholder="Nome"
+        value={name}
+        onChangeText={setName}
+        autoCapitalize="words"
+        style={{ borderWidth: 1, marginBottom: 10, padding: 10 }}
+      />
 
       <TextInput
         placeholder="Email"
