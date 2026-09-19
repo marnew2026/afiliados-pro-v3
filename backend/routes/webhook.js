@@ -4,6 +4,7 @@ import Stripe from "stripe";
 
 
 import User from "../models/User.js";
+import { applyStripeSubscriptionEvent } from "../services/billing/StripeSubscriptionService.js";
 
 const router = express.Router();
 
@@ -29,54 +30,12 @@ router.post(
 
       console.log("EVENTO:", event.type);
 
-      /* =========================
-         PAGAMENTO APROVADO
-      ========================= */
-      if (event.type === "checkout.session.completed") {
-            console.log("✅ EVENTO CORRETO");
-        const session = event.data.object;
-            
-        const email = session.customer_email;
+      const result = await applyStripeSubscriptionEvent({
+        event,
+        UserModel: User,
+      });
 
-     console.log("================================");
-console.log("💳 PAGAMENTO APROVADO");
-
-console.log("================================");
-
-        
-
-
-        /* MONGODB */
-const user = await User.findOneAndUpdate(
-  { email },
-  {
-    $set: {
-      isPro: true,
-      plan: "PRO",
-      accessSource: "STRIPE",
-      proAccessEndsAt: null,
-      status: "done",
-      lastProcessedAt: new Date(),
-    },
-  },
-  {
-    new: true,
-  }
-);
-
-if (!user) {
- 
-} else {
-
-}
-
-
-console.log("================================");
-console.log("USUÁRIO ATUALIZADO");
-
-console.log("================================");
-console.log("✅ MONGO PRO OK");;
-      }
+      console.log("STRIPE ACAO:", result.action);
       res.json({
         received: true,
       });

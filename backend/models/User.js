@@ -54,6 +54,31 @@ password: {
     default: null,
   },
 
+  stripeCustomerId: {
+    type: String,
+    default: null,
+  },
+
+  stripeSubscriptionId: {
+    type: String,
+    default: null,
+  },
+
+  stripeSubscriptionStatus: {
+    type: String,
+    default: null,
+  },
+
+  stripeLastCheckoutSessionId: {
+    type: String,
+    default: null,
+  },
+
+  stripeLastEventId: {
+    type: String,
+    default: null,
+  },
+
   status: {
     type: String,
     enum: ["pending", "processing", "done", "failed"],

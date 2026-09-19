@@ -1,35 +1,28 @@
 import express from "express";
 import Stripe from "stripe";
+import { protect } from "../middlewares/authMiddleware.js";
+import { buildProCheckoutSession } from "../services/billing/StripeSubscriptionService.js";
 console.log("🔥 CHECKOUT ROUTE CARREGADA");
 const router = express.Router();
 console.log("🔥 CHECKOUT ROUTES CARREGADA");
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-router.post("/create-checkout", async (req, res) => {
+router.post("/create-checkout", protect, async (req, res) => {
 
     console.log("🔥 CREATE CHECKOUT CHAMADO");
     console.log("🔥🔥🔥 CHECKOUT.JS FOI IMPORTADO 🔥🔥🔥");
   try {
-    const { email } = req.body;
-
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price: process.env.STRIPE_PRICE_ID,
-          quantity: 1,
-        },
-      ],
-      customer_email: email,
-      success_url: `${process.env.BASE_URL}/success`,
-      cancel_url: `${process.env.BASE_URL}/cancel`,
+    const params = buildProCheckoutSession({
+      user: req.user,
+      priceId: process.env.STRIPE_PRICE_ID,
+      baseUrl: process.env.BASE_URL,
     });
+    const session = await stripe.checkout.sessions.create(params);
 
     return res.json({ url: session.url });
   } catch (err) {
-    console.log(err);
-    return res.status(500).json({ error: err.message });
+    console.log("ERRO AO CRIAR CHECKOUT:", err.message);
+    return res.status(500).json({ error: "Falha ao abrir pagamento" });
   }
 });
 
