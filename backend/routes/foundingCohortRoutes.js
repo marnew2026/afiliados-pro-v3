@@ -9,6 +9,10 @@ import Distribution from "../models/Distribution.js";
 import { protect } from "../middlewares/authMiddleware.js";
 import { requireIntegrationAdmin } from "../middlewares/integrationAdminMiddleware.js";
 import { getFoundingCohortConfig } from "../services/founding/FoundingCohortService.js";
+import {
+  buildFeedbackAdminRows,
+  buildFounderAdminRows,
+} from "../services/founding/FounderAdminViewService.js";
 
 const router = express.Router();
 
@@ -16,10 +20,10 @@ router.get("/", protect, requireIntegrationAdmin, async (req, res) => {
   try {
     const now = new Date();
     const config = getFoundingCohortConfig();
-    const [state, founders, feedbackSummary] = await Promise.all([
+    const [state, founders, feedbackSummary, recentFeedback] = await Promise.all([
       FoundingCohortState.findById("founding-users-v1").lean(),
       User.find({ founderTrialGrantedAt: { $ne: null } })
-        .select("_id accessSource proAccessEndsAt founderTrialGrantedAt")
+        .select("_id accessSource proAccessEndsAt founderTrialGrantedAt founderTrialClaimNumber")
         .lean(),
       FounderFeedback.aggregate([
         {
@@ -31,6 +35,11 @@ router.get("/", protect, requireIntegrationAdmin, async (req, res) => {
           },
         },
       ]),
+      FounderFeedback.find({})
+        .select("userId rating wouldRecommend mostValuable biggestDifficulty comment status createdAt updatedAt")
+        .sort({ updatedAt: -1 })
+        .limit(50)
+        .lean(),
     ]);
 
     const claimed = Number(state?.claimedCount || 0);
@@ -85,6 +94,9 @@ router.get("/", protect, requireIntegrationAdmin, async (req, res) => {
       (founder) => founder.accessSource === "STRIPE"
     ).length;
     const feedback = feedbackSummary[0] || {};
+    const founderNumberById = new Map(
+      founders.map((founder) => [String(founder._id), founder.founderTrialClaimNumber])
+    );
 
     return res.json({
       success: true,
@@ -121,6 +133,11 @@ router.get("/", protect, requireIntegrationAdmin, async (req, res) => {
               ? Number(((feedback.recommendCount / feedback.responses) * 100).toFixed(2))
               : 0,
         },
+        founders: buildFounderAdminRows({ founders, activityDays, now }),
+        recentFeedback: buildFeedbackAdminRows({
+          feedbackItems: recentFeedback,
+          founderNumberById,
+        }),
       },
     });
   } catch (error) {

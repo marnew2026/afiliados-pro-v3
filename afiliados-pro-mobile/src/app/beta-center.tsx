@@ -19,6 +19,17 @@ function Metric({ label, value }: { label: string; value: string | number }) {
   );
 }
 
+const founderStatus: Record<string, { label: string; color: string }> = {
+  active: { label: "Ativo", color: "#34d399" },
+  converted: { label: "Assinante", color: "#38bdf8" },
+  expired: { label: "Expirado", color: "#fbbf24" },
+};
+
+function formatDate(value?: string | null) {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(new Date(value));
+}
+
 export default function BetaCenter() {
   const [cohort, setCohort] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -88,6 +99,34 @@ export default function BetaCenter() {
               <Metric label="Nota média" value={cohort.feedback?.averageRating || 0} />
               <Metric label="Recomendariam" value={`${cohort.feedback?.recommendationRate || 0}%`} />
             </View>
+
+            <Text style={{ color: "#fff", fontSize: 19, fontWeight: "bold", marginTop: 12, marginBottom: 12 }}>Fundadores</Text>
+            {(cohort.founders || []).map((founder: any) => {
+              const status = founderStatus[founder.status] || founderStatus.expired;
+              return (
+                <View key={founder.founderNumber} style={{ backgroundColor: "#1e293b", borderRadius: 14, padding: 15, marginBottom: 10 }}>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>Fundador #{founder.founderNumber}</Text>
+                    <Text style={{ color: status.color, fontWeight: "bold" }}>{status.label}</Text>
+                  </View>
+                  <Text style={{ color: "#94a3b8", marginTop: 8 }}>Dias ativos: {founder.activeDays} · Último acesso: {formatDate(founder.lastActiveAt)}</Text>
+                  <Text style={{ color: "#94a3b8", marginTop: 4 }}>Acesso até: {formatDate(founder.accessEndsAt)}</Text>
+                </View>
+              );
+            })}
+
+            <Text style={{ color: "#fff", fontSize: 19, fontWeight: "bold", marginTop: 18, marginBottom: 12 }}>Opiniões recentes</Text>
+            {(cohort.recentFeedback || []).length === 0 ? (
+              <Text style={{ color: "#94a3b8" }}>Nenhuma opinião recebida.</Text>
+            ) : (cohort.recentFeedback || []).map((feedback: any, index: number) => (
+              <View key={`${feedback.founderNumber}-${index}`} style={{ backgroundColor: "#1e293b", borderRadius: 14, padding: 15, marginBottom: 10 }}>
+                <Text style={{ color: "#fff", fontWeight: "bold" }}>Fundador #{feedback.founderNumber} · {feedback.rating} ★</Text>
+                <Text style={{ color: "#cbd5e1", marginTop: 7 }}>Recomendaria: {feedback.wouldRecommend ? "Sim" : "Ainda não"}</Text>
+                <Text style={{ color: "#cbd5e1", marginTop: 4 }}>Mais valioso: {feedback.mostValuable}</Text>
+                <Text style={{ color: "#cbd5e1", marginTop: 4 }}>Dificuldade: {feedback.biggestDifficulty}</Text>
+                {feedback.comment ? <Text style={{ color: "#94a3b8", marginTop: 9 }}>“{feedback.comment}”</Text> : null}
+              </View>
+            ))}
           </>
         ) : null}
       </View>
