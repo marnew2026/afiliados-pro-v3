@@ -1,10 +1,14 @@
 import express from "express";
 import Withdraw from "../models/Withdraw.js";
 import User from "../models/User.js";
+import { protect } from "../middlewares/authMiddleware.js";
+import { requireIntegrationAdmin } from "../middlewares/integrationAdminMiddleware.js";
 
 console.log("🚀 ADMIN WITHDRAW ROUTES CARREGADA");
 
 const router = express.Router();
+
+router.use(protect, requireIntegrationAdmin);
 
 /**
  * LISTAR SAQUES
@@ -24,7 +28,9 @@ router.get("/", async (req, res) => {
       .lean();
 
     for (const item of withdrawals) {
-      const user = await User.findById(item.userId).lean();
+      const user = await User.findById(item.userId)
+        .select("_id name email plan isPro")
+        .lean();
 
 
 

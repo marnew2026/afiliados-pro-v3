@@ -5,8 +5,11 @@ import Wallet from "../models/Wallet.js";
 import Click from "../models/Click.js";
 import Conversion from "../models/Conversion.js";
 import Withdraw from "../models/Withdraw.js";
+import { protect } from "../middlewares/authMiddleware.js";
+import { requireIntegrationAdmin } from "../middlewares/integrationAdminMiddleware.js";
 
 const router = express.Router();
+router.use(protect, requireIntegrationAdmin);
 router.get("/stats", async (req, res) => {
   try {
     const totalUsers = await Wallet.countDocuments();
