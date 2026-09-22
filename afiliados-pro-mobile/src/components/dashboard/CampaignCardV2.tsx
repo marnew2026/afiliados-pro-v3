@@ -83,18 +83,18 @@ const performance =
     };
   });
   
-async function excluirCampanha() {
+async function arquivarCampanha() {
   Alert.alert(
-    "Excluir campanha",
-    "Tem certeza que deseja excluir esta campanha?\n\nEssa ação não poderá ser desfeita.",
+    "Arquivar campanha",
+    "Deseja arquivar esta campanha no Museu?\n\nEla será preservada com seu histórico e resultados.",
     [
       {
         text: "Cancelar",
         style: "cancel",
       },
       {
-        text: "Excluir",
-        style: "destructive",
+        text: "Arquivar",
+        style: "default",
         onPress: async () => {
           try {
             await api.delete(`/campaigns/${item._id}`);
@@ -105,13 +105,13 @@ async function excluirCampanha() {
               await loadDashboard(userId);
             }
 
-            Alert.alert("Sucesso", "Campanha excluída.");
+            Alert.alert("Sucesso", "Campanha arquivada no Museu.");
           } catch (err: any) {
             console.log(err);
 
             Alert.alert(
               "Erro",
-              err?.response?.data?.error || "Não foi possível excluir."
+              err?.response?.data?.error || "Não foi possível arquivar a campanha."
             );
           }
         },
@@ -437,15 +437,15 @@ elevation: 8,
   <TouchableOpacity
     style={{
       flex: 1,
-      backgroundColor: "#dc2626",
+      backgroundColor: "#422006",
       paddingVertical: 12,
       borderRadius: 12,
       alignItems: "center",
     }}
-    onPress={excluirCampanha}
+    onPress={arquivarCampanha}
   >
     <Text style={{ color: "#fff", fontWeight: "bold" }}>
-      🗑 Excluir
+      🏛 Arquivar
     </Text>
   </TouchableOpacity>
 </View>

@@ -91,6 +91,40 @@ if (!/^https?:\/\/.+/i.test(link)) {
 /**
  * Listar campanhas do usuário
  */
+router.get("/museum", protect, async (req, res) => {
+  try {
+    const userId = req.user?._id || req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: "Usuário não autenticado",
+      });
+    }
+
+    const campaigns = await Campaign.find({
+      userId,
+      status: "archived",
+    }).sort({ archivedAt: -1, createdAt: -1 });
+
+    const campaignsFixed = campaigns.map((campaign) => {
+      const data = campaign.toObject();
+
+      return {
+        ...data,
+        earnings: fixMoney(data.earnings || 0),
+      };
+    });
+
+    return res.json(campaignsFixed);
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      error: err.message,
+    });
+  }
+});
+
 router.get("/user/:userId", protect, requireSelfParam("userId"), async (req, res) => {
   try {
 
@@ -209,10 +243,16 @@ router.delete("/:id", protect, async (req, res) => {
       });
     }
 
-    await campaign.deleteOne();
+    campaign.active = false;
+    campaign.status = "archived";
+    campaign.archivedAt = new Date();
+
+    await campaign.save();
 
     return res.json({
       success: true,
+      archived: true,
+      campaignId: campaign._id,
     });
 
   } catch (err) {
@@ -244,6 +284,10 @@ console.time("CLICK_TOTAL");
 
   if (!campaign) {
     return res.status(404).send("Campanha não encontrada");
+  }
+
+  if (campaign.active !== true || campaign.status === "archived") {
+    return res.status(410).send("Campanha arquivada");
   }
 
 

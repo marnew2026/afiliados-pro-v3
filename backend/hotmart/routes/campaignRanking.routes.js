@@ -5,7 +5,7 @@ const router = express.Router();
 
 // 📊 TOP CAMPANHAS
 router.get("/", async (req, res) => {
-  const top = await Campaign.find({})
+  const top = await Campaign.find({ active: true })
     .sort({ clicks: -1 })
     .limit(10);
 

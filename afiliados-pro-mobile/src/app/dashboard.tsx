@@ -743,7 +743,53 @@ Alert.alert(
         </TouchableOpacity>
 
 
-      </View>
+              {/* MUSEU DE CAMPANHAS */}
+        <TouchableOpacity
+          onPress={() => router.push("/museu" as any)}
+          style={{
+            width:"48%",
+            backgroundColor:"#422006",
+            borderRadius:22,
+            paddingVertical:20,
+            paddingHorizontal:16,
+            marginBottom:16,
+            borderWidth:1,
+            borderColor:"#fbbf24",
+            shadowColor:"#fbbf24",
+            shadowOpacity:0.12,
+            shadowRadius:6,
+            elevation:4,
+          }}
+        >
+          <Ionicons
+            name="library"
+            size={34}
+            color="#fbbf24"
+          />
+
+          <Text
+            style={{
+              color:"#fff",
+              fontSize:18,
+              fontWeight:"bold",
+              marginTop:12,
+            }}
+          >
+            Museu de Campanhas
+          </Text>
+
+          <Text
+            style={{
+              color:"#fde68a",
+              fontSize:13,
+              marginTop:6,
+            }}
+          >
+            Preserve a história e os resultados das suas campanhas.
+          </Text>
+        </TouchableOpacity>
+
+</View>
         {/* ATIVIDADE RECENTE */}
 <View
   style={{

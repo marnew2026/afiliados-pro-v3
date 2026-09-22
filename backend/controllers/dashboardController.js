@@ -13,8 +13,9 @@ export default async function dashboard(req, res) {
    
 
     const campaigns = await Campaign.find({
-  userId: new mongoose.Types.ObjectId(req.user.id),
-});
+      userId: new mongoose.Types.ObjectId(req.user.id),
+      active: true,
+    });
 
     res.json({
       totalEarnings: wallet?.totalEarned || 0,

@@ -26,8 +26,13 @@ const CampaignSchema = new mongoose.Schema(
     // Já deixa preparado para futuras versões
     status: {
       type: String,
-      enum: ["active", "paused"],
+      enum: ["active", "paused", "archived"],
       default: "active",
+    },
+
+    archivedAt: {
+      type: Date,
+      default: null,
     },
 
     clicks: {

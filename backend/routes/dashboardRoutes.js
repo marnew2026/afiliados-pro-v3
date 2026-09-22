@@ -33,6 +33,7 @@ router.get("/debug/finance/:userId", protect, requireIntegrationAdmin, async (re
 
 const campaigns = await Campaign.find({
   userId: mongoUserId,
+  active: true,
 });
 
 const wallet = await Wallet.findOne({
@@ -155,6 +156,7 @@ console.log("==================================");
     // Busca campanhas
     const campaigns = await Campaign.find({
       userId: user._id,
+      active: true,
     });
     console.log("==============================");
 console.log("CAMPANHAS ENCONTRADAS:");
