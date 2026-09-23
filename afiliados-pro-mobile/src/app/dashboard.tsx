@@ -27,6 +27,7 @@ import useDashboard from "../hooks/useDashboard";
 import PerformanceCard from "../components/dashboard/PerformanceCard";
 import BalanceCard from "../components/dashboard/BalanceCard";
 import HomeHeader from "../components/dashboard/HomeHeader";
+import SessionLogoutButton from "../components/dashboard/SessionLogoutButton";
 import StatsCards from "../components/dashboard/StatsCards";
 
 
@@ -324,6 +325,7 @@ if (userId) {
  <HomeHeader
   name={d.user?.name}
 />
+<SessionLogoutButton />
 
 {founderEndsAt ? (
   <TouchableOpacity

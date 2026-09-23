@@ -16,7 +16,10 @@ router.post("/register", async (req, res) => {
   console.log("🚀 ENTROU NA ROTA /auth/register");
 
   try {
-    const { name, email, password } = req.body;
+    const { name, password } = req.body;
+    const email = String(req.body?.email || "")
+      .trim()
+      .toLowerCase();
 
     if (!name || !email || !password) {
       return res.status(400).json({
@@ -83,7 +86,10 @@ router.post("/login", async (req, res) => {
  
 
   try {
-    const { email, password } = req.body;
+    const { password } = req.body;
+    const email = String(req.body?.email || "")
+      .trim()
+      .toLowerCase();
 
     if (!email || !password) {
       return res.status(400).json({

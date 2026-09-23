@@ -22,7 +22,7 @@ async function entrar() {
   
 
     const { data } = await api.post("/auth/login", {
-      email,
+      email: email.trim().toLowerCase(),
       password,
     });
 
@@ -41,10 +41,11 @@ async function entrar() {
    console.log("====================================");
 
  // 💾 SALVAR TOKEN
-await AsyncStorage.setItem("token", data.token);
-
-// 💾 SALVAR MONGO USER ID
-await AsyncStorage.setItem("userId", data.user._id);
+await AsyncStorage.multiSet([
+  ["token", data.token],
+  ["userId", data.user._id],
+  ["email", data.user.email],
+]);
 
 console.log("========== LOGIN PERSISTENTE ==========");
 
