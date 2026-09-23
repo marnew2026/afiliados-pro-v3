@@ -4,11 +4,9 @@ import Campaign from "../models/Campaign.js";
 import User from "../models/User.js";
 import { protect } from "../middlewares/authMiddleware.js";
 import { registerClick } from "../services/clickService.js";
-import { addCredit } from "../services/ledgerService.js";
-import { rebuildWallet } from "../src/services/rebuildWallet.js";
 import axios from "axios";
 import ClickLog from "../models/ClickLog.js";
-import { toCents, toReais, fixMoney } from "../utils/money.js";
+import { fixMoney } from "../utils/money.js";
 import { requireSelfParam } from "../middlewares/userOwnershipMiddleware.js";
 const router = express.Router();
 
@@ -327,14 +325,7 @@ if (repetido) {
     // Incrementa os cliques
     campaign.clicks += 1;
 
-    // Valor do clique (ajuste depois se desejar)
-    const valorClique = 0.10;
-  console.log("Salvando campanha...");
- const earningsCents =
-  toCents(campaign.earnings || 0) +
-  toCents(valorClique);
-
-campaign.earnings = toReais(earningsCents);
+    // Clique e metrica de engajamento; nao gera credito monetario.
     if (!campaign.lastClicks) {
   campaign.lastClicks = [];
 }
@@ -376,50 +367,7 @@ console.timeEnd("clickLog");
 
 console.log("✅ ClickLog salvo");
 
- console.log("➡️ Chamando addCredit...");
-
-const referenceId = `click-${campaign._id}-${Date.now()}`;
-
-console.log("💰 ADD CREDIT INICIO");
-
-console.log({
-  userId: campaign.userId.toString(),
-  amount: valorClique,
-  referenceId
-});
-
-console.time("addCredit");
-await addCredit({
-  userId: campaign.userId.toString(),
-  amount: valorClique,
-  referenceId,
-  source: "campaign",
-  description: "Clique em campanha",
-  metadata: {
-    campaignId: campaign._id,
-  },
-});
-console.timeEnd("addCredit");
-
-
-   console.log("✅ ADD CREDIT FINALIZADO");
-console.log({
- userId: campaign.userId.toString(),
- valorCreditado: valorClique,
- referencia: referenceId
-});
-    console.log("3️⃣ Vai chamar rebuildWallet");
-console.log("🚨 ANTES DO REBUILD WALLET");
-console.time("rebuildWallet");
-const wallet = await rebuildWallet(
-  campaign.userId.toString()
-);
-console.log("🚨 DEPOIS DO REBUILD WALLET");
-console.log("4️⃣ RebuildWallet terminou");
-
-console.log("===== WALLET FINAL DO CLICK =====");
-
-console.log("===============================");
+console.log("CLICK PROCESSADO SEM CREDITO MONETARIO");
 console.timeEnd("CLICK_TOTAL");
 
     return res.redirect(campaign.link);
