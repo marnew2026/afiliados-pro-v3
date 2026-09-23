@@ -12,6 +12,7 @@ import { useRouter } from "expo-router";
 
 import { useDistributions } from "../hooks/useDistributions";
 import { useAutopilotSettings } from "../hooks/useAutopilotSettings";
+import TikTokConnectionCard from "../components/distribution/TikTokConnectionCard";
 
 export default function DistributionScreen() {
   const router = useRouter();
@@ -1013,6 +1014,8 @@ const autopilotOperationalStatus =
             color="#ccfbf1"
           />
         </TouchableOpacity>
+
+        <TikTokConnectionCard />
 
         <View
           style={{

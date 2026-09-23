@@ -110,7 +110,7 @@ export default function DistributionLoginScreen() {
             marginBottom: 28,
           }}
         >
-          Ambiente V4 de testes. Esta sessão é separada do login principal do Afiliados Pro.
+          Acesse com sua conta do Afiliados Pro para gerenciar suas divulga??es.
         </Text>
 
         <Text
@@ -129,7 +129,7 @@ export default function DistributionLoginScreen() {
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
-          placeholder="Email do staging"
+          placeholder="Email do Afiliados Pro"
           placeholderTextColor="#64748b"
           editable={!loading}
           style={{

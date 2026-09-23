@@ -111,12 +111,14 @@ export default function IntegrationReadinessScreen() {
     } catch (requestError: any) {
       const status = requestError?.response?.status;
       const sessionError =
-        requestError?.code === "NO_SESSION" || status === 401 || status === 403;
+        requestError?.code === "NO_SESSION" || status === 401;
 
       setNeedsLogin(sessionError);
       setError(
         sessionError
-          ? "Entre na area de Divulgacao V4 com a conta administrativa."
+          ? "Entre na Central de Divulgacao para continuar."
+          : status === 403
+          ? "Sua conta nao possui permissao para consultar a prontidao."
           : "Nao foi possivel consultar as integracoes. Tente novamente."
       );
     } finally {
