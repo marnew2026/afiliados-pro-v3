@@ -45,6 +45,20 @@ const CampaignSchema = new mongoose.Schema(
       default: 0,
     },
 
+    earningsAudit: {
+      invalidatedAmount: {
+        type: Number,
+        default: null,
+      },
+      invalidatedAt: {
+        type: Date,
+        default: null,
+      },
+      reason: {
+        type: String,
+        default: null,
+      },
+    },
     sales: {
       type: Number,
       default: 0,
