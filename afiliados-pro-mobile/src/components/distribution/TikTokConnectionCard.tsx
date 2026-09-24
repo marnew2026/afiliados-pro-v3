@@ -126,7 +126,7 @@ export default function TikTokConnectionCard() {
           }}
         >
           <Ionicons
-            name="musical-notes"
+            name="logo-tiktok"
             size={25}
             color="#ffffff"
           />

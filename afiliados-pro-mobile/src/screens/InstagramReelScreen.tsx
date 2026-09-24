@@ -13,17 +13,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 import {
-  createTikTokDraft,
-  getTikTokReviewOptions,
-  TikTokReviewOption,
-} from "../services/tiktokDistributionService";
+  createInstagramReel,
+  getInstagramReviewOptions,
+  InstagramReviewOption,
+} from "../services/instagramDistributionService";
 
-export default function TikTokDraftScreen() {
+export default function InstagramReelScreen() {
   const router = useRouter();
 
   const [connected, setConnected] = useState(false);
   const [destinationName, setDestinationName] = useState("");
-  const [options, setOptions] = useState<TikTokReviewOption[]>([]);
+  const [options, setOptions] = useState<InstagramReviewOption[]>([]);
   const [selectedMediaAssetId, setSelectedMediaAssetId] =
     useState("");
   const [caption, setCaption] = useState("");
@@ -36,11 +36,11 @@ export default function TikTokDraftScreen() {
       setLoading(true);
       setError(null);
 
-      const result = await getTikTokReviewOptions();
+      const result = await getInstagramReviewOptions();
 
       setConnected(result.connected === true);
       setDestinationName(
-        result.connection?.destinationName || "Conta TikTok"
+        result.connection?.destinationName || "Conta Instagram"
       );
       setOptions(
         Array.isArray(result.options) ? result.options : []
@@ -49,7 +49,7 @@ export default function TikTokDraftScreen() {
       setError(
         err?.response?.data?.error ||
           err?.message ||
-          "Não foi possível carregar os vídeos do TikTok."
+          "Não foi possível carregar os vídeos do Instagram."
       );
     } finally {
       setLoading(false);
@@ -74,11 +74,11 @@ export default function TikTokDraftScreen() {
     caption.trim().length >= 10 &&
     !submitting;
 
-  function confirmDraft() {
+  function confirmPublish() {
     if (!selectedOption) {
       Alert.alert(
-        "Vídeo obrigatório",
-        "Selecione uma campanha com vídeo pronto."
+        "V\u00eddeo obrigat\u00f3rio",
+        "Selecione uma campanha com v\u00eddeo pronto."
       );
       return;
     }
@@ -92,24 +92,25 @@ export default function TikTokDraftScreen() {
     }
 
     Alert.alert(
-      "Enviar rascunho ao TikTok",
-      "O vídeo será enviado como rascunho para " +
+      "Publicar Reel no Instagram?",
+      "O v\u00eddeo ser\u00e1 enviado para publica\u00e7\u00e3o imediata no perfil " +
         destinationName +
-        ". Você ainda precisará revisar e publicar dentro do TikTok.",
+        ". Confirme somente se a conta, o v\u00eddeo e a legenda estiverem corretos.",
       [
         {
           text: "Cancelar",
           style: "cancel",
         },
         {
-          text: "Enviar rascunho",
-          onPress: sendDraft,
+          text: "Publicar Reel",
+          style: "destructive",
+          onPress: sendReel,
         },
       ]
     );
   }
 
-  async function sendDraft() {
+  async function sendReel() {
     if (!selectedOption || submitting) {
       return;
     }
@@ -117,7 +118,7 @@ export default function TikTokDraftScreen() {
     try {
       setSubmitting(true);
 
-      const result = await createTikTokDraft({
+      const result = await createInstagramReel({
         campaignId: selectedOption.campaignId,
         mediaAssetId: selectedOption.mediaAssetId,
         caption: caption.trim(),
@@ -126,29 +127,29 @@ export default function TikTokDraftScreen() {
       if (!result.success) {
         throw new Error(
           result.error ||
-            "Não foi possível enviar o rascunho."
+            "N\u00e3o foi poss\u00edvel enviar o Reel para processamento."
         );
       }
 
       Alert.alert(
-        "Rascunho enviado",
-        result.nextStep ||
-          "Abra a caixa de entrada do TikTok para revisar o vídeo."
+        "Reel enviado para processamento",
+        "O Instagram est\u00e1 processando a publica\u00e7\u00e3o. " +
+          "Acompanhe o status antes de realizar um novo envio."
       );
 
       setCaption("");
       setSelectedMediaAssetId("");
     } catch (err: any) {
       console.log(
-        "CREATE TIKTOK DRAFT ERROR:",
+        "CREATE INSTAGRAM REEL ERROR:",
         err?.response?.data || err?.message
       );
 
       Alert.alert(
-        "Falha no envio",
+        "Falha na publica\u00e7\u00e3o",
         err?.response?.data?.error ||
           err?.message ||
-          "Não foi possível enviar o rascunho ao TikTok."
+          "N\u00e3o foi poss\u00edvel publicar o Reel no Instagram."
       );
     } finally {
       setSubmitting(false);
@@ -195,7 +196,7 @@ export default function TikTokDraftScreen() {
           }}
         >
           <Ionicons
-            name="logo-tiktok"
+            name="logo-instagram"
             size={34}
             color="#ffffff"
           />
@@ -208,7 +209,7 @@ export default function TikTokDraftScreen() {
               marginLeft: 12,
             }}
           >
-            Rascunho TikTok
+            Publicar Reel no Instagram
           </Text>
         </View>
 
@@ -220,8 +221,7 @@ export default function TikTokDraftScreen() {
             marginBottom: 24,
           }}
         >
-          Envie um vídeo para revisar dentro do TikTok. Nada
-          será publicado automaticamente nesta etapa.
+          {"Revise o v\u00eddeo e a legenda com aten\u00e7\u00e3o. Ap\u00f3s sua confirma\u00e7\u00e3o, o Reel ser\u00e1 enviado para publica\u00e7\u00e3o."}
         </Text>
 
         {loading && (
@@ -268,8 +268,7 @@ export default function TikTokDraftScreen() {
             }}
           >
             <Text style={{ color: "#fde68a" }}>
-              Conecte sua conta TikTok antes de enviar um
-              rascunho.
+              {"Conecte sua conta Instagram antes de publicar um Reel."}
             </Text>
           </View>
         )}
@@ -292,7 +291,7 @@ export default function TikTokDraftScreen() {
                   fontWeight: "900",
                 }}
               >
-                TikTok conectado
+                Instagram conectado
               </Text>
 
               <Text
@@ -409,7 +408,7 @@ export default function TikTokDraftScreen() {
             <TextInput
               value={caption}
               onChangeText={setCaption}
-              placeholder="Escreva a legenda do TikTok..."
+              placeholder="Escreva a legenda do Instagram..."
               placeholderTextColor="#64748b"
               multiline
               maxLength={1800}
@@ -438,7 +437,7 @@ export default function TikTokDraftScreen() {
             </Text>
 
             <TouchableOpacity
-              onPress={confirmDraft}
+              onPress={confirmPublish}
               disabled={!canSubmit}
               style={{
                 backgroundColor: canSubmit
@@ -457,8 +456,8 @@ export default function TikTokDraftScreen() {
                 }}
               >
                 {submitting
-                  ? "Enviando..."
-                  : "Enviar rascunho ao TikTok"}
+                  ? "Publicando..."
+                  : "Publicar Reel no Instagram"}
               </Text>
             </TouchableOpacity>
 
@@ -471,8 +470,7 @@ export default function TikTokDraftScreen() {
                 marginTop: 12,
               }}
             >
-              Depois do envio, abra o TikTok para revisar e
-              concluir a publicação.
+              {"A publica\u00e7\u00e3o somente ser\u00e1 iniciada ap\u00f3s sua confirma\u00e7\u00e3o."}
             </Text>
           </>
         )}

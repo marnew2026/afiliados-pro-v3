@@ -255,6 +255,315 @@ async function handlePublish() {
             marginBottom: 8,
           }}
         >
+          Texto da divulgação
+        </Text>
+
+        <TextInput
+          value={text}
+          onChangeText={setText}
+          placeholder="Escreva a mensagem que será enviada junto com o link da campanha..."
+          placeholderTextColor="#64748b"
+          multiline
+          maxLength={3500}
+          textAlignVertical="top"
+          style={{
+            backgroundColor: "#1e293b",
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: "#334155",
+            color: "#ffffff",
+            paddingHorizontal: 16,
+            paddingVertical: 14,
+            fontSize: 15,
+            minHeight: 150,
+          }}
+        />
+
+        <Text
+          style={{
+            color: "#64748b",
+            fontSize: 12,
+            textAlign: "right",
+            marginTop: 6,
+            marginBottom: 22,
+          }}
+        >
+          {text.length}/3500
+        </Text>
+
+        <Text
+          style={{
+            color: "#ffffff",
+            fontSize: 15,
+            fontWeight: "800",
+            marginBottom: 10,
+          }}
+        >
+          Canal
+        </Text>
+
+        <TouchableOpacity
+          onPress={() =>
+            router.push("/tiktok-draft" as any)
+          }
+          style={{
+            backgroundColor: "#1e293b",
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: "#22c55e",
+            padding: 16,
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 12,
+          }}
+        >
+          <Ionicons
+            name="logo-tiktok"
+            size={24}
+            color="#ffffff"
+          />
+
+          <View
+            style={{
+              flex: 1,
+              marginLeft: 12,
+            }}
+          >
+            <Text
+              style={{
+                color: "#ffffff",
+                fontSize: 15,
+                fontWeight: "800",
+              }}
+            >
+              TikTok
+            </Text>
+
+            <Text
+              style={{
+                color: "#94a3b8",
+                fontSize: 12,
+                marginTop: 3,
+              }}
+            >
+              Enviar vídeo como rascunho
+            </Text>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={22}
+            color="#22c55e"
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() =>
+            router.push("/instagram-reel" as any)
+          }
+          style={{
+            backgroundColor: "#1e293b",
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: "#e1306c",
+            padding: 16,
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 12,
+          }}
+        >
+          <Ionicons
+            name="logo-instagram"
+            size={24}
+            color="#ffffff"
+          />
+
+          <View
+            style={{
+              flex: 1,
+              marginLeft: 12,
+            }}
+          >
+            <Text
+              style={{
+                color: "#ffffff",
+                fontSize: 15,
+                fontWeight: "800",
+              }}
+            >
+              Instagram
+            </Text>
+
+            <Text
+              style={{
+                color: "#94a3b8",
+                fontSize: 12,
+                marginTop: 3,
+              }}
+            >
+              Revisar e publicar um Reel
+            </Text>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={22}
+            color="#e1306c"
+          />
+        </TouchableOpacity>
+
+        <View
+          style={{
+            backgroundColor: "#1e293b",
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: "#8b5cf6",
+            padding: 16,
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 22,
+          }}
+        >
+          <Ionicons
+            name="paper-plane"
+            size={24}
+            color="#c4b5fd"
+          />
+
+          <View
+            style={{
+              flex: 1,
+              marginLeft: 12,
+            }}
+          >
+            <Text
+              style={{
+                color: "#ffffff",
+                fontSize: 15,
+                fontWeight: "800",
+              }}
+            >
+              Telegram
+            </Text>
+
+            <Text
+              style={{
+                color: "#94a3b8",
+                fontSize: 12,
+                marginTop: 3,
+              }}
+            >
+              Primeiro canal da Central
+            </Text>
+          </View>
+
+          <Ionicons
+            name="checkmark-circle"
+            size={22}
+            color="#c4b5fd"
+          />
+        </View>
+
+        <Text
+          style={{
+            color: "#ffffff",
+            fontSize: 15,
+            fontWeight: "800",
+            marginBottom: 10,
+          }}
+        >
+          Quando publicar
+        </Text>
+
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 12,
+            marginBottom: 28,
+          }}
+        >
+          <OptionButton
+            active={scheduleMode === "now"}
+            icon="flash-outline"
+            label="Agora"
+            onPress={() => setScheduleMode("now")}
+          />
+
+          <OptionButton
+            active={scheduleMode === "later"}
+            icon="calendar-outline"
+            label="Agendar"
+            onPress={() => setScheduleMode("later")}
+          />
+        </View>
+
+        {scheduleMode === "later" && (
+          <View
+            style={{
+              backgroundColor: "#1e293b",
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: "#334155",
+              padding: 16,
+              marginBottom: 24,
+            }}
+          >
+            <Text
+              style={{
+                color: "#cbd5e1",
+                fontSize: 13,
+                lineHeight: 19,
+              }}
+            >
+              O seletor de data e horário será conectado na próxima etapa.
+            </Text>
+          </View>
+        )}
+
+        <TouchableOpacity
+         onPress={handlePublish}
+disabled={submitting || !canContinue}
+          style={{
+            backgroundColor: canContinue
+              ? "#7c3aed"
+              : "#334155",
+            borderRadius: 16,
+            paddingVertical: 15,
+            alignItems: "center",
+          }}
+        >
+          <Text
+            style={{
+              color: "#ffffff",
+              fontSize: 16,
+              fontWeight: "900",
+            }}
+          >
+            {submitting
+  ? "Publicando..."
+  : "Publicar agora"}
+          </Text>
+        </TouchableOpacity>
+
+        <Text
+          style={{
+            color: "#64748b",
+            fontSize: 11,
+            textAlign: "center",
+            marginTop: 10,
+          }}
+        >
+          A publicação só será enviada após sua confirmação.
+        </Text>
+        <Text
+          style={{
+            color: "#ffffff",
+            fontSize: 15,
+            fontWeight: "800",
+            marginTop: 28,
+            marginBottom: 8,
+          }}
+        >
           Campanha
         </Text>
 
@@ -403,259 +712,6 @@ async function handlePublish() {
     </View>
   )}
 
-        <Text
-          style={{
-            color: "#ffffff",
-            fontSize: 15,
-            fontWeight: "800",
-            marginBottom: 8,
-          }}
-        >
-          Texto da divulgação
-        </Text>
-
-        <TextInput
-          value={text}
-          onChangeText={setText}
-          placeholder="Escreva a mensagem que será enviada junto com o link da campanha..."
-          placeholderTextColor="#64748b"
-          multiline
-          maxLength={3500}
-          textAlignVertical="top"
-          style={{
-            backgroundColor: "#1e293b",
-            borderRadius: 16,
-            borderWidth: 1,
-            borderColor: "#334155",
-            color: "#ffffff",
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-            fontSize: 15,
-            minHeight: 150,
-          }}
-        />
-
-        <Text
-          style={{
-            color: "#64748b",
-            fontSize: 12,
-            textAlign: "right",
-            marginTop: 6,
-            marginBottom: 22,
-          }}
-        >
-          {text.length}/3500
-        </Text>
-
-        <Text
-          style={{
-            color: "#ffffff",
-            fontSize: 15,
-            fontWeight: "800",
-            marginBottom: 10,
-          }}
-        >
-          Canal
-        </Text>
-
-        <TouchableOpacity
-          onPress={() =>
-            router.push("/tiktok-draft" as any)
-          }
-          style={{
-            backgroundColor: "#1e293b",
-            borderRadius: 16,
-            borderWidth: 1,
-            borderColor: "#22c55e",
-            padding: 16,
-            flexDirection: "row",
-            alignItems: "center",
-            marginBottom: 12,
-          }}
-        >
-          <Ionicons
-            name="musical-notes"
-            size={24}
-            color="#ffffff"
-          />
-
-          <View
-            style={{
-              flex: 1,
-              marginLeft: 12,
-            }}
-          >
-            <Text
-              style={{
-                color: "#ffffff",
-                fontSize: 15,
-                fontWeight: "800",
-              }}
-            >
-              TikTok
-            </Text>
-
-            <Text
-              style={{
-                color: "#94a3b8",
-                fontSize: 12,
-                marginTop: 3,
-              }}
-            >
-              Enviar vídeo como rascunho
-            </Text>
-          </View>
-
-          <Ionicons
-            name="chevron-forward"
-            size={22}
-            color="#22c55e"
-          />
-        </TouchableOpacity>
-
-        <View
-          style={{
-            backgroundColor: "#1e293b",
-            borderRadius: 16,
-            borderWidth: 1,
-            borderColor: "#8b5cf6",
-            padding: 16,
-            flexDirection: "row",
-            alignItems: "center",
-            marginBottom: 22,
-          }}
-        >
-          <Ionicons
-            name="paper-plane"
-            size={24}
-            color="#c4b5fd"
-          />
-
-          <View
-            style={{
-              flex: 1,
-              marginLeft: 12,
-            }}
-          >
-            <Text
-              style={{
-                color: "#ffffff",
-                fontSize: 15,
-                fontWeight: "800",
-              }}
-            >
-              Telegram
-            </Text>
-
-            <Text
-              style={{
-                color: "#94a3b8",
-                fontSize: 12,
-                marginTop: 3,
-              }}
-            >
-              Primeiro canal da Central
-            </Text>
-          </View>
-
-          <Ionicons
-            name="checkmark-circle"
-            size={22}
-            color="#c4b5fd"
-          />
-        </View>
-
-        <Text
-          style={{
-            color: "#ffffff",
-            fontSize: 15,
-            fontWeight: "800",
-            marginBottom: 10,
-          }}
-        >
-          Quando publicar
-        </Text>
-
-        <View
-          style={{
-            flexDirection: "row",
-            gap: 12,
-            marginBottom: 28,
-          }}
-        >
-          <OptionButton
-            active={scheduleMode === "now"}
-            icon="flash-outline"
-            label="Agora"
-            onPress={() => setScheduleMode("now")}
-          />
-
-          <OptionButton
-            active={scheduleMode === "later"}
-            icon="calendar-outline"
-            label="Agendar"
-            onPress={() => setScheduleMode("later")}
-          />
-        </View>
-
-        {scheduleMode === "later" && (
-          <View
-            style={{
-              backgroundColor: "#1e293b",
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: "#334155",
-              padding: 16,
-              marginBottom: 24,
-            }}
-          >
-            <Text
-              style={{
-                color: "#cbd5e1",
-                fontSize: 13,
-                lineHeight: 19,
-              }}
-            >
-              O seletor de data e horário será conectado na próxima etapa.
-            </Text>
-          </View>
-        )}
-
-        <TouchableOpacity
-         onPress={handlePublish}
-disabled={submitting || !canContinue}
-          style={{
-            backgroundColor: canContinue
-              ? "#7c3aed"
-              : "#334155",
-            borderRadius: 16,
-            paddingVertical: 15,
-            alignItems: "center",
-          }}
-        >
-          <Text
-            style={{
-              color: "#ffffff",
-              fontSize: 16,
-              fontWeight: "900",
-            }}
-          >
-            {submitting
-  ? "Publicando..."
-  : "Publicar agora"}
-          </Text>
-        </TouchableOpacity>
-
-        <Text
-          style={{
-            color: "#64748b",
-            fontSize: 11,
-            textAlign: "center",
-            marginTop: 10,
-          }}
-        >
-          A publicação só será enviada após sua confirmação.
-        </Text>
       </ScrollView>
     </SafeAreaView>
   );
