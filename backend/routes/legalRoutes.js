@@ -5,7 +5,10 @@ import {
   renderPrivacyPolicy,
   renderTermsOfService,
 } from "../services/legal/LegalPageService.js";
-import { deactivateInstagramConnection } from "../services/connections/InstagramDeauthorizationService.js";
+import {
+  deactivateInstagramConnection,
+  deleteInstagramConnectionData,
+} from "../services/connections/InstagramDeauthorizationService.js";
 
 const router = express.Router();
 
@@ -52,6 +55,38 @@ router.post("/instagram/deauthorize", async (req, res) => {
     return res.status(400).json({
       success: false,
       error: "invalid_deauthorization_request",
+    });
+  }
+});
+
+
+router.post("/instagram/data-deletion", async (req, res) => {
+  try {
+    const result = await deleteInstagramConnectionData({
+      signedRequest: req.body?.signed_request,
+    });
+
+    const baseUrl = String(
+      process.env.BASE_URL ||
+      `${req.protocol}://${req.get("host")}`
+    )
+      .trim()
+      .replace(/\/+$/, "");
+
+    return res.status(200).json({
+      url:
+        `${baseUrl}/legal/data-deletion?confirmation_code=` +
+        encodeURIComponent(result.confirmationCode),
+      confirmation_code: result.confirmationCode,
+    });
+  } catch (error) {
+    console.error(
+      "INSTAGRAM DATA DELETION ERROR:",
+      error.message
+    );
+
+    return res.status(400).json({
+      error: "invalid_data_deletion_request",
     });
   }
 });

@@ -4,6 +4,7 @@ import crypto from "node:crypto";
 
 import {
   deactivateInstagramConnection,
+  deleteInstagramConnectionData,
   verifyInstagramSignedRequest,
 } from "../services/connections/InstagramDeauthorizationService.js";
 
@@ -57,5 +58,43 @@ test("rejeita signed_request adulterado antes de acessar o banco", async () => {
   assert.throws(
     () => verifyInstagramSignedRequest(`${signedRequest}x`, secret),
     /Assinatura de desautorizacao invalida/
+  );
+});
+
+
+test("exclui a conexao Instagram e retorna codigo de confirmacao", async () => {
+  const secret = "instagram-secret-test";
+
+  const signedRequest = createSignedRequest(
+    {
+      algorithm: "HMAC-SHA256",
+      user_id: "ig-user-123",
+    },
+    secret
+  );
+
+  let receivedFilter;
+
+  const result = await deleteInstagramConnectionData({
+    signedRequest,
+    appSecret: secret,
+    confirmationCodeFactory: () => "confirmacao-123",
+    connectionModel: {
+      async deleteMany(filter) {
+        receivedFilter = filter;
+        return { deletedCount: 1 };
+      },
+    },
+  });
+
+  assert.deepEqual(receivedFilter, {
+    provider: "instagram",
+    destinationId: "ig-user-123",
+  });
+
+  assert.equal(result.deletedCount, 1);
+  assert.equal(
+    result.confirmationCode,
+    "confirmacao-123"
   );
 });

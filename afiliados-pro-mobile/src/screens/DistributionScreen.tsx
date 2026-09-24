@@ -13,6 +13,7 @@ import { useRouter } from "expo-router";
 import { useDistributions } from "../hooks/useDistributions";
 import { useAutopilotSettings } from "../hooks/useAutopilotSettings";
 import TikTokConnectionCard from "../components/distribution/TikTokConnectionCard";
+import InstagramConnectionCard from "../components/distribution/InstagramConnectionCard";
 
 export default function DistributionScreen() {
   const router = useRouter();
@@ -1016,6 +1017,7 @@ const autopilotOperationalStatus =
         </TouchableOpacity>
 
         <TikTokConnectionCard />
+        <InstagramConnectionCard />
 
         <View
           style={{
