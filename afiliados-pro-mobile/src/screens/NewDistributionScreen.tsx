@@ -412,6 +412,61 @@ async function handlePublish() {
           />
         </TouchableOpacity>
 
+        <TouchableOpacity
+          onPress={() =>
+            router.push("/facebook-reel" as any)
+          }
+          style={{
+            backgroundColor: "#1e293b",
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: "#1877f2",
+            padding: 16,
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 12,
+          }}
+        >
+          <Ionicons
+            name="logo-facebook"
+            size={24}
+            color="#ffffff"
+          />
+
+          <View
+            style={{
+              flex: 1,
+              marginLeft: 12,
+            }}
+          >
+            <Text
+              style={{
+                color: "#ffffff",
+                fontSize: 15,
+                fontWeight: "800",
+              }}
+            >
+              Facebook
+            </Text>
+
+            <Text
+              style={{
+                color: "#94a3b8",
+                fontSize: 12,
+                marginTop: 3,
+              }}
+            >
+              Revisar e publicar um Reel
+            </Text>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={22}
+            color="#1877f2"
+          />
+        </TouchableOpacity>
+
         <View
           style={{
             backgroundColor: "#1e293b",

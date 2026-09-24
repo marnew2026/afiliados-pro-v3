@@ -14,6 +14,7 @@ import { useDistributions } from "../hooks/useDistributions";
 import { useAutopilotSettings } from "../hooks/useAutopilotSettings";
 import TikTokConnectionCard from "../components/distribution/TikTokConnectionCard";
 import InstagramConnectionCard from "../components/distribution/InstagramConnectionCard";
+import FacebookConnectionCard from "../components/distribution/FacebookConnectionCard";
 
 export default function DistributionScreen() {
   const router = useRouter();
@@ -1018,6 +1019,7 @@ const autopilotOperationalStatus =
 
         <TikTokConnectionCard />
         <InstagramConnectionCard />
+        <FacebookConnectionCard />
 
         <View
           style={{

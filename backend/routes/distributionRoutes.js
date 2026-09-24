@@ -5,6 +5,7 @@ import Distribution from "../models/Distribution.js";
 import ChannelConnection from "../models/ChannelConnection.js";
 import { listTikTokReviewOptions } from "../services/distribution/TikTokReviewOptionsService.js";
 import { listInstagramReviewOptions } from "../services/distribution/InstagramReviewOptionsService.js";
+import { listFacebookReviewOptions } from "../services/distribution/FacebookReviewOptionsService.js";
 
 import { protect } from "../middlewares/authMiddleware.js";
 import {
@@ -81,6 +82,30 @@ router.get("/instagram/options", protect, async (req, res) => {
     return res.status(500).json({
       success: false,
       error: "Nao foi possivel carregar os videos do Instagram.",
+    });
+  }
+});
+
+router.get("/facebook/options", protect, async (req, res) => {
+  try {
+    const result = await listFacebookReviewOptions({
+      userId: req.user._id,
+    });
+
+    return res.status(200).json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    console.error(
+      "ERRO FACEBOOK REVIEW OPTIONS:",
+      error.message
+    );
+
+    return res.status(500).json({
+      success: false,
+      error:
+        "Nao foi possivel carregar os videos do Facebook.",
     });
   }
 });
