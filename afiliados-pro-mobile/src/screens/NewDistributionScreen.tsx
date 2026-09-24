@@ -458,6 +458,61 @@ async function handlePublish() {
           Canal
         </Text>
 
+        <TouchableOpacity
+          onPress={() =>
+            router.push("/tiktok-draft" as any)
+          }
+          style={{
+            backgroundColor: "#1e293b",
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: "#22c55e",
+            padding: 16,
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 12,
+          }}
+        >
+          <Ionicons
+            name="musical-notes"
+            size={24}
+            color="#ffffff"
+          />
+
+          <View
+            style={{
+              flex: 1,
+              marginLeft: 12,
+            }}
+          >
+            <Text
+              style={{
+                color: "#ffffff",
+                fontSize: 15,
+                fontWeight: "800",
+              }}
+            >
+              TikTok
+            </Text>
+
+            <Text
+              style={{
+                color: "#94a3b8",
+                fontSize: 12,
+                marginTop: 3,
+              }}
+            >
+              Enviar vídeo como rascunho
+            </Text>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={22}
+            color="#22c55e"
+          />
+        </TouchableOpacity>
+
         <View
           style={{
             backgroundColor: "#1e293b",
