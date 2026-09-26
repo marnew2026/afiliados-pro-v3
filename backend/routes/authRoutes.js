@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
+import { protect } from "../middlewares/authMiddleware.js";
 import { grantFoundingAccess } from "../services/founding/FoundingCohortService.js";
 import {
   publicAccessDetails,
@@ -56,7 +57,7 @@ router.post("/register", async (req, res) => {
     console.log("✅ USUÁRIO CRIADO NO MONGO");
 
     const token = jwt.sign(
-      { id: user._id },
+      { id: user._id, tokenVersion: Number(user.tokenVersion || 0) },
       process.env.JWT_SECRET,
       { expiresIn: "30d" }
     );
@@ -127,6 +128,7 @@ router.post("/login", async (req, res) => {
     const token = jwt.sign(
       {
         id: user._id,
+        tokenVersion: Number(user.tokenVersion || 0),
       },
       process.env.JWT_SECRET,
       {
@@ -151,6 +153,20 @@ router.post("/login", async (req, res) => {
     return res.status(500).json({
       error: err.message,
     });
+  }
+});
+
+
+/* LOGOUT */
+router.post("/logout", protect, async (req, res) => {
+  try {
+    req.user.tokenVersion = Number(req.user.tokenVersion || 0) + 1;
+    await req.user.save();
+
+    return res.json({ message: "Logout realizado com sucesso" });
+  } catch (err) {
+    console.error("ERRO LOGOUT:", err);
+    return res.status(500).json({ error: "Erro interno no logout" });
   }
 });
 

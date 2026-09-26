@@ -22,6 +22,11 @@ password: {
 },
 
  
+  tokenVersion: {
+    type: Number,
+    default: 0,
+  },
+
   plan: {
     type: String,
     enum: ["FREE", "PRO", "SCALE"],

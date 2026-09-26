@@ -42,6 +42,13 @@ export async function protect(req, res, next) {
       });
     }
 
+    if (!Number.isInteger(decoded.tokenVersion) ||
+        decoded.tokenVersion !== Number(user.tokenVersion || 0)) {
+      return res.status(401).json({
+        error: "Sessão inválida ou revogada",
+      });
+    }
+
     await refreshUserAccess(user);
 
     req.user = user;

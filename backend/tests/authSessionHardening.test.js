@@ -14,6 +14,20 @@ function read(relativePath) {
     "utf8"
   );
 }
+test("JWT usa versao de sessao e logout revoga tokens", () => {
+  const userModel = read("backend/models/User.js");
+  const authRoutes = read("backend/routes/authRoutes.js");
+  const authMiddleware = read("backend/middlewares/authMiddleware.js");
+
+  assert.match(userModel, /tokenVersion/);
+  assert.match(userModel, /default:\s*0/);
+  assert.match(authRoutes, /tokenVersion:\s*Number\(user\.tokenVersion \|\| 0\)/);
+  assert.match(authMiddleware, /Number\.isInteger\(decoded\.tokenVersion\)/);
+  assert.match(authMiddleware, /decoded\.tokenVersion !== Number\(user\.tokenVersion \|\| 0\)/);
+  assert.match(authRoutes, /router\.post\("\/logout",\s*protect/);
+  assert.match(authRoutes, /req\.user\.tokenVersion = Number\(req\.user\.tokenVersion \|\| 0\) \+ 1/);
+});
+
 
 test("backend normaliza email no cadastro e login", () => {
   const source = read("backend/routes/authRoutes.js");
@@ -71,12 +85,13 @@ test("dashboard oferece logout real", () => {
     dashboard,
     /<SessionLogoutButton \/>/
   );
+  assert.match(logout, /api\.post\("\/auth\/logout"\)/);
   assert.match(logout, /AsyncStorage\.multiRemove/);
   assert.match(logout, /"token"/);
   assert.match(logout, /"userId"/);
   assert.match(logout, /"email"/);
   assert.match(
     logout,
-    /router\.replace\("\/login"\)/
+    /router\.replace\("\/login"(?: as any)?\)/
   );
 });

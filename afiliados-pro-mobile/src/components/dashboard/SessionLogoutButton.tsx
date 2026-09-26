@@ -1,12 +1,46 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
-import { Alert, Text, TouchableOpacity } from "react-native";
+import { Alert, Platform, Text, TouchableOpacity } from "react-native";
+import { logoutDistribution } from "../../services/distributionAuth";
+import api from "../../services/api";
 
 export default function SessionLogoutButton() {
+  async function performLogout() {
+    try {
+      await api.post("/auth/logout");
+    } catch (error) {
+      console.warn("Falha ao revogar sessão no servidor durante logout.");
+    } finally {
+      await Promise.all([
+        AsyncStorage.multiRemove([
+          "token",
+          "userId",
+          "email",
+        ]),
+        logoutDistribution(),
+      ]);
+
+      router.replace("/login" as any);
+    }
+  }
+
   function confirmLogout() {
+    if (Platform.OS === "web") {
+      const confirmed =
+        typeof window !== "undefined"
+          ? window.confirm("Deseja encerrar esta sessão?")
+          : true;
+
+      if (confirmed) {
+        void performLogout();
+      }
+
+      return;
+    }
+
     Alert.alert(
       "Sair da conta",
-      "Deseja encerrar esta sess?o?",
+      "Deseja encerrar esta sessão?",
       [
         {
           text: "Cancelar",
@@ -15,14 +49,8 @@ export default function SessionLogoutButton() {
         {
           text: "Sair",
           style: "destructive",
-          onPress: async () => {
-            await AsyncStorage.multiRemove([
-              "token",
-              "userId",
-              "email",
-            ]);
-
-            router.replace("/login" as any);
+          onPress: () => {
+            void performLogout();
           },
         },
       ]
