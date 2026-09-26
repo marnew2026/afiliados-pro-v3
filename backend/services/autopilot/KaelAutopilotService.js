@@ -138,7 +138,6 @@ export async function runKaelAutopilotOnce(userId) {
       await Distribution.findOne({
         userId,
         channel: "telegram",
-        source: "autopilot",
         status: "published",
         publishedAt: {
           $ne: null,
@@ -172,6 +171,21 @@ export async function runKaelAutopilotOnce(userId) {
         };
       }
     }
+    const lastAutopilotDistribution =
+      await Distribution.findOne({
+        userId,
+        channel: "telegram",
+        source: "autopilot",
+        status: "published",
+        publishedAt: {
+          $ne: null,
+       },
+      })
+       .sort({
+        publishedAt: -1,
+       })
+       .select("campaignId")
+       .lean();
 
     const campaignFilter = {
       userId,
@@ -181,11 +195,11 @@ export async function runKaelAutopilotOnce(userId) {
 
     let campaign = null;
 
-    if (lastPublishedDistribution?.campaignId) {
+    if (lastAutopilotDistribution?.campaignId) {
       campaign = await Campaign.findOne({
         ...campaignFilter,
         _id: {
-          $ne: lastPublishedDistribution.campaignId,
+          $ne: lastAutopilotDistribution.campaignId,
         },
       })
         .sort({
