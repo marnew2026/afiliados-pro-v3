@@ -74,3 +74,19 @@ test("KAEL Autopilot permanece limitado ao Telegram nesta fase", () => {
     /channels\.includes\("telegram"\)/
   );
 });
+
+test("KAEL evita repetir imediatamente a ultima campanha do Autopilot", () => {
+  const source = read(
+    "backend/services/autopilot/KaelAutopilotService.js"
+  );
+
+  assert.match(
+    source,
+    /source:\s*"autopilot"[\s\S]*?campaignId/
+  );
+
+  assert.match(
+    source,
+    /_id:\s*\{\s*\$ne:/
+  );
+});

@@ -138,6 +138,7 @@ export async function runKaelAutopilotOnce(userId) {
       await Distribution.findOne({
         userId,
         channel: "telegram",
+        source: "autopilot",
         status: "published",
         publishedAt: {
           $ne: null,
@@ -146,7 +147,7 @@ export async function runKaelAutopilotOnce(userId) {
         .sort({
           publishedAt: -1,
         })
-        .select("publishedAt")
+        .select("publishedAt campaignId")
         .lean();
 
     if (lastPublishedDistribution?.publishedAt) {
@@ -172,16 +173,36 @@ export async function runKaelAutopilotOnce(userId) {
       }
     }
 
-    const campaign = await Campaign.findOne({
+    const campaignFilter = {
       userId,
       active: true,
       status: "active",
-    })
-      .sort({
-        clicks: 1,
-        createdAt: 1,
+    };
+
+    let campaign = null;
+
+    if (lastPublishedDistribution?.campaignId) {
+      campaign = await Campaign.findOne({
+        ...campaignFilter,
+        _id: {
+          $ne: lastPublishedDistribution.campaignId,
+        },
       })
-      .lean();
+        .sort({
+          clicks: 1,
+          createdAt: 1,
+        })
+        .lean();
+    }
+
+    if (!campaign) {
+      campaign = await Campaign.findOne(campaignFilter)
+        .sort({
+          clicks: 1,
+          createdAt: 1,
+        })
+        .lean();
+    }
 
     if (!campaign) {
       return {
@@ -214,8 +235,8 @@ export async function runKaelAutopilotOnce(userId) {
     }
 
     // Revalida o estado imediatamente antes de criar a Distribution.
-    // Evita publicação caso o Autopilot tenha sido desligado
-    // ou alterado para modo assistido durante esta execução.
+    // Evita publicacao caso o Autopilot tenha sido desligado
+    // ou alterado para modo assistido durante esta execucao.
     const stillAutomatic = await AutopilotSettings.exists({
       userId,
       enabled: true,
