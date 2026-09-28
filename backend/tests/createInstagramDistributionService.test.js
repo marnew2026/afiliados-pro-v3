@@ -57,6 +57,7 @@ test("cria um unico Reel manual com asset e conexao do proprio usuario", async (
   const created = deps.getCreated();
   assert.equal(created.channel, "instagram");
   assert.equal(created.source, "manual");
+  assert.equal(created.reviewMode, false);
   assert.equal(created.destinationId, "ig-1");
   assert.equal(created.content.contentType, "short_video");
   assert.equal(created.content.media.assetUrl, "https://cdn.example/reel.mp4");
@@ -109,3 +110,49 @@ test("nao cria distribuicao sem conexao ativa do Instagram", async () => {
   assert.equal(created, false);
 });
 
+
+
+test("cria Reel de review somente com gate de staging explicitamente habilitado", async () => {
+  const deps = dependencies();
+  await createInstagramDistribution({
+    userId: "user-1",
+    campaignId: "campaign-1",
+    mediaAssetId: "asset-1",
+    caption: "Review Meta",
+    review: true,
+    env: {
+      INSTAGRAM_API_APPROVAL_STATUS: "pending",
+      INSTAGRAM_ENABLED: "false",
+      INSTAGRAM_REVIEW_ENABLED: "true",
+      INSTAGRAM_REVIEW_ENV: "staging",
+      INSTAGRAM_EMERGENCY_DISABLED: "false",
+      BASE_URL: "https://staging.example",
+    },
+    ...deps,
+  });
+
+  assert.equal(deps.getCreated().reviewMode, true);
+  assert.equal(deps.getCreated().source, "manual");
+});
+
+test("nao cria Reel de review sem ambiente staging explicito", async () => {
+  const deps = dependencies();
+  await assert.rejects(
+    createInstagramDistribution({
+      userId: "user-1",
+      campaignId: "campaign-1",
+      mediaAssetId: "asset-1",
+      caption: "Review Meta",
+      review: true,
+      env: {
+        INSTAGRAM_API_APPROVAL_STATUS: "pending",
+        INSTAGRAM_ENABLED: "false",
+        INSTAGRAM_REVIEW_ENABLED: "true",
+        INSTAGRAM_REVIEW_ENV: "production",
+        BASE_URL: "https://staging.example",
+      },
+      ...deps,
+    }),
+    (error) => error.statusCode === 503 && error.reason === "approval_not_confirmed"
+  );
+});

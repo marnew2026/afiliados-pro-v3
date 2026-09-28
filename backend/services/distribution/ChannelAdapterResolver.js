@@ -30,7 +30,7 @@ const CHANNEL_ADAPTERS = {
   kwai: publishKwai,
 };
 
-export function getChannelAdapter(channel) {
+export function getChannelAdapter(channel, { review = false } = {}) {
   const normalizedChannel = String(
     channel || ""
   )
@@ -53,7 +53,7 @@ export function getChannelAdapter(channel) {
   }
 
   return async (input) => {
-    assertIntegrationOperational(normalizedChannel, process.env);
+    assertIntegrationOperational(normalizedChannel, process.env, { review });
     return adapter(input);
   };
 }

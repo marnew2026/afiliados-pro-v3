@@ -17,6 +17,7 @@ export async function createInstagramDistribution({
   caption,
   hashtags = [],
   cta = "Confira a oferta no link",
+  review = false,
   env = process.env,
   campaignModel = Campaign,
   connectionModel = ChannelConnection,
@@ -25,7 +26,7 @@ export async function createInstagramDistribution({
   scheduler,
   now = () => new Date(),
 }) {
-  assertIntegrationOperational("instagram", env);
+  assertIntegrationOperational("instagram", env, { review });
 
   const cleanUserId = String(userId || "").trim();
   const cleanCampaignId = String(campaignId || "").trim();
@@ -99,6 +100,7 @@ export async function createInstagramDistribution({
     campaignId: cleanCampaignId,
     channel: "instagram",
     source: "manual",
+    reviewMode: review === true,
     destinationId: String(connection.destinationId),
     content: {
       text: cleanCaption,

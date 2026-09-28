@@ -39,12 +39,28 @@ function unavailable(message, reason) {
   return error;
 }
 
-export function assertIntegrationOperational(channel, env = process.env) {
+function isInstagramReviewAllowed(channel, env, review = false) {
+  return (
+    review === true &&
+    channel === "instagram" &&
+    isTrue(env.INSTAGRAM_REVIEW_ENABLED) &&
+    String(env.INSTAGRAM_REVIEW_ENV || "").trim().toLowerCase() === "staging"
+  );
+}
+
+export function assertIntegrationOperational(
+  channel,
+  env = process.env,
+  { review = false } = {}
+) {
   const normalizedChannel = String(channel || "").trim().toLowerCase();
   const control = CHANNEL_CONTROLS[normalizedChannel];
 
   if (!control) {
-    throw unavailable("Canal sem controle operacional configurado.", "unknown_channel");
+    throw unavailable(
+      "Canal sem controle operacional configurado.",
+      "unknown_channel"
+    );
   }
 
   if (isTrue(env[control.emergencyEnv])) {
@@ -54,7 +70,14 @@ export function assertIntegrationOperational(channel, env = process.env) {
     );
   }
 
+  const reviewAllowed = isInstagramReviewAllowed(
+    normalizedChannel,
+    env,
+    review
+  );
+
   if (
+    !reviewAllowed &&
     control.approvalEnv &&
     String(env[control.approvalEnv] || "").trim().toLowerCase() !== "approved"
   ) {
@@ -64,7 +87,7 @@ export function assertIntegrationOperational(channel, env = process.env) {
     );
   }
 
-  if (!isTrue(env[control.enabledEnv])) {
+  if (!reviewAllowed && !isTrue(env[control.enabledEnv])) {
     throw unavailable(
       `Integracao ${normalizedChannel} desativada.`,
       "feature_disabled"

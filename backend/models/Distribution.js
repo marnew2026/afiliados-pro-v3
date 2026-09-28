@@ -29,7 +29,11 @@ const DistributionSchema = new mongoose.Schema(
       default: "manual",
       index: true,
     },
-
+    reviewMode: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
     destinationId: {
       type: String,
       required: true,

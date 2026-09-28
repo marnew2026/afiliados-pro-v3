@@ -114,7 +114,8 @@ export async function publishDistribution(distributionId) {
     });
 
     const channelAdapter = getChannelAdapter(
-      distribution.channel
+      distribution.channel,
+      { review: distribution.reviewMode === true }
     );
 
     const result = await channelAdapter({

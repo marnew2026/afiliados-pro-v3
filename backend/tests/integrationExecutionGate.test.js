@@ -34,3 +34,73 @@ test("telegram exige habilitacao mas nao aprovacao externa", () => {
     TELEGRAM_ENABLED: "true",
   }), true);
 });
+test("libera Instagram review somente quando explicitamente habilitado fora de producao", () => {
+  assert.equal(
+    assertIntegrationOperational(
+      "instagram",
+      {
+        INSTAGRAM_REVIEW_ENV: "staging",
+        INSTAGRAM_API_APPROVAL_STATUS: "pending",
+        INSTAGRAM_ENABLED: "false",
+        INSTAGRAM_REVIEW_ENABLED: "true",
+        INSTAGRAM_EMERGENCY_DISABLED: "false",
+      },
+      { review: true }
+    ),
+    true
+  );
+});
+
+test("Instagram review continua bloqueado sem flag explicita de review", () => {
+  assert.throws(
+    () =>
+      assertIntegrationOperational("instagram", {
+        INSTAGRAM_REVIEW_ENV: "staging",
+        INSTAGRAM_API_APPROVAL_STATUS: "pending",
+        INSTAGRAM_ENABLED: "false",
+        INSTAGRAM_REVIEW_ENABLED: "true",
+      }),
+    (error) =>
+      error.statusCode === 503 &&
+      error.reason === "approval_not_confirmed"
+  );
+});
+
+test("Instagram review exige ambiente de review staging explicito", () => {
+  assert.throws(
+    () =>
+      assertIntegrationOperational(
+        "instagram",
+        {
+          INSTAGRAM_REVIEW_ENV: "production",
+          INSTAGRAM_API_APPROVAL_STATUS: "pending",
+          INSTAGRAM_ENABLED: "false",
+          INSTAGRAM_REVIEW_ENABLED: "true",
+        },
+        { review: true }
+      ),
+    (error) =>
+      error.statusCode === 503 &&
+      error.reason === "approval_not_confirmed"
+  );
+});
+
+test("desligamento emergencial tambem bloqueia Instagram review", () => {
+  assert.throws(
+    () =>
+      assertIntegrationOperational(
+        "instagram",
+        {
+          INSTAGRAM_REVIEW_ENV: "staging",
+          INSTAGRAM_API_APPROVAL_STATUS: "pending",
+          INSTAGRAM_ENABLED: "false",
+          INSTAGRAM_REVIEW_ENABLED: "true",
+          INSTAGRAM_EMERGENCY_DISABLED: "true",
+        },
+        { review: true }
+      ),
+    (error) =>
+      error.statusCode === 503 &&
+      error.reason === "emergency_disabled"
+  );
+});
