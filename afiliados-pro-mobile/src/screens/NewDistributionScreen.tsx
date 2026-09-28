@@ -255,162 +255,6 @@ async function handlePublish() {
             marginBottom: 8,
           }}
         >
-          Campanha
-        </Text>
-
-        {campaignsLoading && (
-  <View
-    style={{
-      backgroundColor: "#1e293b",
-      borderRadius: 16,
-      padding: 16,
-      marginBottom: 20,
-    }}
-  >
-    <Text
-      style={{
-        color: "#94a3b8",
-        fontSize: 13,
-      }}
-    >
-      Carregando campanhas...
-    </Text>
-  </View>
-)}
-
-{!campaignsLoading && campaignsError && (
-  <TouchableOpacity
-    onPress={reloadCampaigns}
-    style={{
-      backgroundColor: "#1e293b",
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: "#475569",
-      padding: 16,
-      marginBottom: 20,
-    }}
-  >
-    <Text
-      style={{
-        color: "#fca5a5",
-        fontSize: 13,
-      }}
-    >
-      {campaignsError}
-    </Text>
-
-    <Text
-      style={{
-        color: "#c4b5fd",
-        fontSize: 12,
-        fontWeight: "800",
-        marginTop: 8,
-      }}
-    >
-      Tentar novamente
-    </Text>
-  </TouchableOpacity>
-)}
-
-{!campaignsLoading &&
-  !campaignsError &&
-  campaigns.map((item) => {
-    const selected =
-      selectedCampaignId === item._id;
-
-    return (
-      <TouchableOpacity
-        key={item._id}
-        onPress={() =>
-          setSelectedCampaignId(item._id)
-        }
-        style={{
-          backgroundColor: selected
-            ? "#4c1d95"
-            : "#1e293b",
-          borderRadius: 16,
-          borderWidth: 1,
-          borderColor: selected
-            ? "#8b5cf6"
-            : "#334155",
-          padding: 16,
-          marginBottom: 12,
-          flexDirection: "row",
-          alignItems: "center",
-        }}
-      >
-        <View style={{ flex: 1 }}>
-          <Text
-            style={{
-              color: "#ffffff",
-              fontSize: 15,
-              fontWeight: "800",
-            }}
-          >
-            {item.nome}
-          </Text>
-
-          {!!item.link && (
-            <Text
-              numberOfLines={1}
-              style={{
-                color: "#94a3b8",
-                fontSize: 12,
-                marginTop: 4,
-              }}
-            >
-              {item.link}
-            </Text>
-          )}
-        </View>
-
-        <Ionicons
-          name={
-            selected
-              ? "checkmark-circle"
-              : "ellipse-outline"
-          }
-          size={23}
-          color={
-            selected
-              ? "#ddd6fe"
-              : "#64748b"
-          }
-        />
-      </TouchableOpacity>
-    );
-  })}
-
-{!campaignsLoading &&
-  !campaignsError &&
-  campaigns.length === 0 && (
-    <View
-      style={{
-        backgroundColor: "#1e293b",
-        borderRadius: 16,
-        padding: 16,
-        marginBottom: 20,
-      }}
-    >
-      <Text
-        style={{
-          color: "#94a3b8",
-          fontSize: 13,
-        }}
-      >
-        Nenhuma campanha ativa encontrada.
-      </Text>
-    </View>
-  )}
-
-        <Text
-          style={{
-            color: "#ffffff",
-            fontSize: 15,
-            fontWeight: "800",
-            marginBottom: 8,
-          }}
-        >
           Texto da divulgação
         </Text>
 
@@ -565,6 +409,163 @@ async function handlePublish() {
             </Text>
           </View>
         )}
+
+        <Text
+          style={{
+            color: "#ffffff",
+            fontSize: 15,
+            fontWeight: "800",
+            marginBottom: 8,
+          }}
+        >
+          Campanha
+        </Text>
+
+        {campaignsLoading && (
+  <View
+    style={{
+      backgroundColor: "#1e293b",
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 20,
+    }}
+  >
+    <Text
+      style={{
+        color: "#94a3b8",
+        fontSize: 13,
+      }}
+    >
+      Carregando campanhas...
+    </Text>
+  </View>
+)}
+
+{!campaignsLoading && campaignsError && (
+  <TouchableOpacity
+    onPress={reloadCampaigns}
+    style={{
+      backgroundColor: "#1e293b",
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: "#475569",
+      padding: 16,
+      marginBottom: 20,
+    }}
+  >
+    <Text
+      style={{
+        color: "#fca5a5",
+        fontSize: 13,
+      }}
+    >
+      {campaignsError}
+    </Text>
+
+    <Text
+      style={{
+        color: "#c4b5fd",
+        fontSize: 12,
+        fontWeight: "800",
+        marginTop: 8,
+      }}
+    >
+      Tentar novamente
+    </Text>
+  </TouchableOpacity>
+)}
+
+{!campaignsLoading &&
+  !campaignsError &&
+  campaigns.map((item) => {
+    const selected =
+      selectedCampaignId === item._id;
+
+    return (
+      <TouchableOpacity
+        key={item._id}
+        onPress={() =>
+          setSelectedCampaignId(item._id)
+        }
+        style={{
+          backgroundColor: selected
+            ? "#4c1d95"
+            : "#1e293b",
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: selected
+            ? "#8b5cf6"
+            : "#334155",
+          padding: 16,
+          marginBottom: 12,
+          flexDirection: "row",
+          alignItems: "center",
+        }}
+      >
+        <View style={{ flex: 1 }}>
+          <Text
+            style={{
+              color: "#ffffff",
+              fontSize: 15,
+              fontWeight: "800",
+            }}
+          >
+            {item.nome}
+          </Text>
+
+          {!!item.link && (
+            <Text
+              numberOfLines={1}
+              style={{
+                color: "#94a3b8",
+                fontSize: 12,
+                marginTop: 4,
+              }}
+            >
+              {item.link}
+            </Text>
+          )}
+        </View>
+
+        <Ionicons
+          name={
+            selected
+              ? "checkmark-circle"
+              : "ellipse-outline"
+          }
+          size={23}
+          color={
+            selected
+              ? "#ddd6fe"
+              : "#64748b"
+          }
+        />
+      </TouchableOpacity>
+    );
+  })}
+
+{!campaignsLoading &&
+  !campaignsError &&
+  campaigns.length === 0 && (
+    <View
+      style={{
+        backgroundColor: "#1e293b",
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 20,
+      }}
+    >
+      <Text
+        style={{
+          color: "#94a3b8",
+          fontSize: 13,
+        }}
+      >
+        Nenhuma campanha ativa encontrada.
+      </Text>
+    </View>
+  )}
+
 
         <TouchableOpacity
          onPress={handlePublish}
