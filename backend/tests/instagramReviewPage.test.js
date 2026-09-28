@@ -5,11 +5,11 @@ import { renderInstagramReviewPage } from "../services/review/InstagramReviewPag
 test("pagina de revisao do Instagram exige login, mostra perfil e pede consentimento", () => {
   const html = renderInstagramReviewPage();
 
-  assert.match(html, /Entrar com segurança/);
-  assert.match(html, /Conectar Instagram/);
-  assert.match(html, /Perfil profissional conectado/);
-  assert.match(html, /Eu revisei este conteúdo e autorizo/);
-  assert.match(html, /Publicar Reel no Instagram/);
+  assert.match(html, /Sign in securely/);
+  assert.match(html, /Connect Instagram/);
+  assert.match(html, /Connected professional profile/);
+  assert.match(html, /I reviewed this content and authorize/);
+  assert.match(html, /Publish Reel to Instagram/);
   assert.match(html, /\/channel\/instagram\/oauth\/start/);
   assert.match(html, /\/distribution\/instagram\/options/);
   assert.match(html, /\/instagram-review\/publish/);
