@@ -36,6 +36,55 @@ export async function findActiveGenerationTaskByKey({
   });
 }
 
+export async function findRecoverableGenerationUserIds({
+  staleBefore,
+  limit = 20,
+  taskModel = MediaGenerationTask,
+}) {
+  if (!(staleBefore instanceof Date)) {
+    throw new Error(
+      "Data limite para discovery de recovery nao informada."
+    );
+  }
+
+  const results = await taskModel.aggregate([
+    {
+      $match: {
+        mediaAssetId: null,
+        externalTaskId: {
+          $type: "string",
+          $ne: "",
+        },
+        $or: [
+          {
+            status: {
+              $in: ["PENDING", "RUNNING"],
+            },
+          },
+          {
+            status: "PROCESSING",
+            processingStartedAt: {
+              $lt: staleBefore,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $group: {
+        _id: "$userId",
+      },
+    },
+    {
+      $limit: limit,
+    },
+  ]);
+
+  return results.map((result) =>
+    String(result._id)
+  );
+}
+
 export async function findRecoverableGenerationTasks({
   userId,
   staleBefore,
