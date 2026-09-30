@@ -115,9 +115,9 @@ test("KAEL inicia geracao quando short_video nao possui video pronto", async () 
         generationTask,
       };
     },
-    provider: {
+    providerResolver: async () => ({
       providerName: "runway",
-    },
+    }),
   });
 
   assert.equal(result.status, "PENDING");

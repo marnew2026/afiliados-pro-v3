@@ -24,11 +24,14 @@ export async function runKaelMediaPreparation({
   mediaResolver = resolveKaelMedia,
   generationEnsurer = ensureKaelMediaGeneration,
 }) {
-  const providerName = providerNameGetter();
 
-  const provider = await providerResolver({
-    provider: providerName,
-  });
+  const lazyProviderResolver = async () => {
+    const providerName = providerNameGetter();
+
+    return providerResolver({
+      provider: providerName,
+    });
+  };
 
   return mediaPreparer({
     userId,
@@ -36,6 +39,6 @@ export async function runKaelMediaPreparation({
     content,
     mediaResolver,
     generationEnsurer,
-    provider,
+    providerResolver: lazyProviderResolver,
   });
 }

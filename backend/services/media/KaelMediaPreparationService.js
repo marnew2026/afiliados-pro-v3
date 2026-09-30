@@ -4,7 +4,7 @@ export async function prepareKaelMedia({
   content,
   mediaResolver,
   generationEnsurer,
-  provider,
+  providerResolver,
 }) {
   if (!content) {
     throw new Error(
@@ -45,7 +45,13 @@ export async function prepareKaelMedia({
       "Generation Ensurer nao informado ao KAEL Media Preparation."
     );
   }
+  if (typeof providerResolver !== "function") {
+    throw new Error(
+      "Provider Resolver nao informado ao KAEL Media Preparation."
+    );
+  }
 
+  const provider = await providerResolver();
   const generationResult = await generationEnsurer({
     userId,
     campaign,

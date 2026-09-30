@@ -5,13 +5,10 @@ import {
   runKaelMediaPreparation,
 } from "../services/media/KaelMediaPreparationRunner.js";
 
-test("KAEL compoe provider configurado antes de preparar midia", async () => {
-  let resolvedProviderName = null;
+test("KAEL delega resolucao lazy do provider para preparacao de midia", async () => {
+  let providerGetterCalled = false;
+  let providerResolverCalled = false;
   let preparationInput = null;
-
-  const provider = {
-    providerName: "runway",
-  };
 
   const content = {
     contentType: "short_video",
@@ -27,29 +24,41 @@ test("KAEL compoe provider configurado antes de preparar midia", async () => {
       _id: "campaign-test",
     },
     content,
-    providerNameGetter: () => "runway",
-    providerResolver: async ({ provider: providerName }) => {
-      resolvedProviderName = providerName;
-      return provider;
+    providerNameGetter: () => {
+      providerGetterCalled = true;
+      return "runway";
+    },
+    providerResolver: async () => {
+      providerResolverCalled = true;
+
+      return {
+        providerName: "runway",
+      };
     },
     mediaPreparer: async (input) => {
       preparationInput = input;
 
       return {
-        status: "PENDING",
+        status: "READY",
         content,
-        reason: "media_generation_started",
+        reason: "media_asset_ready",
       };
     },
   });
 
-  assert.equal(resolvedProviderName, "runway");
+  assert.equal(providerGetterCalled, false);
+  assert.equal(providerResolverCalled, false);
+
   assert.equal(preparationInput.userId, "user-test");
   assert.equal(
     preparationInput.campaign._id,
     "campaign-test"
   );
   assert.equal(preparationInput.content, content);
-  assert.equal(preparationInput.provider, provider);
-  assert.equal(result.status, "PENDING");
+  assert.equal(
+    typeof preparationInput.providerResolver,
+    "function"
+  );
+
+  assert.equal(result.status, "READY");
 });
