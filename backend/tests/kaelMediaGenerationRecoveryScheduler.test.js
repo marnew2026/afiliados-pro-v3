@@ -98,3 +98,56 @@ test("KAEL recovery scheduler isola falha por usuario", async () => {
   assert.equal(result.usersProcessed, 2);
   assert.equal(result.errors, 1);
 });
+
+test("KAEL recovery scheduler bloqueia execucao concorrente", async () => {
+  let releaseFirstRun;
+
+  const firstRunGate = new Promise((resolve) => {
+    releaseFirstRun = resolve;
+  });
+
+  const firstRun = runKaelMediaGenerationRecoveryScheduler({
+    leaseCutoffResolver: () =>
+      new Date("2026-09-29T20:00:00.000Z"),
+    userFinder: async () => ["user-1"],
+    recoveryRunner: async () => {
+      await firstRunGate;
+
+      return {
+        success: true,
+        scanned: 1,
+      };
+    },
+    logger: {
+      info() {},
+      error() {},
+    },
+  });
+
+  await new Promise((resolve) => setImmediate(resolve));
+
+  const secondRun =
+    await runKaelMediaGenerationRecoveryScheduler({
+      leaseCutoffResolver: () =>
+        new Date("2026-09-29T20:00:00.000Z"),
+      userFinder: async () => ["user-2"],
+      recoveryRunner: async () => ({
+        success: true,
+        scanned: 1,
+      }),
+      logger: {
+        info() {},
+        error() {},
+      },
+    });
+
+  assert.equal(secondRun.success, true);
+  assert.equal(secondRun.skipped, true);
+  assert.equal(
+    secondRun.reason,
+    "scheduler_already_running"
+  );
+
+  releaseFirstRun();
+  await firstRun;
+});
