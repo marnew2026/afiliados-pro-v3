@@ -142,12 +142,16 @@ async function bootstrap() {
   const kaelScheduler = await import(
     "./services/autopilot/KaelAutopilotScheduler.js"
   );
-
+  const kaelMediaRecoveryCron = await import(
+    "./services/media/generation/KaelMediaRecoveryCron.js"
+  );
   const reconciliationJob = reconciliation.reconciliationJob;
   const withdrawWatchdog = watchdog.withdrawWatchdog;
 
   const runKaelAutopilotScheduler =
     kaelScheduler.runKaelAutopilotScheduler;
+  const registerKaelMediaRecoveryCron =
+    kaelMediaRecoveryCron.registerKaelMediaRecoveryCron;
   console.log("🔄 RECONCILIATION RUN");
   processWithdrawQueue = withdrawQueue.processWithdrawQueue;
   generateCampaigns = campaignGen.generateCampaigns;
@@ -183,7 +187,9 @@ console.log("DISTRIBUTION WORKER CARREGADO");
   } else {
     console.log("🤖 KAEL AUTOPILOT CRON DESATIVADO");
   }
-
+  registerKaelMediaRecoveryCron({
+    cron,
+  });
   // SERVER
   server.listen(PORT, () => {
     console.log("🚀 SERVER ON PORTA:", PORT);
