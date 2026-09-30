@@ -6,6 +6,7 @@ export async function resolveKaelMedia({
   userId,
   campaignId,
   content,
+  mediaAssetFinder = findReadyCampaignVideo,
 }) {
   if (!content) {
     throw new Error(
@@ -18,7 +19,7 @@ export async function resolveKaelMedia({
   }
 
   const mediaAsset =
-    await findReadyCampaignVideo({
+    await mediaAssetFinder({
       userId,
       campaignId,
     });
@@ -35,6 +36,7 @@ export async function resolveKaelMedia({
 
   return {
     ...content,
+    mediaAssetId: String(mediaAsset._id),
     media: {
       ...content.media,
       assetUrl: mediaAsset.assetUrl,
