@@ -82,3 +82,24 @@ test("cria video do Kwai quando a integracao for explicitamente habilitada", asy
   assert.deepEqual(created.content.hashtags, ["oferta", "kwai"]);
   assert.equal(result.queue.jobId, "job-1");
 });
+test("permite identificar Distribution criada pelo Autopilot", async () => {
+  const deps = dependencies();
+
+  await createKwaiDistribution({
+    userId: "user-1",
+    campaignId: "campaign-1",
+    mediaAssetId: "asset-1",
+    caption: "Produto selecionado pelo KAEL.",
+    source: "autopilot",
+    env: {
+      BASE_URL: "https://staging.example",
+      KWAI_API_APPROVAL_STATUS: "approved",
+      KWAI_ENABLED: "true",
+    },
+    ...deps,
+  });
+
+  const created = deps.getCreated();
+
+  assert.equal(created.source, "autopilot");
+});

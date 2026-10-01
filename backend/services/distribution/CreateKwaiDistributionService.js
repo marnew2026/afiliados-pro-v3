@@ -18,6 +18,7 @@ export async function createKwaiDistribution({
   caption,
   hashtags = [],
   cta = "Confira a oferta no link",
+  source = "manual",
   env = process.env,
   campaignModel = Campaign,
   connectionModel = ChannelConnection,
@@ -106,7 +107,7 @@ export async function createKwaiDistribution({
     userId: cleanUserId,
     campaignId: cleanCampaignId,
     channel: "kwai",
-    source: "manual",
+    source,
     destinationId: String(connection.destinationId),
     content: {
       text: cleanCaption,

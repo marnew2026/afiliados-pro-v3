@@ -44,7 +44,26 @@ test("cria video manual somente para conta TikTok conectada", async () => {
   assert.deepEqual(created.content.hashtags, ["Oferta"]);
   assert.equal(result.queue.jobId, "job-1");
 });
+test("permite identificar Distribution criada pelo Autopilot", async () => {
+  const deps = dependencies();
 
+  await createTikTokDistribution({
+    userId: "user-1",
+    campaignId: "campaign-1",
+    mediaAssetId: "asset-1",
+    caption: "Patinete eletrico.",
+    source: "autopilot",
+    env: {
+      ...TIKTOK_OPERATIONAL_ENV,
+      BASE_URL: "https://staging.example",
+    },
+    ...deps,
+  });
+
+  const created = deps.getCreated();
+
+  assert.equal(created.source, "autopilot");
+});
 test("bloqueia video de outro usuario ou campanha", async () => {
   const deps = dependencies({ mediaAssetModel: { async findOne() { return null; } } });
   await assert.rejects(createTikTokDistribution({

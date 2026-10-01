@@ -67,7 +67,26 @@ test("cria Reel manual somente para Pagina conectada do usuario", async () => {
   assert.deepEqual(created.content.hashtags, ["PatineteEletrico", "oferta"]);
   assert.equal(result.queue.jobId, "job-1");
 });
+test("permite identificar Distribution criada pelo Autopilot", async () => {
+  const deps = dependencies();
 
+  await createFacebookDistribution({
+    userId: "user-1",
+    campaignId: "campaign-1",
+    mediaAssetId: "asset-1",
+    caption: "Patinete eletrico dobravel.",
+    source: "autopilot",
+    env: {
+      ...FACEBOOK_OPERATIONAL_ENV,
+      BASE_URL: "https://staging.example",
+    },
+    ...deps,
+  });
+
+  const created = deps.getCreated();
+
+  assert.equal(created.source, "autopilot");
+});
 test("bloqueia asset de outro usuario ou campanha", async () => {
   let created = false;
   const deps = dependencies({

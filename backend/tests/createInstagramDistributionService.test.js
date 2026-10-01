@@ -66,6 +66,27 @@ test("cria um unico Reel manual com asset e conexao do proprio usuario", async (
   assert.equal(result.queue.jobId, "job-1");
 });
 
+test("permite identificar Distribution criada pelo Autopilot", async () => {
+  const deps = dependencies();
+
+  await createInstagramDistribution({
+    userId: "user-1",
+    campaignId: "campaign-1",
+    mediaAssetId: "asset-1",
+    caption: "Patinete eletrico dobravel.",
+    source: "autopilot",
+    env: {
+      ...INSTAGRAM_OPERATIONAL_ENV,
+      BASE_URL: "https://staging.example",
+    },
+    ...deps,
+  });
+
+  const created = deps.getCreated();
+
+  assert.equal(created.source, "autopilot");
+  assert.equal(created.reviewMode, false);
+});
 test("bloqueia asset que nao pertence ao usuario e campanha", async () => {
   let created = false;
   const deps = dependencies({

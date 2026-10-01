@@ -17,6 +17,7 @@ export async function createTikTokDistribution({
   caption,
   hashtags = [],
   cta = "Confira a oferta no link",
+  source = "manual",
   deliveryMode = "direct",
   privacyLevel = "SELF_ONLY",
   disableComment = true,
@@ -97,7 +98,7 @@ export async function createTikTokDistribution({
     userId: cleanUserId,
     campaignId: cleanCampaignId,
     channel: "tiktok",
-    source: "manual",
+    source,
     destinationId: String(connection.destinationId),
     content: {
       text: cleanCaption,
