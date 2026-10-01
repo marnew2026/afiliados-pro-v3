@@ -80,3 +80,28 @@ export async function deactivateInstagramConnection({
     deactivatedCount: Number(result?.modifiedCount || 0),
   };
 }
+
+
+export async function deleteInstagramConnectionData({
+  signedRequest,
+  appSecret = process.env.INSTAGRAM_APP_SECRET,
+  connectionModel = ChannelConnection,
+  confirmationCodeFactory = () =>
+    crypto.randomUUID().replaceAll("-", ""),
+}) {
+  const { instagramUserId } = verifyInstagramSignedRequest(
+    signedRequest,
+    appSecret
+  );
+
+  const result = await connectionModel.deleteMany({
+    provider: "instagram",
+    destinationId: instagramUserId,
+  });
+
+  return {
+    instagramUserId,
+    deletedCount: Number(result?.deletedCount || 0),
+    confirmationCode: String(confirmationCodeFactory()),
+  };
+}
