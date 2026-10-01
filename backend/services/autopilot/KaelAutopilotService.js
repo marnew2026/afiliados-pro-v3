@@ -7,7 +7,11 @@ import {
 } from "../distribution/KaelDistributionContentBuilder.js";
 import crypto from "crypto";
 
-export async function runKaelAutopilotOnce(userId) {
+export async function runKaelAutopilotOnce(userId, { channel = "telegram" } = {}) {
+  if (channel !== "telegram") {
+    const { runKaelVideoAutopilotOnce } = await import("./KaelVideoAutopilotService.js");
+    return runKaelVideoAutopilotOnce(userId, { channel });
+  }
   if (!userId) {
     throw new Error("userId nao informado ao KAEL Autopilot.");
   }

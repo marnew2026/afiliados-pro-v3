@@ -14,6 +14,7 @@ export async function executeKaelDistribution({
   mediaPreparer = runKaelMediaPreparation,
   distributionCreator,
   creatorResolver = resolveKaelDistributionCreator,
+  beforeCreate,
 }) {
   const preparation = await mediaPreparer({
     userId,
@@ -36,6 +37,10 @@ export async function executeKaelDistribution({
     creatorResolver({
       channel,
     });
+
+  if (beforeCreate && !(await beforeCreate())) {
+    return { success: true, skipped: true, reason: "autopilot_state_changed" };
+  }
 
   return creator({
     userId,

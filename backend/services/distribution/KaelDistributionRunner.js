@@ -7,9 +7,9 @@ export async function scheduleKaelDistribution(input) {
 }
 
 export async function runKaelDistribution({
-  userId, campaign, channel, content,
+  userId, campaign, channel, content, beforeCreate,
   executor = executeKaelDistribution,
   scheduler = scheduleKaelDistribution,
 }) {
-  return executor({ userId, campaign, channel, content, scheduler });
+  return executor({ userId, campaign, channel, content, scheduler, ...(beforeCreate ? { beforeCreate } : {}) });
 }

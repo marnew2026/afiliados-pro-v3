@@ -46,9 +46,20 @@ router.put("/settings", protect, async (req, res) => {
       mode,
       dailyLimit,
       minIntervalMinutes,
+      channels,
     } = req.body;
 
     const update = {};
+    if (channels !== undefined) {
+      const allowed = ["telegram", "instagram", "facebook", "tiktok", "kwai"];
+      if (!Array.isArray(channels) || !channels.length || channels.some((c) => !allowed.includes(c))) {
+        return res.status(400).json({ success: false, error: "Canais do Autopilot invalidos." });
+      }
+      if (channels.some((c) => c !== "telegram") && process.env.KAEL_VIDEO_AUTOPILOT_ENABLED !== "true") {
+        return res.status(400).json({ success: false, error: "Autopilot de video ainda nao habilitado." });
+      }
+      update.channels = [...new Set(channels)];
+    }
 
     if (typeof enabled === "boolean") {
       update.enabled = enabled;
@@ -112,7 +123,7 @@ router.put("/settings", protect, async (req, res) => {
           $set: update,
           $setOnInsert: {
             userId: req.user._id,
-            channels: ["telegram"],
+            ...(update.channels ? {} : { channels: ["telegram"] }),
           },
         },
         {
@@ -143,9 +154,11 @@ router.put("/settings", protect, async (req, res) => {
 
 router.post("/run-once", protect, async (req, res) => {
   try {
-    const result = await runKaelAutopilotOnce(
-      req.user._id
-    );
+    const channel = req.body?.channel ?? "telegram";
+    if (!["telegram", "instagram", "facebook", "tiktok", "kwai"].includes(channel)) {
+      return res.status(400).json({ success: false, error: "Canal do Autopilot invalido." });
+    }
+    const result = await runKaelAutopilotOnce(req.user._id, { channel });
 
     return res.json(result);
   } catch (error) {

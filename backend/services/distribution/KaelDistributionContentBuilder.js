@@ -11,6 +11,8 @@ export async function buildKaelDistributionContent({
   campaign,
   channel,
   trackingUrl = "",
+  contentEngine = buildKaelContent,
+  mediaResolver = resolveKaelMedia,
 }) {
   if (!userId) {
     throw new Error(
@@ -24,18 +26,20 @@ export async function buildKaelDistributionContent({
     );
   }
 
-  const kaelContent = buildKaelContent({
+  const kaelContent = contentEngine({
     campaign,
     channel,
   });
 
-  const resolvedContent = await resolveKaelMedia({
+  const resolvedContent = await mediaResolver({
     userId,
     campaignId: campaign._id,
     content: kaelContent,
   });
 
   return {
+    mediaAssetId: resolvedContent.mediaAssetId,
+    channel,
     title: resolvedContent.title,
     text: resolvedContent.text,
     contentType: resolvedContent.contentType,

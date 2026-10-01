@@ -23,7 +23,7 @@ const AutopilotSettingsSchema = new mongoose.Schema(
 
     channels: {
       type: [String],
-      enum: ["telegram"],
+      enum: ["telegram", "instagram", "facebook", "tiktok", "kwai"],
       default: ["telegram"],
     },
 
@@ -40,11 +40,17 @@ const AutopilotSettingsSchema = new mongoose.Schema(
       min: 30,
     },
 
+    videoPendingCampaigns: {
+      type: Map,
+      of: mongoose.Schema.Types.ObjectId,
+      default: () => ({}),
+    },
+
     lastRunAt: {
       type: Date,
       default: null,
     },
-    
+
     runLockedUntil: {
       type: Date,
       default: null,

@@ -60,7 +60,7 @@ test("Distribution criada pelo KAEL identifica origem autopilot", () => {
   );
 });
 
-test("KAEL Autopilot permanece limitado ao Telegram nesta fase", () => {
+test("KAEL preserva Telegram como padrao e permite canais de video", () => {
   const settings = read(
     "backend/models/AutopilotSettings.js"
   );
@@ -68,7 +68,8 @@ test("KAEL Autopilot permanece limitado ao Telegram nesta fase", () => {
     "backend/services/autopilot/KaelAutopilotService.js"
   );
 
-  assert.match(settings, /enum:\s*\["telegram"\]/);
+  assert.match(settings, /enum:\s*\["telegram", "instagram", "facebook", "tiktok", "kwai"\]/);
+  assert.match(service, /channel = "telegram"/);
   assert.match(
     service,
     /channels\.includes\("telegram"\)/

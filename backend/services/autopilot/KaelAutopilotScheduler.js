@@ -3,7 +3,11 @@ import { runKaelAutopilotOnce } from "./KaelAutopilotService.js";
 
 let schedulerRunning = false;
 
-export async function runKaelAutopilotScheduler() {
+export async function runKaelAutopilotScheduler({
+  settingsModel = AutopilotSettings,
+  runner = runKaelAutopilotOnce,
+  env = process.env,
+} = {}) {
   if (schedulerRunning) {
     console.log("KAEL SCHEDULER: ciclo anterior ainda em execução");
     return;
@@ -12,12 +16,14 @@ export async function runKaelAutopilotScheduler() {
   schedulerRunning = true;
 
   try {
-    const settingsList = await AutopilotSettings.find({
+    const settingsList = await settingsModel.find({
       enabled: true,
       mode: "automatico",
-      channels: "telegram",
+      channels: env.KAEL_VIDEO_AUTOPILOT_ENABLED === "true"
+        ? { $in: ["telegram", "instagram", "facebook", "tiktok", "kwai"] }
+        : "telegram",
     })
-      .select("userId")
+      .select("userId channels")
       .limit(20)
       .lean();
 
@@ -32,13 +38,21 @@ export async function runKaelAutopilotScheduler() {
 
     for (const settings of settingsList) {
       try {
-        const result = await runKaelAutopilotOnce(settings.userId);
-
-        console.log(
-          "KAEL SCHEDULER RESULT:",
-          String(settings.userId),
-          result?.reason || (result?.skipped ? "skipped" : "executed")
-        );
+        const channels = (settings.channels || ["telegram"]).filter((channel) =>
+          channel === "telegram" || env.KAEL_VIDEO_AUTOPILOT_ENABLED === "true");
+        for (const channel of [...new Set(channels)]) {
+          try {
+            const result = await runner(settings.userId, { channel });
+            console.log(
+              "KAEL SCHEDULER RESULT:",
+              String(settings.userId),
+              channel,
+              result?.reason || (result?.skipped ? "skipped" : "executed")
+            );
+          } catch (error) {
+            console.error("KAEL SCHEDULER CHANNEL ERROR:", channel, error?.message || "erro desconhecido");
+          }
+        }
       } catch (error) {
         console.error(
           "KAEL SCHEDULER USER ERROR:",
