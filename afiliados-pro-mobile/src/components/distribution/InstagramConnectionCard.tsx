@@ -184,10 +184,13 @@ export default function InstagramConnectionCard() {
         ) : null}
       </View>
 
-      {!loading && !connection && (
+      {!loading && (
         <TouchableOpacity
           onPress={connectInstagram}
           disabled={connecting}
+          accessibilityRole="button"
+          accessibilityLabel={connection ? "Reconectar Instagram" : "Conectar Instagram"}
+          accessibilityState={{ disabled: connecting, busy: connecting }}
           style={{
             backgroundColor: "#111827",
             borderRadius: 14,
@@ -212,7 +215,7 @@ export default function InstagramConnectionCard() {
                 fontWeight: "900",
               }}
             >
-              Conectar Instagram
+              {connection ? "Reconectar Instagram" : "Conectar Instagram"}
             </Text>
           )}
         </TouchableOpacity>

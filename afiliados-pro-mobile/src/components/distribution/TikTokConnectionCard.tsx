@@ -184,10 +184,13 @@ export default function TikTokConnectionCard() {
         ) : null}
       </View>
 
-      {!loading && !connection && (
+      {!loading && (
         <TouchableOpacity
           onPress={connectTikTok}
           disabled={connecting}
+          accessibilityRole="button"
+          accessibilityLabel={connection ? "Reconectar TikTok" : "Conectar TikTok"}
+          accessibilityState={{ disabled: connecting, busy: connecting }}
           style={{
             backgroundColor: "#111827",
             borderRadius: 14,
@@ -212,7 +215,7 @@ export default function TikTokConnectionCard() {
                 fontWeight: "900",
               }}
             >
-              Conectar TikTok
+              {connection ? "Reconectar TikTok" : "Conectar TikTok"}
             </Text>
           )}
         </TouchableOpacity>

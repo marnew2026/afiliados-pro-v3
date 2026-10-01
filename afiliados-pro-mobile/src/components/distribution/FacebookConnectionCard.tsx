@@ -184,10 +184,13 @@ export default function FacebookConnectionCard() {
         ) : null}
       </View>
 
-      {!loading && !connection && (
+      {!loading && (
         <TouchableOpacity
           onPress={connectFacebook}
           disabled={connecting}
+          accessibilityRole="button"
+          accessibilityLabel={connection ? "Reconectar Facebook" : "Conectar Facebook"}
+          accessibilityState={{ disabled: connecting, busy: connecting }}
           style={{
             backgroundColor: "#111827",
             borderRadius: 14,
@@ -212,7 +215,7 @@ export default function FacebookConnectionCard() {
                 fontWeight: "900",
               }}
             >
-              Conectar Facebook
+              {connection ? "Reconectar Facebook" : "Conectar Facebook"}
             </Text>
           )}
         </TouchableOpacity>
