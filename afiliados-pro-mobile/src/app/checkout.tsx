@@ -7,7 +7,7 @@ import {
 
 import { useRouter } from "expo-router";
 import * as Linking from "expo-linking";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "../services/sessionStorage";
 
 import api from "../services/api";
 

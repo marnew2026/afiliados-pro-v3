@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "./sessionStorage";
 import distributionApi from "./distributionApi";
 
 const TOKEN_KEY = "distributionToken";

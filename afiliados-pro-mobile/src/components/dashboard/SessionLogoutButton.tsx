@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "../../services/sessionStorage";
 import { router } from "expo-router";
 import { Alert, Platform, Text, TouchableOpacity } from "react-native";
 import { logoutDistribution } from "../../services/distributionAuth";

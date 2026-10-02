@@ -1,5 +1,5 @@
 import axios from "axios";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "./sessionStorage";
 import { buildApiUrl } from "./apiEnvironment";
 
 const READINESS_URL = buildApiUrl("/admin/integrations/readiness");

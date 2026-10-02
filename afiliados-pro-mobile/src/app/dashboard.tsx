@@ -34,7 +34,7 @@ import StatsCards from "../components/dashboard/StatsCards";
 import Kael from "../components/kael/Kael";
 import api from "../services/api";
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "../services/sessionStorage";
 import useDashboardService from "../hooks/useDashboardService";
 type Campaign = {
   _id: string;

@@ -1,6 +1,6 @@
 import { Redirect } from "expo-router";
 import { useEffect, useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "../services/sessionStorage";
 
 export default function Index() {
   const [loading, setLoading] = useState(true);

@@ -1,90 +1,65 @@
 import { router } from "expo-router";
-import { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
-
+import { useEffect, useState } from "react";
+import { ActivityIndicator, View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
+import AsyncStorage from "../services/sessionStorage";
 import api from "../services/api";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [restoring, setRestoring] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
-async function entrar() {
+  useEffect(() => {
+    let active = true;
+    async function restoreSession() {
+      try {
+        const [[, token], [, userId]] = await AsyncStorage.multiGet(["token", "userId"]);
+        if (active && token && userId) router.replace("/dashboard");
+      } catch {
+        console.warn("Não foi possível ler a sessão salva.");
+      } finally {
+        if (active) setRestoring(false);
+      }
+    }
+    void restoreSession();
+    return () => { active = false; };
+  }, []);
 
-
-  try {
-    if (!email || !password) {
+  async function entrar() {
+    if (submitting) return;
+    if (!email.trim() || !password) {
       Alert.alert("Erro", "Preencha todos os campos");
       return;
     }
-
-  
-
-    const { data } = await api.post("/auth/login", {
-      email: email.trim().toLowerCase(),
-      password,
-    });
-
-    console.log("========== DEBUG LOGIN JWT ==========");
-
-    
-
-    if (!data?.token) {
-      throw new Error("Backend não retornou token");
+    setSubmitting(true);
+    try {
+      const { data } = await api.post("/auth/login", {
+        email: email.trim().toLowerCase(), password,
+      });
+      if (!data?.token || !data?.user?._id || !data?.user?.email) {
+        throw new Error("Backend não retornou uma sessão completa");
+      }
+      await AsyncStorage.multiSet([
+        ["token", data.token], ["userId", data.user._id], ["email", data.user.email],
+      ]);
+      router.replace("/dashboard");
+    } catch (err: any) {
+      Alert.alert("Erro", err?.response?.data?.error || err.message || "Falha no login");
+    } finally {
+      setSubmitting(false);
     }
-
-   
-
-    
-   console.log("LOGIN USUÁRIO RECEBIDO: SIM");
-   console.log("====================================");
-
- // 💾 SALVAR TOKEN
-await AsyncStorage.multiSet([
-  ["token", data.token],
-  ["userId", data.user._id],
-  ["email", data.user.email],
-]);
-
-console.log("========== LOGIN PERSISTENTE ==========");
-
-console.log(
-  "TOKEN SALVO:",
-  (await AsyncStorage.getItem("token")) ? "SIM" : "NÃO"
-);
-
-console.log(
-  "USER ID SALVO:",
-  await AsyncStorage.getItem("userId")
-);
-
-console.log("=======================================");
-    router.replace("/dashboard");
-
-  } catch (err: any) {
-
-    console.log(
-      "LOGIN ERROR:",
-      err?.response?.data || err.message
-    );
-
-    Alert.alert(
-      "Erro",
-      err?.response?.data?.error ||
-      err.message ||
-      "Falha no login"
-    );
   }
-}
 
+  if (restoring) {
+    return <View style={{ flex: 1, justifyContent: "center" }}><ActivityIndicator accessibilityLabel="Restaurando sessão" /></View>;
+  }
   return (
     <View style={{ flex: 1, justifyContent: "center", padding: 20 }}>
-      <TextInput placeholder="Email" value={email} onChangeText={setEmail} />
+      <TextInput placeholder="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
       <TextInput placeholder="Senha" secureTextEntry value={password} onChangeText={setPassword} />
-
-      <TouchableOpacity onPress={entrar}>
-        <Text>Entrar</Text>
+      <TouchableOpacity onPress={entrar} disabled={submitting} accessibilityRole="button">
+        <Text>{submitting ? "Entrando..." : "Entrar"}</Text>
       </TouchableOpacity>
     </View>
   );

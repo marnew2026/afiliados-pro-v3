@@ -10,7 +10,7 @@ import {
 import { router } from "expo-router";
 import api from "../services/api";
 import * as Crypto from "expo-crypto";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "../services/sessionStorage";
 export default function Saque() {
     
   const [amount, setAmount] = useState("");

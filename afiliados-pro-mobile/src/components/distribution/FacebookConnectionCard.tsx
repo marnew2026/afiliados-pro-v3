@@ -1,12 +1,10 @@
-import React, {
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   AppState,
+  Linking,
+  Platform,
   Text,
   TouchableOpacity,
   View,
@@ -18,38 +16,27 @@ import { useDistributionChannels } from "../../hooks/useDistributionChannels";
 import distributionApi from "../../services/distributionApi";
 
 export default function FacebookConnectionCard() {
-  const {
-    connections,
-    loading,
-    error,
-    reload,
-  } = useDistributionChannels();
+  const { connections, loading, error, reload } =
+    useDistributionChannels();
 
   const [connecting, setConnecting] = useState(false);
 
   const connection = connections.find(
-    (item) =>
-      item.provider === "facebook" &&
-      item.active !== false
+    (item) => item.provider === "facebook" && item.active !== false
   );
 
   useEffect(() => {
-    const subscription = AppState.addEventListener(
-      "change",
-      (state) => {
-        if (state === "active") {
-          reload();
-        }
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        void reload();
       }
-    );
+    });
 
     return () => subscription.remove();
   }, [reload]);
 
   const connectFacebook = useCallback(async () => {
-    if (connecting) {
-      return;
-    }
+    if (connecting) return;
 
     try {
       setConnecting(true);
@@ -62,38 +49,68 @@ export default function FacebookConnectionCard() {
 
       if (!data?.success || !authorizationUrl) {
         throw new Error(
-          "O servidor nao retornou a autorizacao do Facebook."
+          "O servidor não retornou a autorização do Facebook."
         );
       }
 
-      const browserResult =
-        await WebBrowser.openAuthSessionAsync(
-          authorizationUrl
+      if (Platform.OS === "web") {
+        await Linking.openURL(authorizationUrl);
+      } else if (Platform.OS === "android") {
+        const browsers =
+          await WebBrowser.getCustomTabsSupportingBrowsersAsync();
+
+        console.log(
+          "FACEBOOK BROWSERS:",
+          browsers.browserPackages
         );
 
-      console.log(
-        "FACEBOOK OAUTH SESSION RESULT:",
-        browserResult.type
-      );
+        const browserPackage = browsers.browserPackages.includes(
+          "com.android.chrome"
+        )
+          ? "com.android.chrome"
+          : browsers.preferredBrowserPackage ||
+            browsers.browserPackages[0];
 
-      await reload();
+        if (!browserPackage) {
+          throw new Error(
+            "Nenhum navegador compatível foi encontrado."
+          );
+        }
+
+        const browserResult = await WebBrowser.openBrowserAsync(
+          authorizationUrl,
+          {
+            browserPackage,
+            createTask: false,
+          }
+        );
+
+        console.log(
+          "FACEBOOK BROWSER RESULT:",
+          browserResult.type
+        );
+
+        await reload();
+      } else {
+        await WebBrowser.openBrowserAsync(authorizationUrl);
+        await reload();
+      }
     } catch (requestError: any) {
       console.log(
         "FACEBOOK CONNECTION ERROR:",
-        requestError?.response?.data ||
-          requestError?.message
+        requestError?.response?.data || requestError?.message
       );
 
       Alert.alert(
         "Falha ao conectar Facebook",
         requestError?.response?.data?.error ||
           requestError?.message ||
-          "Nao foi possivel iniciar a conexao."
+          "Não foi possível iniciar a conexão."
       );
     } finally {
       setConnecting(false);
     }
-  }, [connecting]);
+  }, [connecting, reload]);
 
   return (
     <View
@@ -103,9 +120,7 @@ export default function FacebookConnectionCard() {
         padding: 18,
         marginBottom: 14,
         borderWidth: 1,
-        borderColor: connection
-          ? "#22c55e"
-          : "#334155",
+        borderColor: connection ? "#22c55e" : "#334155",
       }}
     >
       <View
@@ -151,17 +166,13 @@ export default function FacebookConnectionCard() {
             }}
           >
             {connection
-              ? connection.destinationName ||
-                "Pagina conectada"
-              : "Conecte sua Pagina oficial"}
+              ? connection.destinationName || "Página conectada"
+              : "Conecte sua Página oficial"}
           </Text>
         </View>
 
         {loading ? (
-          <ActivityIndicator
-            size="small"
-            color="#c4b5fd"
-          />
+          <ActivityIndicator size="small" color="#c4b5fd" />
         ) : connection ? (
           <View
             style={{
@@ -189,8 +200,13 @@ export default function FacebookConnectionCard() {
           onPress={connectFacebook}
           disabled={connecting}
           accessibilityRole="button"
-          accessibilityLabel={connection ? "Reconectar Facebook" : "Conectar Facebook"}
-          accessibilityState={{ disabled: connecting, busy: connecting }}
+          accessibilityLabel={
+            connection ? "Reconectar Facebook" : "Conectar Facebook"
+          }
+          accessibilityState={{
+            disabled: connecting,
+            busy: connecting,
+          }}
           style={{
             backgroundColor: "#111827",
             borderRadius: 14,
@@ -203,10 +219,7 @@ export default function FacebookConnectionCard() {
           }}
         >
           {connecting ? (
-            <ActivityIndicator
-              size="small"
-              color="#ffffff"
-            />
+            <ActivityIndicator size="small" color="#ffffff" />
           ) : (
             <Text
               style={{
@@ -215,7 +228,9 @@ export default function FacebookConnectionCard() {
                 fontWeight: "900",
               }}
             >
-              {connection ? "Reconectar Facebook" : "Conectar Facebook"}
+              {connection
+                ? "Reconectar Facebook"
+                : "Conectar Facebook"}
             </Text>
           )}
         </TouchableOpacity>
@@ -229,12 +244,7 @@ export default function FacebookConnectionCard() {
             alignItems: "center",
           }}
         >
-          <Text
-            style={{
-              color: "#fca5a5",
-              fontSize: 12,
-            }}
-          >
+          <Text style={{ color: "#fca5a5", fontSize: 12 }}>
             {error}
           </Text>
 

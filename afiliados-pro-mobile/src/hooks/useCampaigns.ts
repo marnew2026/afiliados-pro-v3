@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import api from "../services/api";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "../services/sessionStorage";
 export default function useCampaigns() {
   const [search, setSearch] = useState("");
 

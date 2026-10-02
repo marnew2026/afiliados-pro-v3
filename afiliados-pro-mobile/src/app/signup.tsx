@@ -1,7 +1,7 @@
 import { View, Text, TextInput, Button, Alert } from "react-native";
 import { useState } from "react";
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "../services/sessionStorage";
 
 
 import api from "../services/api";

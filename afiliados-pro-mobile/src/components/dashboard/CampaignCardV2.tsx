@@ -12,7 +12,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { router } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "../../services/sessionStorage";
 import api from "../../services/api";
 import { buildApiUrl } from "../../services/apiEnvironment";
 

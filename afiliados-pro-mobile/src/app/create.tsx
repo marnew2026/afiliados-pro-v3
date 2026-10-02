@@ -8,7 +8,7 @@ import {
 } from "react-native";
 
 import { router } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "../services/sessionStorage";
 import api from "../services/api";
 export default function CreateCampaign() {
   const [nome, setNome] = useState("");
