@@ -25,6 +25,7 @@ import distributionRoutes from "./routes/distributionRoutes.js";
 import channelRoutes from "./routes/channelRoutes.js";
 import autopilotRoutes from "./routes/autopilotRoutes.js";
 import legalRoutes from "./routes/legalRoutes.js";
+import { renderHomePage } from "./services/legal/HomePageService.js";
 import tiktokVerificationRoutes from "./routes/tiktokVerificationRoutes.js";
 import tiktokReviewRoutes from "./routes/tiktokReviewRoutes.js";
 import instagramReviewRoutes from "./routes/instagramReviewRoutes.js";
@@ -77,6 +78,9 @@ app.use("/distribution", distributionRoutes);
 app.use("/channel", channelRoutes);
 app.use("/autopilot", autopilotRoutes);
 app.use("/legal", legalRoutes);
+app.get("/", (req, res) =>
+  res.status(200).type("html").set("Cache-Control", "public, max-age=300").send(renderHomePage())
+);
 app.use("/tiktok-review", tiktokReviewRoutes);
 app.use("/instagram-review", instagramReviewRoutes);
 app.use("/admin/integrations/readiness", integrationReadinessRoutes);

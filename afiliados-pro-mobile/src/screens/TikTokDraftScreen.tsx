@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   ScrollView,
   Text,
   TextInput,
@@ -90,7 +91,22 @@ export default function TikTokDraftScreen() {
       );
       return;
     }
+    if (Platform.OS === "web") {
+      const confirmed =
+        typeof window !== "undefined"
+          ? window.confirm(
+              "Enviar o vídeo como rascunho para " +
+                destinationName +
+                "? Você ainda precisará revisar e publicar dentro do TikTok."
+            )
+          : false;
 
+      if (confirmed) {
+        void sendDraft();
+      }
+
+      return;
+    }
     Alert.alert(
       "Enviar rascunho ao TikTok",
       "O vídeo será enviado como rascunho para " +
