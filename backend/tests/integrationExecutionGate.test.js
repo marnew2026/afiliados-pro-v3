@@ -104,3 +104,27 @@ test("desligamento emergencial tambem bloqueia Instagram review", () => {
       error.reason === "emergency_disabled"
   );
 });
+
+
+test("producao nao usa a excecao de review com flags de staging", () => {
+  assert.throws(
+    () => assertIntegrationOperational("instagram", {
+      NODE_ENV: "production",
+      INSTAGRAM_REVIEW_ENV: "staging",
+      INSTAGRAM_REVIEW_ENABLED: "true",
+      INSTAGRAM_API_APPROVAL_STATUS: "pending",
+      INSTAGRAM_ENABLED: "false",
+    }, { review: true }),
+    (error) => error.reason === "approval_not_confirmed"
+  );
+});
+
+test("producao aprovada e habilitada preserva o fluxo normal", () => {
+  assert.equal(assertIntegrationOperational("instagram", {
+    NODE_ENV: "production",
+    INSTAGRAM_REVIEW_ENV: "staging",
+    INSTAGRAM_REVIEW_ENABLED: "true",
+    INSTAGRAM_API_APPROVAL_STATUS: "approved",
+    INSTAGRAM_ENABLED: "true",
+  }, { review: true }), true);
+});

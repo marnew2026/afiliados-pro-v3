@@ -43,6 +43,7 @@ function isInstagramReviewAllowed(channel, env, review = false) {
   return (
     review === true &&
     channel === "instagram" &&
+    String(env.NODE_ENV || "").trim().toLowerCase() !== "production" &&
     isTrue(env.INSTAGRAM_REVIEW_ENABLED) &&
     String(env.INSTAGRAM_REVIEW_ENV || "").trim().toLowerCase() === "staging"
   );
