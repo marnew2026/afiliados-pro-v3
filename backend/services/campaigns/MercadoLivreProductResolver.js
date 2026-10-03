@@ -49,6 +49,7 @@ function htmlAttributes(tag) {
   return attrs;
 }
 export function productPageDestination(html, currentUrl) {
+  html = String(html).replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, "");
   const tags = [...String(html).matchAll(/<(?:link|meta)\b[^>]*>/gi)].map(match => htmlAttributes(match[0]));
   const refresh = tags.find(attrs => attrs["http-equiv"]?.toLowerCase() === "refresh");
   const refreshUrl = refresh?.content?.match(/(?:^|;)\s*url\s*=\s*(.+)$/i)?.[1]?.replace(/^['"]|['"]$/g, "");
@@ -79,6 +80,29 @@ export function productFromItem(data, resolvedUrl) {
       .filter(a => ["BRAND", "MODEL", "COLOR"].includes(a.id) && a.value_name)
       .map(a => `${a.name}: ${a.value_name}`).slice(0, 3) };
 }
+function socialProductFromPage(html, resolvedUrl) {
+  if (!new URL(resolvedUrl).pathname.startsWith("/social/")) return null;
+  const normalize = value => decodeHtml(value).replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+  const metadata = [...String(html).matchAll(/<meta\b[^>]*>/gi)].map(match => htmlAttributes(match[0]));
+  const title = metadata.find(attrs => attrs.property?.toLowerCase() === "og:title")?.content;
+  if (!title) return null;
+  const matches = new Map();
+  for (const match of String(html).matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)) {
+    const attrs = htmlAttributes(match[1]);
+    if (!attrs.class?.split(/\s+/).includes("poly-component__title") || normalize(match[2]) !== normalize(title)) continue;
+    const target = validateProductLink(new URL(attrs.href, resolvedUrl).href);
+    const id = extractItemId(target.href);
+    if (id) matches.set(id, target.href);
+  }
+  if (matches.size !== 1) return null;
+  const pictures = [...String(html).matchAll(/<img\b[^>]*>/gi)]
+    .map(match => htmlAttributes(match[0]))
+    .filter(attrs => attrs.class?.split(/\s+/).includes("poly-component__picture") && normalize(attrs.alt || "") === normalize(title))
+    .map(attrs => ({ secure_url: attrs.src })).filter(picture => picture.secure_url);
+  if (!pictures.length) return null;
+  const [id, target] = [...matches][0];
+  return productFromItem({ id, title: normalize(title), status: "active", pictures, attributes: [] }, target);
+}
 export function productFromPage(html, resolvedUrl) {
   const entries = [];
   for (const match of String(html).matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
@@ -101,6 +125,8 @@ export function productFromPage(html, resolvedUrl) {
   const unique = [...new Map(products.map(product => [`${product.title}|${product.images.join("|")}`, product])).values()];
   if (unique.length === 1) return unique[0];
   if (unique.length > 1) throw new Error("Pagina com varios produtos. Nao e possivel escolher um anuncio automaticamente.");
+  const socialProduct = socialProductFromPage(html, resolvedUrl);
+  if (socialProduct) return socialProduct;
   throw new Error("Pagina sem dados estruturados suficientes para montar a campanha.");
 }
 async function readProductPage({ startUrl, http, allowItemStop }) {
@@ -124,7 +150,7 @@ async function readProductPage({ startUrl, http, allowItemStop }) {
     try { product = productFromPage(html, url.href); } catch { /* Procura um destino explicito abaixo. */ }
     const destination = productPageDestination(html, url.href);
     if (product) {
-      const productUrl = destination || url;
+      const productUrl = validateProductLink(product.resolvedUrl || (destination || url).href);
       return { url: productUrl, product: { ...product, resolvedUrl: productUrl.href, itemId: extractItemId(productUrl.href) }, itemId: extractItemId(productUrl.href) };
     }
     if (destination && destination.href !== url.href) { url = destination; continue; }

@@ -126,3 +126,33 @@ test("pagina com varios produtos nao escolhe o primeiro anuncio", () => {
   const list = [{"@type":"Product", name:"Mouse", image:fixture.pictures[0].secure_url}, {"@type":"Product", name:"Teclado", image:fixture.pictures[0].secure_url}];
   assert.throws(() => productFromPage('<script type="application/ld+json">'+JSON.stringify(list)+'</script>', "https://meli.la/a"), /varios produtos/);
 });
+
+const socialPage = `<meta property="og:title" content="Vara de pesca">
+<noscript><meta http-equiv="refresh" content="0;URL=https://www.mercadolivre.com.br/gz/webdevice/config"></noscript>
+<meta property="og:url" content="https://www.mercadolivre.com.br/social/exemplo">
+<img class="poly-component__picture" alt="Vara de pesca" src="https://http2.mlstatic.com/vara.webp">
+<a class="poly-component__title" href="https://www.mercadolivre.com.br/up/MLBU3425941263?wid=MLB4211228077">Vara de pesca</a>
+<a class="poly-component__title" href="https://www.mercadolivre.com.br/up/MLBU999?wid=MLB999">Outro produto</a>`;
+test("ignora refresh de configuracao dentro de noscript", () => {
+  assert.equal(productPageDestination(socialPage, "https://www.mercadolivre.com.br/social/exemplo").pathname, "/social/exemplo");
+});
+test("perfil afiliado escolhe somente cartao que corresponde ao titulo compartilhado", () => {
+  const product = productFromPage(socialPage, "https://www.mercadolivre.com.br/social/exemplo");
+  assert.equal(product.itemId, "MLB4211228077");
+  assert.equal(product.title, "Vara de pesca");
+  assert.deepEqual(product.images, ["https://http2.mlstatic.com/vara.webp"]);
+});
+test("perfil com titulo ambiguo ou imagem diferente nao escolhe produto", () => {
+  assert.throws(() => productFromPage(socialPage + '<a class="poly-component__title" href="https://www.mercadolivre.com.br/MLB-888-produto">Vara de pesca</a>', "https://www.mercadolivre.com.br/social/exemplo"));
+  assert.throws(() => productFromPage(socialPage.replace('alt="Vara de pesca"','alt="Outra imagem"'), "https://www.mercadolivre.com.br/social/exemplo"));
+});
+test("link curto de perfil resolve produto sem seguir configuracao nem consultar API", async () => {
+  const calls = [];
+  const product = await resolveMercadoLivreProduct({link: "https://meli.la/exemplo", http: {get: async url => {
+    calls.push(url);
+    return calls.length === 1 ? {status:301,headers:{location:"https://www.mercadolivre.com.br/social/exemplo"}} : {status:200,headers:{},data:socialPage};
+  }}});
+  assert.equal(calls.length,2);
+  assert.equal(product.itemId,"MLB4211228077");
+  assert.match(product.resolvedUrl,/wid=MLB4211228077/);
+});
