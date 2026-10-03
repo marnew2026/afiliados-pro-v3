@@ -1,4 +1,5 @@
-﻿import Campaign from "../../models/Campaign.js";
+import { assertLinkAutomationAtDelivery } from "../autopilot/KaelLinkAutomationGuard.js";
+import Campaign from "../../models/Campaign.js";
 import Distribution from "../../models/Distribution.js";
 import ChannelConnection from "../../models/ChannelConnection.js";
 import { getChannelAdapter } from "./ChannelAdapterResolver.js";
@@ -66,6 +67,7 @@ export async function publishDistribution(distributionId) {
   }
 
   try {
+  await assertLinkAutomationAtDelivery(distribution);
   const campaign = await Campaign.findOne({
     _id: distribution.campaignId,
     userId: distribution.userId,
@@ -140,7 +142,7 @@ export async function publishDistribution(distributionId) {
       providerResult: result,
     };
   } catch (error) {
-    distribution.status = "failed";
+    distribution.status = error.code === "KAEL_AUTOMATION_PAUSED" ? "scheduled" : "failed";
     distribution.lastError = error.message;
 
     await distribution.save();

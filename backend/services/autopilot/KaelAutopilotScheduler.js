@@ -18,6 +18,7 @@ export async function runKaelAutopilotScheduler({
   try {
     const settingsList = await settingsModel.find({
       enabled: true,
+      linkAutomation: { $ne: true },
       mode: "automatico",
       channels: env.KAEL_VIDEO_AUTOPILOT_ENABLED === "true"
         ? { $in: ["telegram", "instagram", "facebook", "tiktok", "kwai"] }

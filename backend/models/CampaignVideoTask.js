@@ -8,7 +8,9 @@ const schema = new mongoose.Schema({
   product: { title: String, provider: String, itemId: String, images: [String],
     resolvedUrl: String, fetchedAt: Date, attributes: [String] },
   mediaAssetId: { type: mongoose.Schema.Types.ObjectId, ref: "MediaAsset" },
+  caption: { type: String, default: "", maxlength: 1800 },
   lastError: { type: String, default: "" },
 }, { timestamps: true });
+schema.index({ userId: 1, status: 1, createdAt: 1 });
 schema.index({ userId: 1, linkHash: 1 }, { unique: true });
 export default mongoose.model("CampaignVideoTask", schema);

@@ -18,6 +18,7 @@ export async function createFacebookDistribution({
   hashtags = [],
   cta = "Confira a oferta no link",
   source = "manual",
+  automationKey,
   env = process.env,
   campaignModel = Campaign,
   connectionModel = ChannelConnection,
@@ -100,6 +101,7 @@ export async function createFacebookDistribution({
     campaignId: cleanCampaignId,
     channel: "facebook",
     source,
+    ...(automationKey ? { automationKey, authorizationAt: connection.connectedAt } : {}),
     destinationId: String(connection.destinationId),
     content: {
       text: cleanCaption,

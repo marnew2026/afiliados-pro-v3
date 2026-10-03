@@ -23,6 +23,8 @@ export async function buildCampaignVideo({ taskId, taskModel = CampaignVideoTask
     let asset = await readyFinder({ userId: task.userId, campaignId: task.campaignId });
     if (!asset) {
       const video = await renderer({ product });
+      task.caption = String(video.caption || "").slice(0, 1800);
+      await task.save();
       // Revalida antes do upload se o usuario arquivou a campanha durante a renderizacao.
       const current = await campaignModel.findOne({ _id: task.campaignId, userId: task.userId, active: true, status: "active" });
       if (!current) throw new Error("Campanha arquivada durante a montagem do video.");

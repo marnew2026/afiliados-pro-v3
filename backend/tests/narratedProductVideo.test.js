@@ -44,3 +44,20 @@ test("trilha instrumental tem formato PCM valido e volume limitado", () => {
 test("estilo desconhecido nao cai silenciosamente no formato antigo", async () => {
   await assert.rejects(renderProductVideo({style:"typo"}), /desconhecido/);
 });
+
+import { buildPhraseCaptions } from "../services/media/template/ProductAdScript.js";
+test("categorias escolhem roteiros e temas diferentes sem fabricar caracteristicas", () => {
+  const shoe = buildProductAdScript({ title: "Tênis azul", images });
+  const mouse = buildProductAdScript({ title: "Mouse Bluetooth", images });
+  assert.equal(shoe.category, "footwear"); assert.equal(mouse.category, "technology");
+  assert.notEqual(shoe.theme.accent, mouse.theme.accent);
+  assert.doesNotMatch(JSON.stringify(shoe), /impermeavel|conforto garantido|antiderrapante/);
+});
+test("legendas por frases cobrem a fala e respeitam a duracao da voz", () => {
+  const speech = "Veja mais detalhes do produto. Confira as características e as condições na página do vendedor.";
+  const phrases = buildPhraseCaptions(speech, 7);
+  assert.equal(phrases.map(item => item.text).join(" "), speech);
+  assert.equal(phrases[0].start, .1);
+  assert.ok(Math.abs(phrases.at(-1).end - 7.1) < .0001);
+  assert.throws(() => buildPhraseCaptions(speech, NaN));
+});

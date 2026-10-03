@@ -10,6 +10,9 @@ const AutopilotSettingsSchema = new mongoose.Schema(
       index: true,
     },
 
+    linkAutomation: { type: Boolean, default: false },
+    linkLastRunAt: { type: Date, default: null },
+
     enabled: {
       type: Boolean,
       default: false,
@@ -71,6 +74,8 @@ const AutopilotSettingsSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+AutopilotSettingsSchema.index({ enabled: 1, linkAutomation: 1, linkLastRunAt: 1 });
 
 export default mongoose.model(
   "AutopilotSettings",

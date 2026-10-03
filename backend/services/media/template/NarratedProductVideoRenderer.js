@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import axios from "axios";
 import { validateProductImage } from "../../campaigns/MercadoLivreProductResolver.js";
-import { buildProductAdScript } from "./ProductAdScript.js";
+import { buildProductAdScript, buildPhraseCaptions } from "./ProductAdScript.js";
 import { narrateProductScenes } from "../narration/LocalProductNarrator.js";
 import { getFfmpegPath, wrapVideoText } from "./ProductVideoRenderer.js";
 const run = promisify(execFile);
@@ -58,10 +58,16 @@ export async function renderNarratedProductVideo({ product, http = axios, ffmpeg
       const closing = scene.layout === "closing", panelY = closing ? 430 : 360, panelH = closing ? 420 : 540;
       const zoom = scene.layout === "detail" ? "min(1.28+on*0.00012,1.32)" : scene.layout === "showcase" ? "min(1.40+on*0.00012,1.44)" : "min(1+on*0.00012,1.018)";
       const focusY = scene.layout === "detail" ? "0" : scene.layout === "showcase" ? "ih-ih/zoom" : "ih/2-ih/zoom/2";
+      const subtitleFilters = [];
+      for (const [index, phrase] of buildPhraseCaptions(scene.speech, voices[i].durationSeconds).entries()) {
+        const file = join(directory, `subtitle-${i}-${index}.txt`);
+        await writeFile(file, wrapVideoText(phrase.text, 38));
+        subtitleFilters.push(`${text(file, 25, "(w-text_w)/2", 1130)}:box=1:boxcolor=black@0.65:boxborderw=10:enable='between(t,${phrase.start.toFixed(3)},${phrase.end.toFixed(3)})'`);
+      }
       const filters = [
         `[0:v]scale=588:${panelH}:force_original_aspect_ratio=decrease,pad=600:${panelH + 12}:(ow-iw)/2:(oh-ih)/2:color=white,zoompan=z='${zoom}':x='iw/2-iw/zoom/2':y='${focusY}':d=${frames}:s=600x${panelH + 12}:fps=30[picture]`,
-        `color=c=0x101827:s=720x1280:r=30:d=${duration}[background]`,
-        `[background][picture]overlay=x=42:y=${panelY}:shortest=1,drawbox=x=42:y=105:w=78:h=5:color=0x50E3C2:t=fill,${text(brand, 18, 42, 65, "0xC9D2E5")},${text(count, 16, 542, 65, "0xC9D2E5")},${text(headline, 42, 42, 155)},${text(detail, 24, 42, 275, "0xB4C0D4")},drawbox=x=42:y=954:w=600:h=70:color=0x7357DB:t=fill,${text(join(directory, "cta.txt"), 26, 68, 976)},${text(footer, 16, 42, 1070, "0xAAB7CC")},fade=t=in:st=0:d=0.18,fade=t=out:st=${duration - .18}:d=0.18,format=yuv420p[video]`,
+        `color=c=${script.theme.background}:s=720x1280:r=30:d=${duration}[background]`,
+        `[background][picture]overlay=x=42:y=${panelY}:shortest=1,drawbox=x=42:y=105:w=78:h=5:color=${script.theme.accent}:t=fill,${text(brand, 18, 42, 65, "0xC9D2E5")},${text(count, 16, 542, 65, "0xC9D2E5")},${text(headline, 42, 42, 155)},${text(detail, 24, 42, 275, "0xB4C0D4")},drawbox=x=42:y=954:w=600:h=70:color=0x7357DB:t=fill,${text(join(directory, "cta.txt"), 26, 68, 976)},${text(footer, 16, 42, 1070, "0xAAB7CC")},${subtitleFilters.join(",")},fade=t=in:st=0:d=0.18,fade=t=out:st=${duration - .18}:d=0.18,format=yuv420p[video]`,
         `[1:a]adelay=100:all=1,apad,loudnorm=I=-16:TP=-1.5:LRA=7[audio]`
       ].join(";");
       await writeFile(join(directory, "cta.txt"), closing ? "CONFIRA NO LINK DA CAMPANHA" : "VEJA OS DETALHES DO PRODUTO");

@@ -20,6 +20,7 @@ import {
 } from "react-native";
 import { useFocusEffect } from "expo-router";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
+import KaelActivitySummary from "../components/dashboard/KaelActivitySummary";
 import SummaryCards from "../components/dashboard/SummaryCards";
 import DashboardCard from "../components/dashboard/DashboardCard";
 import CampaignCardV2 from "../components/dashboard/CampaignCardV2";
@@ -98,7 +99,7 @@ const loadDashboard = useCallback(async (userId: string) => {
 
 
   console.log("🔥 LOAD DASHBOARD EXECUTOU");
- 
+
   if (!userId) return;
 
   try {
@@ -106,12 +107,12 @@ const loadDashboard = useCallback(async (userId: string) => {
 
 const dashboardData = dashboardRes.data;
     console.log("🔥 DASHBOARD API:");
-   
 
-  
+
+
 
     console.log("🔥 USER ID:");
-    
+
 setDashboard({
   totalEarnings:
     dashboardData.wallet?.totalEarned || 0,
@@ -149,7 +150,7 @@ console.log("===============================");
 
   console.log("Status:", err.response?.status);
 
- 
+
 
   console.log("URL:", err.config?.url);
 
@@ -274,7 +275,7 @@ if (userId) {
     }
   }
 
- 
+
 
   const d = dashboard;
   const list = campaigns;
@@ -284,7 +285,7 @@ if (userId) {
   const founderDaysRemaining = founderEndsAt
     ? Math.max(0, Math.ceil((new Date(founderEndsAt).getTime() - Date.now()) / 86400000))
     : 0;
-  
+
 
 
   // 🔥 LOADING UI
@@ -298,7 +299,7 @@ if (userId) {
           backgroundColor: "#0f172a",
         }}
       >
-        
+
          <Kael state="working" />
       </View>
     );
@@ -321,7 +322,7 @@ if (userId) {
   }
 >
   <View style={{ padding: 20 }}>
-    
+
  <HomeHeader
   name={d.user?.name}
 />
@@ -362,6 +363,7 @@ if (userId) {
 />
 
 
+<KaelActivitySummary />
 <SummaryCards
   isPro={d.isPro}
   totalCampaigns={list.length}
@@ -397,7 +399,7 @@ if (userId) {
           }}
         >
 
-       
+
 
       <Text
   style={{
@@ -451,7 +453,7 @@ if (userId) {
   marginBottom:16,
 
   borderWidth:1,
-  borderColor:"#2563eb",      
+  borderColor:"#2563eb",
 
   shadowColor:"#22c55e",
   shadowOpacity:0.10,

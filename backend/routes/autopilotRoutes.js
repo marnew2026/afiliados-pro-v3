@@ -43,6 +43,7 @@ router.put("/settings", protect, async (req, res) => {
   try {
     const {
       enabled,
+      linkAutomation,
       mode,
       dailyLimit,
       minIntervalMinutes,
@@ -50,6 +51,11 @@ router.put("/settings", protect, async (req, res) => {
     } = req.body;
 
     const update = {};
+    if (linkAutomation !== undefined) {
+      if (typeof linkAutomation !== "boolean") return res.status(400).json({ success: false, error: "Configuracao automatica invalida." });
+      if (linkAutomation && enabled !== false && process.env.KAEL_LINK_AUTOMATION_ENABLED !== "true") return res.status(503).json({ success: false, error: "Divulgacao automatica de links ainda nao habilitada neste servidor." });
+      update.linkAutomation = linkAutomation;
+    }
     if (channels !== undefined) {
       const allowed = ["telegram", "instagram", "facebook", "tiktok", "kwai"];
       if (!Array.isArray(channels) || !channels.length || channels.some((c) => !allowed.includes(c))) {

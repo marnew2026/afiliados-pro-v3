@@ -6,7 +6,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 
-import DistributionScreen from "../screens/CampaignVideoScreen";
+import DistributionScreen from "../screens/DistributionScreen";
 import { getDistributionSession } from "../services/distributionAuth";
 
 export default function Divulgacao() {

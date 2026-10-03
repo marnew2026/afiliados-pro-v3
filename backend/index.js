@@ -197,6 +197,14 @@ console.log("DISTRIBUTION WORKER CARREGADO");
   } else {
     console.log("🤖 KAEL AUTOPILOT CRON DESATIVADO");
   }
+  if (process.env.KAEL_LINK_AUTOMATION_ENABLED === "true" && process.env.KAEL_PRODUCT_VIDEO_ENABLED === "true") {
+    const { default: Distribution } = await import("./models/Distribution.js");
+    await Distribution.init();
+    const { runLinkAutomationScheduler } = await import("./services/autopilot/KaelLinkAutomationService.js");
+    const { enqueueCampaignVideo } = await import("./queue/campaignVideoQueue.js");
+    cron.schedule("*/1 * * * *", () => runLinkAutomationScheduler({ enqueue: enqueueCampaignVideo }));
+    console.log("KAEL LINKS AUTOMATICO ATIVO: a cada minuto");
+  }
   registerKaelMediaRecoveryCron({
     cron,
   });

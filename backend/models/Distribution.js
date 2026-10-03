@@ -29,6 +29,9 @@ const DistributionSchema = new mongoose.Schema(
       default: "manual",
       index: true,
     },
+    automationKey: { type: String },
+    authorizationAt: { type: Date },
+    authorizationRecoveries: { type: Number, default: 0 },
     reviewMode: {
       type: Boolean,
       default: false,
@@ -173,5 +176,8 @@ DistributionSchema.index({
   status: 1,
   scheduledAt: 1,
 });
+
+// Uma publicacao por campanha/canal do fluxo de links, inclusive apos reinicios.
+DistributionSchema.index({ automationKey: 1 }, { unique: true, partialFilterExpression: { automationKey: { $type: "string" } } });
 
 export default mongoose.model("Distribution", DistributionSchema);

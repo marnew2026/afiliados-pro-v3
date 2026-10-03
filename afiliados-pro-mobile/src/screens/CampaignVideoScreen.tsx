@@ -1,198 +1,162 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { ActivityIndicator, AppState, Linking, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
-import storage from "../services/sessionStorage";
-import { CampaignVideoTask, campaignVideoError, campaignVideoStorageKey, createCampaignVideo, extractProductLink, getCampaignVideo } from "../services/campaignVideoService";
+import api from "../services/api";
+import { campaignVideoError, createCampaignVideoBatch, extractProductLinks, getCampaignVideo, getKaelLinkSummary,
+  KaelLinkSummary, LinkCampaignTask, listCampaignVideos } from "../services/campaignVideoService";
+import TikTokConnectionCard from "../components/distribution/TikTokConnectionCard";
+import InstagramConnectionCard from "../components/distribution/InstagramConnectionCard";
+import FacebookConnectionCard from "../components/distribution/FacebookConnectionCard";
 
-const statusText = {
-  queued: "Na fila de criação",
-  processing: "Criando sua campanha e montando o vídeo",
-  ready: "Campanha e vídeo prontos",
-  failed: "Não foi possível concluir",
-};
+const channels = ["tiktok", "instagram", "facebook", "kwai", "telegram"];
+const names: Record<string, string> = { tiktok: "TikTok", instagram: "Instagram", facebook: "Facebook", kwai: "Kwai", telegram: "Telegram" };
+const statuses: Record<string, string> = { queued: "Na fila", processing: "Montando campanha e vídeo", ready: "Vídeo pronto", failed: "Criação pendente de correção",
+  scheduled: "Na fila de divulgação", published: "Publicado", delivered: "Enviado à rede", cancelled: "Cancelado" };
 export default function CampaignVideoScreen() {
-  const [userId, setUserId] = useState("");
-  const [link, setLink] = useState("");
-  const [task, setTask] = useState<CampaignVideoTask | null>(null);
-  const [taskId, setTaskId] = useState("");
-  const [hydrating, setHydrating] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [links, setLinks] = useState("");
+  const [tasks, setTasks] = useState<LinkCampaignTask[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [enabled, setEnabled] = useState(false);
+  const [summary, setSummary] = useState<KaelLinkSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [refresh, setRefresh] = useState(0);
-  const [openingVideo, setOpeningVideo] = useState(false);
-  const submitLock = useRef(false);
-  const mounted = useRef(true);
-  const pending = task?.status === "queued" || task?.status === "processing";
-
-  useEffect(() => {
-    mounted.current = true;
-    async function restore() {
-      try {
-        const id = await storage.getItem("userId");
-        const token = await storage.getItem("token");
-        if (!mounted.current) return;
-        if (!id || !token) { router.replace("/login" as any); return; }
-        setUserId(id);
-        const saved = await storage.getItem(campaignVideoStorageKey(id));
-        if (!mounted.current || !saved) return;
-        try {
-          const data = JSON.parse(saved);
-          if (/^[a-f\d]{24}$/i.test(data.taskId) && typeof data.link === "string") {
-            setLink(data.link); setTaskId(data.taskId);
-          }
-        } catch { /* Um registro incompleto nao impede uma nova criacao. */ }
-      } catch { if (mounted.current) setError("Não foi possível recuperar o acompanhamento salvo."); }
-      finally { if (mounted.current) setHydrating(false); }
-    }
-    void restore();
-      return () => { mounted.current = false; };
-  }, []);
-
+  const [message, setMessage] = useState("");
+  const [opening, setOpening] = useState("");
+  const [revision, setRevision] = useState(0);
+  const lock = useRef(false);
+  const focused = useRef(false);
   useFocusEffect(useCallback(() => {
-    if (!taskId || !userId) return;
-    let active = true;
+    focused.current = true;
+    let active = true, inFlight = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let controller: AbortController | undefined;
-    let inFlight = false;
-    let terminal = false;
-    async function check() {
+    async function load(initial = false) {
       if (!active || inFlight || (AppState.currentState && AppState.currentState !== "active")) return;
-      inFlight = true;
-      controller = new AbortController();
+      inFlight = true; controller = new AbortController();
       try {
-        const updated = await getCampaignVideo(taskId, controller.signal);
+        const [rows, activity, settingsResponse] = await Promise.all([
+          listCampaignVideos(controller.signal), getKaelLinkSummary(controller.signal),
+          initial ? api.get("/autopilot/settings", { signal: controller.signal }) : Promise.resolve(null),
+        ]);
         if (!active) return;
-        setTask(updated); setError("");
-        terminal = updated.status === "ready" || updated.status === "failed";
+        setTasks(rows); setSummary(activity); setEnabled(activity.enabled);
+        if (settingsResponse && !lock.current) setSelected(settingsResponse.data?.settings?.channels || []);
       } catch (requestError: any) {
-        if (!active || controller.signal.aborted) return;
-        setError(campaignVideoError(requestError));
-        terminal = [401, 404, 503].includes(requestError?.response?.status);
+        if (active && !controller.signal.aborted) setError(campaignVideoError(requestError));
       } finally {
         inFlight = false;
-        if (active && !terminal && (!AppState.currentState || AppState.currentState === "active")) {
-          timer = setTimeout(() => void check(), 5000);
-        }
+        if (active) { setLoading(false); timer = setTimeout(() => void load(), 10000); }
       }
     }
-    void check();
+    void load(true);
     const subscription = AppState.addEventListener("change", state => {
       if (timer) clearTimeout(timer);
-      if (state === "active") void check();
-      else controller?.abort();
+      if (state === "active") void load(true); else controller?.abort();
     });
-    return () => { active = false; if (timer) clearTimeout(timer); controller?.abort(); subscription.remove(); };
-  }, [taskId, userId, refresh]));
+    return () => { active = false; focused.current = false; if (timer) clearTimeout(timer); controller?.abort(); subscription.remove(); };
+  }, [revision]));
 
   async function submit() {
-    if (submitLock.current || pending || !userId) return;
-    let cleanLink;
-    try { cleanLink = extractProductLink(link); }
-    catch (validationError: any) { setError(validationError.message); return; }
-    submitLock.current = true; setSubmitting(true); setError("");
+    if (lock.current) return;
+    lock.current = true; setBusy(true); setError(""); setMessage("");
     try {
-      const created = await createCampaignVideo(cleanLink);
-      // Guarda o acompanhamento mesmo que o usuario tenha saido desta tela.
-      try {
-        await storage.setItem(campaignVideoStorageKey(userId), JSON.stringify({ taskId: created.id, link: cleanLink }));
-      } catch { if (mounted.current) setError("A criação começou, mas não foi possível salvar o acompanhamento. Mantenha esta tela aberta."); }
-      if (!mounted.current) return;
-      setLink(cleanLink); setTask(created); setTaskId(created.id); setRefresh(value => value + 1);
-    } catch (requestError: any) {
-      if (mounted.current) setError(campaignVideoError(requestError));
-    } finally {
-      submitLock.current = false;
-      if (mounted.current) setSubmitting(false);
-    }
+      const results = await createCampaignVideoBatch(extractProductLinks(links));
+      if (!focused.current) return;
+      const accepted = results.filter(item => item.accepted), rejected = results.filter(item => !item.accepted);
+      setLinks(rejected.map(item => item.link).join("\n"));
+      setMessage(`${accepted.length} link(s) cadastrado(s). O KAEL continua a montagem no servidor.`);
+      if (rejected.length) setError(rejected.map(item => item.error).join("\n"));
+      setRevision(value => value + 1);
+    } catch (requestError) { if (focused.current) setError(campaignVideoError(requestError)); }
+    finally { lock.current = false; if (focused.current) setBusy(false); }
   }
-  async function startAnother() {
-    if (pending || submitting) return;
-    try { await storage.removeItem(campaignVideoStorageKey(userId)); }
-    catch { setError("Não foi possível limpar o acompanhamento anterior. Tente novamente."); return; }
-    if (!mounted.current) return;
-    setTask(null); setTaskId(""); setLink(""); setError("");
-  }
-
-  async function watchVideo() {
-    if (!taskId || openingVideo) return;
-    setOpeningVideo(true);
-    setError("");
+  async function saveAutomation(nextEnabled: boolean, nextChannels = selected) {
+    if (lock.current) return;
+    if (nextEnabled && !nextChannels.length) { setError("Escolha pelo menos uma rede para divulgar."); return; }
+    lock.current = true; setBusy(true); setError("");
     try {
-      const updated = await getCampaignVideo(taskId);
-      if (!mounted.current) return;
-      setTask(updated);
-      if (updated.status !== "ready" || !updated.previewUrl) {
-        throw new Error("O vídeo ainda não está disponível para assistir. Atualize o acompanhamento.");
-      }
-      const url = new URL(updated.previewUrl);
+      const { data } = await api.put("/autopilot/settings", { enabled: nextEnabled, mode: "automatico", linkAutomation: true,
+        ...(nextChannels.length ? { channels: nextChannels } : {}) });
+      if (!data?.settings) throw new Error("Não foi possível salvar o automático.");
+      if (!focused.current) return;
+      setSelected(data.settings.channels); setEnabled(data.settings.enabled);
+      setMessage(nextEnabled ? "Automático habilitado. Os próximos links seguem esta configuração." : "Divulgação automática pausada.");
+      setRevision(value => value + 1);
+    } catch (requestError) { if (focused.current) setError(campaignVideoError(requestError)); }
+    finally { lock.current = false; if (focused.current) setBusy(false); }
+  }
+  function selectChannel(channel: string) {
+    const next = selected.includes(channel) ? selected.filter(item => item !== channel) : [...selected, channel];
+    if (enabled) void saveAutomation(next.length > 0, next);
+    else setSelected(next);
+  }
+  async function watch(task: LinkCampaignTask) {
+    if (opening) return;
+    setOpening(task.id); setError("");
+    try {
+      const current = await getCampaignVideo(task.id);
+      if (!current.previewUrl) throw new Error("O vídeo ainda não está disponível.");
+      const url = new URL(current.previewUrl);
       if (url.protocol !== "https:" || url.username || url.password) throw new Error("Endereço do vídeo inválido.");
       await Linking.openURL(url.href);
-    } catch (requestError) {
-      if (mounted.current) setError(campaignVideoError(requestError));
-    } finally {
-      if (mounted.current) setOpeningVideo(false);
-    }
+    } catch (requestError) { if (focused.current) setError(campaignVideoError(requestError)); }
+    finally { if (focused.current) setOpening(""); }
   }
-
-  if (hydrating) return <View style={styles.loading}><ActivityIndicator color="#a78bfa" /></View>;
-  return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <Text style={styles.title}>Criar com KAEL</Text>
-      <Text style={styles.description}>Cole seu link de afiliado do Mercado Livre. O KAEL cria a campanha e monta um vídeo vertical com as fotos do produto.</Text>
-      <Text style={styles.label}>Link de afiliado</Text>
-      <TextInput accessibilityLabel="Link de afiliado do produto" placeholder="https://meli.la/..." placeholderTextColor="#94a3b8" value={link}
-        onChangeText={setLink} editable={!submitting && !pending && !taskId} autoCapitalize="none" autoCorrect={false}
-        keyboardType="url" multiline style={styles.input} />
-      {!taskId && <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: submitting, busy: submitting }}
-        disabled={submitting} onPress={() => void submit()} style={[styles.primary, submitting && styles.disabled]}>
-        {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Criar campanha e vídeo</Text>}
+  return <ScrollView style={styles.screen} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <Text style={styles.title}>Divulgar com KAEL</Text>
+    <Text style={styles.description}>Conecte suas redes uma vez, escolha onde divulgar e habilite o automático. Depois, basta adicionar links.</Text>
+    <Text style={styles.heading}>Suas redes</Text>
+    <TikTokConnectionCard /><InstagramConnectionCard /><FacebookConnectionCard />
+    <View style={styles.card}>
+      <Text style={styles.heading}>Onde divulgar</Text>
+      {channels.map(channel => <TouchableOpacity key={channel} accessibilityRole="checkbox" accessibilityState={{ checked: selected.includes(channel), disabled: busy || loading }}
+        disabled={busy || loading} onPress={() => selectChannel(channel)} style={styles.choice}>
+        <Text style={styles.white}>{selected.includes(channel) ? "☑" : "☐"} {names[channel]}</Text>
+        <Text style={styles.small}>{summary?.channels.find(item => item.channel === channel)?.available ? "Disponível no servidor" : "Aguardando liberação da integração"}</Text>
+      </TouchableOpacity>)}
+      <Text style={styles.small}>O Telegram usa o canal já cadastrado. Redes sem autorização ou liberação aguardam; as demais continuam. No staging, o TikTok usa publicação privada de teste.</Text>
+      <TouchableOpacity accessibilityRole="switch" accessibilityState={{ checked: enabled, disabled: busy || loading }} disabled={busy || loading}
+        onPress={() => void saveAutomation(!enabled)} style={[styles.primary, enabled && styles.active]}>
+        {busy || loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.button}>{enabled ? "Automático habilitado • Pausar" : "Habilitar divulgação automática"}</Text>}
+      </TouchableOpacity>
+      <Text style={styles.small}>Os limites de frequência da sua conta são respeitados. Você acompanha as publicações e os resultados no dashboard.</Text>
+    </View>
+    <Text style={styles.heading}>Cadastrar links de afiliado</Text>
+    <Text style={styles.description}>Cole até 10 links do Mercado Livre, um por linha. O KAEL cria os textos e os vídeos e divulga quando o automático estiver habilitado.</Text>
+    <TextInput accessibilityLabel="Links de afiliado, um por linha" value={links} onChangeText={setLinks} editable={!busy} multiline
+      autoCapitalize="none" autoCorrect={false} placeholder="https://meli.la/...\nhttps://meli.la/..." placeholderTextColor="#94a3b8" style={styles.input} />
+    <TouchableOpacity accessibilityRole="button" disabled={busy || !links.trim()} onPress={() => void submit()} style={[styles.primary, (busy || !links.trim()) && styles.disabled]}>
+      <Text style={styles.button}>Cadastrar links</Text>
+    </TouchableOpacity>
+    {!!message && <Text accessibilityLiveRegion="polite" style={styles.message}>{message}</Text>}
+    {!!error && <Text accessibilityLiveRegion="polite" style={styles.error}>{error}</Text>}
+    <Text style={styles.heading}>Links cadastrados</Text>
+    {loading && <ActivityIndicator color="#a78bfa" />}
+    {!loading && !tasks.length && <Text style={styles.description}>Seus links aparecerão aqui depois do cadastro.</Text>}
+    {tasks.map(task => <View key={task.id} style={styles.card}>
+      <Text style={styles.white}>{task.title || "Identificando produto"}</Text>
+      <Text style={styles.small}>{statuses[task.status]}</Text>
+      {task.status === "failed" && <Text style={styles.error}>{task.lastError}</Text>}
+      {task.status === "ready" && <TouchableOpacity accessibilityRole="button" disabled={!!opening} onPress={() => void watch(task)} style={styles.secondary}>
+        <Text style={styles.button}>{opening === task.id ? "Abrindo…" : "Assistir ao vídeo"}</Text>
       </TouchableOpacity>}
-      {taskId && !task && <View style={styles.card}><ActivityIndicator color="#a78bfa" /><Text style={styles.description}>Recuperando sua criação…</Text></View>}
-      {task && <View style={styles.card}>
-        {pending && <ActivityIndicator color="#a78bfa" />}
-        <Text accessibilityLiveRegion="polite" style={styles.status}>{statusText[task.status]}</Text>
-        {!!task.title && <Text style={styles.description}>{task.title}</Text>}
-        {pending && <Text style={styles.description}>O acompanhamento atualiza automaticamente. A montagem continua se você fechar o aplicativo.</Text>}
-        {task.status === "failed" && <>
-          <Text style={styles.error}>{task.lastError || "Tente novamente para retomar a criação."}</Text>
-          <TouchableOpacity accessibilityRole="button" disabled={submitting} onPress={() => void submit()} style={styles.primary}>
-            {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Tentar novamente</Text>}
-          </TouchableOpacity>
-        </>}
-        {task.status === "ready" && <>
-          <Text style={styles.description}>Seu vídeo está disponível para divulgação.</Text>
-          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Assistir ao vídeo"
-            accessibilityState={{ disabled: openingVideo, busy: openingVideo }} disabled={openingVideo}
-            onPress={() => void watchVideo()} style={styles.primary}>
-            {openingVideo ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Assistir ao vídeo</Text>}
-          </TouchableOpacity>
-          <TouchableOpacity accessibilityRole="button" onPress={() => router.push("/nova-divulgacao" as any)} style={styles.primary}>
-            <Text style={styles.buttonText}>Abrir divulgação</Text>
-          </TouchableOpacity>
-          <TouchableOpacity accessibilityRole="button" onPress={() => router.replace("/dashboard")} style={styles.secondary}>
-            <Text style={styles.buttonText}>Ver minhas campanhas</Text>
-          </TouchableOpacity>
-        </>}
-      </View>}
-      {!!error && <View style={styles.card}><Text accessibilityLiveRegion="polite" style={styles.error}>{error}</Text>
-        {!!taskId && <TouchableOpacity accessibilityRole="button" onPress={() => setRefresh(value => value + 1)} style={styles.secondary}><Text style={styles.buttonText}>Atualizar acompanhamento</Text></TouchableOpacity>}
-      </View>}
-      {!!taskId && (!!task || !!error) && !pending && !submitting && <TouchableOpacity accessibilityRole="button" onPress={() => void startAnother()} style={styles.secondary}><Text style={styles.buttonText}>Criar outra campanha</Text></TouchableOpacity>}
-      <TouchableOpacity accessibilityRole="button" onPress={() => router.back()} style={styles.secondary}><Text style={styles.buttonText}>Voltar</Text></TouchableOpacity>
-    </ScrollView>
-  );
+    </View>)}
+    <TouchableOpacity accessibilityRole="button" onPress={() => router.replace("/dashboard")} style={styles.secondary}><Text style={styles.button}>Ver resultados no dashboard</Text></TouchableOpacity>
+    <TouchableOpacity accessibilityRole="button" onPress={() => router.push("/divulgacao-manual" as any)} style={styles.secondary}><Text style={styles.button}>Opções de divulgação manual</Text></TouchableOpacity>
+  </ScrollView>;
 }
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#0f172a" }, container: { padding: 22, paddingBottom: 48 },
-  loading: { flex: 1, backgroundColor: "#0f172a", justifyContent: "center", alignItems: "center" },
-  title: { color: "#fff", fontSize: 28, fontWeight: "800", marginBottom: 14 },
-  description: { color: "#cbd5e1", fontSize: 15, lineHeight: 23, marginBottom: 14 },
-  label: { color: "#e2e8f0", fontSize: 14, fontWeight: "700", marginTop: 12, marginBottom: 8 },
-  input: { color: "#fff", backgroundColor: "#1e293b", padding: 15, borderRadius: 12, minHeight: 80, marginBottom: 14 },
-  primary: { backgroundColor: "#7c3aed", borderRadius: 12, padding: 16, alignItems: "center", marginTop: 8 },
-  secondary: { backgroundColor: "#1e293b", borderRadius: 12, padding: 15, alignItems: "center", marginTop: 12 },
-  buttonText: { color: "#fff", fontWeight: "700", fontSize: 15 }, disabled: { opacity: 0.6 },
-  card: { backgroundColor: "#1e293b", padding: 18, borderRadius: 16, marginTop: 20 },
-  status: { color: "#c4b5fd", fontSize: 18, fontWeight: "700", marginVertical: 12 },
-  error: { color: "#fca5a5", fontSize: 14, lineHeight: 22 },
+  screen: { flex: 1, backgroundColor: "#0f172a" }, container: { padding: 20, paddingBottom: 50 },
+  title: { color: "white", fontSize: 28, fontWeight: "800", marginBottom: 12 },
+  heading: { color: "#c4b5fd", fontSize: 18, fontWeight: "700", marginVertical: 14 },
+  description: { color: "#cbd5e1", fontSize: 15, lineHeight: 22, marginBottom: 12 },
+  card: { backgroundColor: "#1e293b", borderRadius: 16, padding: 16, marginVertical: 8 },
+  choice: { paddingVertical: 12, borderBottomWidth: 1, borderColor: "#334155" },
+  white: { color: "white", fontSize: 16, fontWeight: "600" }, small: { color: "#cbd5e1", fontSize: 13, lineHeight: 20, marginTop: 8 },
+  input: { backgroundColor: "#1e293b", color: "white", borderRadius: 12, padding: 15, minHeight: 135, textAlignVertical: "top" },
+  primary: { backgroundColor: "#7c3aed", padding: 16, borderRadius: 12, alignItems: "center", marginTop: 16 },
+  active: { backgroundColor: "#166534" }, secondary: { backgroundColor: "#334155", padding: 14, borderRadius: 12, marginTop: 12, alignItems: "center" },
+  button: { color: "white", fontWeight: "700", fontSize: 15 }, disabled: { opacity: .5 },
+  error: { color: "#fca5a5", marginTop: 12, lineHeight: 22 }, message: { color: "#86efac", marginTop: 12, lineHeight: 22 },
 });

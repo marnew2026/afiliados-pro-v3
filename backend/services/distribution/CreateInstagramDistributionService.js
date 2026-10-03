@@ -18,6 +18,7 @@ export async function createInstagramDistribution({
   hashtags = [],
   cta = "Confira a oferta no link",
   source = "manual",
+  automationKey,
   review = false,
   env = process.env,
   campaignModel = Campaign,
@@ -101,6 +102,7 @@ export async function createInstagramDistribution({
     campaignId: cleanCampaignId,
     channel: "instagram",
     source,
+    ...(automationKey ? { automationKey, authorizationAt: connection.connectedAt } : {}),
     reviewMode: review === true,
     destinationId: String(connection.destinationId),
     content: {
