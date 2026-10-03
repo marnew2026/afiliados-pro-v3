@@ -1,3 +1,4 @@
+import { findProductFootage } from "../media/ProductFootageCatalog.js";
 import Campaign from "../../models/Campaign.js";
 import CampaignVideoTask from "../../models/CampaignVideoTask.js";
 import { resolveMercadoLivreProduct } from "./MercadoLivreProductResolver.js";
@@ -6,7 +7,7 @@ import { findReadyCampaignVideo } from "../media/MediaAssetService.js";
 import { uploadMediaAsset } from "../media/MediaAssetUploadService.js";
 
 export async function buildCampaignVideo({ taskId, taskModel = CampaignVideoTask, campaignModel = Campaign,
-  resolver = resolveMercadoLivreProduct, renderer = renderProductVideo,
+  resolver = resolveMercadoLivreProduct, renderer = renderProductVideo, footageFinder = findProductFootage,
   readyFinder = findReadyCampaignVideo, uploader = uploadMediaAsset }) {
   const task = await taskModel.findById(taskId);
   if (!task) throw new Error("Tarefa de campanha nao encontrada.");
@@ -22,7 +23,8 @@ export async function buildCampaignVideo({ taskId, taskModel = CampaignVideoTask
     if (!campaign.active || campaign.status !== "active") throw new Error("Campanha pausada ou arquivada. Video nao gerado.");
     let asset = await readyFinder({ userId: task.userId, campaignId: task.campaignId });
     if (!asset) {
-      const video = await renderer({ product });
+      const footage = await footageFinder({ product });
+      const video = await renderer({ product, footage });
       task.caption = String(video.caption || "").slice(0, 1800);
       await task.save();
       // Revalida antes do upload se o usuario arquivou a campanha durante a renderizacao.

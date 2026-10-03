@@ -26,10 +26,10 @@ export async function getFfmpegPath() {
   if (!path) throw new Error("FFmpeg indisponivel neste servidor.");
   return path;
 }
-export async function renderProductVideo({ product, http = axios, ffmpegPath, runner = run, style = process.env.KAEL_PRODUCT_VIDEO_STYLE || "simple_v1" }) {
+export async function renderProductVideo({ product, footage, http = axios, ffmpegPath, runner = run, style = process.env.KAEL_PRODUCT_VIDEO_STYLE || "simple_v1" }) {
   if (style === "narrated_v2") {
     const { renderNarratedProductVideo } = await import("./NarratedProductVideoRenderer.js");
-    return renderNarratedProductVideo({ product, http, ffmpegPath, runner });
+    return renderNarratedProductVideo({ product, footage, http, ffmpegPath, runner });
   }
   if (style !== "simple_v1") throw new Error("Formato de video do KAEL desconhecido.");
   const binary = ffmpegPath || await getFfmpegPath();
