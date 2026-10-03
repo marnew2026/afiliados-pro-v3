@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { validateProductLink, validateProductImage, extractItemId, productFromItem, productFromPage, resolveMercadoLivreProduct } from "../services/campaigns/MercadoLivreProductResolver.js";
+import { validateProductLink, validateProductImage, extractItemId, productFromItem, productFromPage, productPageDestination, resolveMercadoLivreProduct } from "../services/campaigns/MercadoLivreProductResolver.js";
 import { wrapVideoText, renderProductVideo } from "../services/media/template/ProductVideoRenderer.js";
 import { buildCampaignVideo } from "../services/campaigns/CampaignVideoBuildService.js";
 const fixture = { id: "MLB123456", title: "Mouse vertical", status: "active", pictures: [{ secure_url: "https://http2.mlstatic.com/D_NQ_NP_123-O.webp" }], attributes: [] };
@@ -83,4 +83,46 @@ test("falha intermediaria aparece como fila durante repeticao automatica", async
   assert.equal((await campaignVideoTaskView(task, async () => ({getState:async () => "delayed"}))).status, "queued");
   assert.equal((await campaignVideoTaskView(task, async () => ({getState:async () => "active"}))).status, "processing");
   assert.equal((await campaignVideoTaskView(task, async () => ({getState:async () => "failed"}))).status, "failed");
+});
+
+test("le canonical com href antes de rel e entidades HTML", () => {
+  const url = productPageDestination('<link href="https://www.mercadolivre.com.br/p/MLB999?wid=MLB123456&amp;tag=affiliate" rel="canonical">', "https://meli.la/abc");
+  assert.equal(extractItemId(url.href), "MLB123456");
+  assert.equal(url.searchParams.get("tag"), "affiliate");
+});
+test("le meta refresh sem depender da ordem dos atributos", () => {
+  const url = productPageDestination('<meta content="0; URL=https://produto.mercadolivre.com.br/MLB-123456-mouse" http-equiv="refresh">', "https://meli.la/abc");
+  assert.equal(extractItemId(url.href), "MLB123456");
+});
+test("le apenas URL literal no redirecionamento JavaScript", () => {
+  assert.equal(extractItemId(productPageDestination('<script>window.location.replace("https://produto.mercadolivre.com.br/MLB-123456-mouse");</script>', "https://meli.la/a")), "MLB123456");
+  assert.equal(productPageDestination('<script>window.location = executeFunction();</script>', "https://meli.la/a"), null);
+});
+test("redirecionamento HTML para rede privada e recusado", () => {
+  assert.throws(() => productPageDestination('<meta http-equiv="refresh" content="0;url=http://127.0.0.1/">', "https://meli.la/a"));
+});
+test("link curto com canonical reverso chega ao anuncio e preserva token", async () => {
+  const calls = [];
+  const result = await resolveMercadoLivreProduct({ link: "https://meli.la/2PnchjZ", accessToken: "secret", http: { get: async (url, options) => {
+    calls.push({url, options});
+    return calls.length === 1 ? {status:200, headers:{}, data:'<link href="https://produto.mercadolivre.com.br/MLB-123456-mouse" rel="canonical">'} : {data:fixture};
+  } } });
+  assert.equal(result.itemId, "MLB123456");
+  assert.equal(calls[0].options.headers, undefined);
+  assert.equal(calls[1].options.headers.Authorization, "Bearer secret");
+});
+test("produto publico de catalogo nao exige item_id para montar video", async () => {
+  const data = '<script type="application/ld+json">'+JSON.stringify({"@type":"Product", name:"Mouse", image:fixture.pictures[0].secure_url})+'</script>';
+  let count = 0;
+  const result = await resolveMercadoLivreProduct({link:"https://meli.la/a", http:{get:async () => { count++; return {status:200, headers:{}, data}; }}});
+  assert.equal(result.title, "Mouse"); assert.equal(result.images.length, 1); assert.equal(count, 1);
+});
+test("ciclo de redirecionamentos termina sem chamadas ilimitadas", async () => {
+  let count = 0;
+  await assert.rejects(resolveMercadoLivreProduct({link:"https://meli.la/a", http:{get:async () => {count++;return {status:302,headers:{location:"https://meli.la/a"}};}}}), /ciclo/);
+  assert.equal(count, 1);
+});
+test("pagina com varios produtos nao escolhe o primeiro anuncio", () => {
+  const list = [{"@type":"Product", name:"Mouse", image:fixture.pictures[0].secure_url}, {"@type":"Product", name:"Teclado", image:fixture.pictures[0].secure_url}];
+  assert.throws(() => productFromPage('<script type="application/ld+json">'+JSON.stringify(list)+'</script>', "https://meli.la/a"), /varios produtos/);
 });
