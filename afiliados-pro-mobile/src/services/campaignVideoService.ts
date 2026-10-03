@@ -7,6 +7,7 @@ export type CampaignVideoTask = {
   campaignId: string;
   title: string | null;
   mediaAssetId: string | null;
+  previewUrl?: string | null;
   lastError: string;
   updatedAt: string;
 };

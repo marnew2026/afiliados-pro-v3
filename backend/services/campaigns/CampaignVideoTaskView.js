@@ -1,4 +1,6 @@
-export async function campaignVideoTaskView(task, getJob) {
+import MediaAsset from "../../models/MediaAsset.js";
+
+export async function campaignVideoTaskView(task, getJob, assetModel = MediaAsset) {
   let status = task.status;
   let lastError = task.lastError;
   // A primeira tentativa pode falhar enquanto BullMQ aguarda a repeticao automatica.
@@ -9,7 +11,18 @@ export async function campaignVideoTaskView(task, getJob) {
     if (["waiting", "delayed", "prioritized", "waiting-children"].includes(state)) { status = "queued"; lastError = ""; }
     else if (state === "active") { status = "processing"; lastError = ""; }
   }
-  return { id: String(task._id), status, campaignId: String(task.campaignId),
+  let previewUrl = null;
+  if (status === "ready" && task.mediaAssetId) {
+    const asset = await assetModel.findOne({ _id: task.mediaAssetId, userId: task.userId,
+      campaignId: task.campaignId, type: "video", status: "ready" });
+    if (asset?.assetUrl) {
+      try {
+        const url = new URL(asset.assetUrl);
+        if (url.protocol === "https:" && !url.username && !url.password) previewUrl = url.href;
+      } catch { /* Material sem URL valida nao oferece pre-visualizacao. */ }
+    }
+  }
+  return { previewUrl, id: String(task._id), status, campaignId: String(task.campaignId),
     title: task.product?.title || null, mediaAssetId: task.mediaAssetId ? String(task.mediaAssetId) : null,
     lastError, updatedAt: task.updatedAt };
 }

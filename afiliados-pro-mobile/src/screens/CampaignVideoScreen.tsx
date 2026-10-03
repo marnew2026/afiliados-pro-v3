@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, AppState, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, AppState, Linking, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import storage from "../services/sessionStorage";
 import { CampaignVideoTask, campaignVideoError, campaignVideoStorageKey, createCampaignVideo, extractProductLink, getCampaignVideo } from "../services/campaignVideoService";
@@ -19,6 +19,7 @@ export default function CampaignVideoScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [refresh, setRefresh] = useState(0);
+  const [openingVideo, setOpeningVideo] = useState(false);
   const submitLock = useRef(false);
   const mounted = useRef(true);
   const pending = task?.status === "queued" || task?.status === "processing";
@@ -44,7 +45,7 @@ export default function CampaignVideoScreen() {
       finally { if (mounted.current) setHydrating(false); }
     }
     void restore();
-    return () => { mounted.current = false; };
+      return () => { mounted.current = false; };
   }, []);
 
   useFocusEffect(useCallback(() => {
@@ -112,6 +113,27 @@ export default function CampaignVideoScreen() {
     setTask(null); setTaskId(""); setLink(""); setError("");
   }
 
+  async function watchVideo() {
+    if (!taskId || openingVideo) return;
+    setOpeningVideo(true);
+    setError("");
+    try {
+      const updated = await getCampaignVideo(taskId);
+      if (!mounted.current) return;
+      setTask(updated);
+      if (updated.status !== "ready" || !updated.previewUrl) {
+        throw new Error("O vídeo ainda não está disponível para assistir. Atualize o acompanhamento.");
+      }
+      const url = new URL(updated.previewUrl);
+      if (url.protocol !== "https:" || url.username || url.password) throw new Error("Endereço do vídeo inválido.");
+      await Linking.openURL(url.href);
+    } catch (requestError) {
+      if (mounted.current) setError(campaignVideoError(requestError));
+    } finally {
+      if (mounted.current) setOpeningVideo(false);
+    }
+  }
+
   if (hydrating) return <View style={styles.loading}><ActivityIndicator color="#a78bfa" /></View>;
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
@@ -139,6 +161,11 @@ export default function CampaignVideoScreen() {
         </>}
         {task.status === "ready" && <>
           <Text style={styles.description}>Seu vídeo está disponível para divulgação.</Text>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Assistir ao vídeo"
+            accessibilityState={{ disabled: openingVideo, busy: openingVideo }} disabled={openingVideo}
+            onPress={() => void watchVideo()} style={styles.primary}>
+            {openingVideo ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Assistir ao vídeo</Text>}
+          </TouchableOpacity>
           <TouchableOpacity accessibilityRole="button" onPress={() => router.push("/nova-divulgacao" as any)} style={styles.primary}>
             <Text style={styles.buttonText}>Abrir divulgação</Text>
           </TouchableOpacity>
