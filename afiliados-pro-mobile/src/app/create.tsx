@@ -81,6 +81,15 @@ const { data } = await api.post("/campaigns/create", {
         🚀 Nova Campanha
       </Text>
 
+      <TouchableOpacity
+        accessibilityRole="button"
+        onPress={() => router.push("/criar-com-kael" as any)}
+        style={{ backgroundColor: "#7c3aed", padding: 16, borderRadius: 12, marginBottom: 20 }}
+      >
+        <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>Criar campanha e vídeo com KAEL</Text>
+        <Text style={{ color: "#ede9fe", marginTop: 6 }}>Cole o link do produto e acompanhe a criação automática.</Text>
+      </TouchableOpacity>
+
       <TextInput
   placeholder="Nome da campanha (preenchido automaticamente)"
         placeholderTextColor="#64748b"

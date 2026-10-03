@@ -9,6 +9,7 @@ import { connection } from "./src/lib/bullmqConnection.js";
 // import debugRoutes from "./routes/debug.js";
 import goRoutes from "./routes/go.js";
 import campaignsRoutes from "./routes/campaigns.js";
+import campaignVideoRoutes from "./routes/campaignVideoRoutes.js";
 // import userRoutes from "./routes/userRoutes.js";
 import withdrawRoutes from "./routes/withdrawRoutes.js";
 import { initWalletSocket } from "./src/realtime/walletEvents.js";
@@ -63,6 +64,7 @@ app.use((req, res, next) => {
 // ROTAS
 // app.use("/ledger", ledgerRoutes);
 app.use("/go", goRoutes);
+app.use("/campaigns/from-link", campaignVideoRoutes);
 app.use("/campaigns", campaignsRoutes);
 // app.use("/user", userRoutes);
 app.use("/withdraw", withdrawRoutes);
@@ -161,6 +163,10 @@ async function bootstrap() {
   generateCampaigns = campaignGen.generateCampaigns;
   autoGenerateCampaigns = mlCampaign.autoGenerateCampaigns;
 await import("./workers/distributionWorker.js");
+if (process.env.KAEL_PRODUCT_VIDEO_ENABLED === "true") {
+  await import("./workers/campaignVideoWorker.js");
+  console.log("KAEL PRODUCT VIDEO WORKER CARREGADO");
+}
 console.log("DISTRIBUTION WORKER CARREGADO");
 
   console.log("📦 Workers carregados");
