@@ -61,3 +61,10 @@ test("legendas por frases cobrem a fala e respeitam a duracao da voz", () => {
   assert.ok(Math.abs(phrases.at(-1).end - 7.1) < .0001);
   assert.throws(() => buildPhraseCaptions(speech, NaN));
 });
+
+test("roteiro de faixas apresenta quantidade sem ler erro do titulo ou inventar resistencias", () => {
+  const script = buildProductAdScript({ title: "Kit 5 Faixa Elastica P/ Treino Extersor Super Band Academia Colorido", images: ["https://http2.mlstatic.com/product.webp"] });
+  assert.equal(script.category, "fitness");
+  assert.match(script.scenes[0].speech, /5 faixas/);
+  assert.doesNotMatch(script.scenes.map(s => s.speech).join(" "), /Extersor|libras|quilogramas|emagrec/);
+});
