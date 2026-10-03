@@ -156,3 +156,17 @@ test("link curto de perfil resolve produto sem seguir configuracao nem consultar
   assert.equal(product.itemId,"MLB4211228077");
   assert.match(product.resolvedUrl,/wid=MLB4211228077/);
 });
+
+const featuredPage = `<meta property="og:title" content="Kit 5 Faixa Elastica">
+<div class="poly-card poly-card--list"><img class="poly-component__picture" alt="Kit 5 Faixa Elastica" src="https://http2.mlstatic.com/featured.webp">
+<a class="poly-component__title" href="https://www.mercadolivre.com.br/p/MLB74751223?wid=MLB7071403358#c_id=/home/card-featured/element">Kit 5 Faixa Elastica</a></div>
+<div class="poly-card poly-card--list"><img class="poly-component__picture" alt="Kit 5 Faixa Elastica" src="https://http2.mlstatic.com/recommendation.webp">
+<a class="poly-component__title" href="https://www.mercadolivre.com.br/up/MLBU4309755457?wid=MLB7172748862#c_id=/home/affiliate-profile-recommendations/element">Kit 5 Faixa Elastica</a></div>`;
+test("produto compartilhado destacado prevalece sobre recomendacao com mesmo titulo", () => {
+  const product = productFromPage(featuredPage, "https://www.mercadolivre.com.br/social/feemdeus");
+  assert.equal(product.itemId, "MLB7071403358");
+  assert.deepEqual(product.images, ["https://http2.mlstatic.com/featured.webp"]);
+});
+test("sem destaque explicito permanece seguro diante de titulos iguais", () => {
+  assert.throws(() => productFromPage(featuredPage.replace("/home/card-featured/element", "/home/affiliate-profile-recommendations/element"), "https://www.mercadolivre.com.br/social/feemdeus"));
+});

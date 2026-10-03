@@ -87,12 +87,33 @@ function socialProductFromPage(html, resolvedUrl) {
   const title = metadata.find(attrs => attrs.property?.toLowerCase() === "og:title")?.content;
   if (!title) return null;
   const matches = new Map();
+  const featured = new Map();
   for (const match of String(html).matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)) {
     const attrs = htmlAttributes(match[1]);
     if (!attrs.class?.split(/\s+/).includes("poly-component__title") || normalize(match[2]) !== normalize(title)) continue;
     const target = validateProductLink(new URL(attrs.href, resolvedUrl).href);
     const id = extractItemId(target.href);
-    if (id) matches.set(id, target.href);
+    if (id) {
+      matches.set(id, target.href);
+      // O compartilhamento destaca um anuncio; recomendacoes podem repetir o titulo.
+      const marker = target.searchParams.get("c_id") ||
+        new URLSearchParams(target.hash.slice(1)).get("c_id");
+      if (marker === "/home/card-featured/element") {
+        const before = String(html).slice(0, match.index);
+        const cards = [...before.matchAll(/<div\b[^>]*class=["'][^"']*\bpoly-card\s[^"']*["'][^>]*>/gi)];
+        const start = cards.at(-1)?.index;
+        const pictures = start === undefined ? [] : [...before.slice(start).matchAll(/<img\b[^>]*>/gi)]
+          .map(image => htmlAttributes(image[0]))
+          .filter(attrs => attrs.class?.split(/\s+/).includes("poly-component__picture") && normalize(attrs.alt || "") === normalize(title))
+          .map(attrs => ({ secure_url: attrs.src })).filter(picture => picture.secure_url);
+        if (pictures.length) featured.set(id, { target: target.href, pictures });
+      }
+    }
+  }
+  if (featured.size > 1) return null;
+  if (featured.size === 1) {
+    const [id, card] = [...featured][0];
+    return productFromItem({ id, title: normalize(title), status: "active", pictures: card.pictures, attributes: [] }, card.target);
   }
   if (matches.size !== 1) return null;
   const pictures = [...String(html).matchAll(/<img\b[^>]*>/gi)]
