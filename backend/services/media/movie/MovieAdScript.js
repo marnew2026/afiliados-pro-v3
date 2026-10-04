@@ -27,7 +27,7 @@ export function buildMovieAdScript(product) {
 // Cortes de edição, sem atribuir uma posição a uma peça que não foi identificada.
 export function movieShot(index, sceneCount) {
   if (![0,1,2,3].includes(index) || !Number.isInteger(sceneCount) || sceneCount<1 || sceneCount>4) throw new Error('Plano de edição inválido.');
-  return { clipIndex: Math.min(index,sceneCount-1), scale:[720,940,860,720][index], height:[1100,1560,1400,1100][index],
-    x:['(W-w)/2','(W-w)*0.42','(W-w)*0.58','(W-w)/2'][index],
-    y:'(H-h)/2', start:sceneCount===1 ? [0,.6,1.2,.2][index] : 0 };
+  return { clipIndex: Math.min(index,sceneCount-1), scale:[660,700,680,660][index], height:900,
+    x:'(ow-iw)/2',
+    y:'120+(900-ih)/2', start:sceneCount===1 ? [0,.6,1.2,.2][index] : 0 };
 }

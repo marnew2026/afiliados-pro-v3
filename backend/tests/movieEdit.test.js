@@ -12,6 +12,7 @@ test('kit de pesca usa abertura conversada e quantidades presentes, sem ler tít
 test('edição varia planos sem recortar posições de peças supostamente identificadas',()=>{
  assert.deepEqual([0,1,2,3].map(i=>movieShot(i,3).clipIndex),[0,1,2,2]);
  assert.equal(new Set([0,1,2,3].map(i=>movieShot(i,1).scale)).size,3);
+ for(const i of [0,1,2,3]) { const shot=movieShot(i,1); assert.ok(shot.scale<=720); assert.ok(shot.height<=900); assert.equal(shot.y,'120+(900-ih)/2'); }
  assert.throws(()=>movieShot(4,3));
 });
 test('reedição cria tarefa isolada, copia cenas e reutiliza reserva; outra conta é recusada',async()=>{
