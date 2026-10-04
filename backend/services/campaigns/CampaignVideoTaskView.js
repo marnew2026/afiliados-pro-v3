@@ -26,7 +26,7 @@ export async function campaignVideoTaskView(task, getJob, assetModel = MediaAsse
     totalScenes: task.movie.plan.scenes.length,
     completedScenes: (task.movie.scenes || []).filter(row => row?.state === "ready").length,
     disclosure: task.movie.plan.disclosure } : null;
-  return { movie, previewOnly: task.previewOnly === true, previewUrl, id: String(task._id), status, campaignId: String(task.campaignId),
+  return { canReedit: status === 'ready' && !!movie && !task.movieReuseOnly, movie, previewOnly: task.previewOnly === true, previewUrl, id: String(task._id), status, campaignId: String(task.campaignId),
     title: task.product?.title || null, mediaAssetId: task.mediaAssetId ? String(task.mediaAssetId) : null,
     lastError, updatedAt: task.updatedAt };
 }

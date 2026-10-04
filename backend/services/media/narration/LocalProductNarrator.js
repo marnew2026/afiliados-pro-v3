@@ -13,13 +13,14 @@ export async function assertLocalVoiceInstalled({
   try { await access(pythonPath); await access(modelPath); await access(`${modelPath}.json`); }
   catch { throw new Error("Voz local do KAEL nao instalada. Execute a configuracao de narracao no servidor."); }
 }
-export async function narrateProductScenes({ scenes, directory, runner = run,
+export async function narrateProductScenes({ scenes, directory, pacing, runner = run,
   pythonPath = process.env.KAEL_PIPER_PYTHON || join(backend, ".kael-runtime", "venv", "bin", "python"),
   modelPath = process.env.KAEL_PIPER_MODEL || join(backend, ".kael-runtime", "voice", "pt_BR-jeff-medium.onnx") }) {
   if (!Array.isArray(scenes) || !scenes.length || scenes.length > 6 || scenes.some(scene => !scene.speech || scene.speech.length > 400)) throw new Error("Roteiro de narracao invalido.");
   await assertLocalVoiceInstalled({ pythonPath, modelPath });
+  if (pacing && (!Number.isFinite(pacing.lengthScale) || pacing.lengthScale < .9 || pacing.lengthScale > 1.1)) throw new Error("Ritmo de voz invalido.");
   const input = join(directory, "voice-input.json");
-  await writeFile(input, JSON.stringify({ texts: scenes.map(scene => scene.speech) }), "utf8");
+  await writeFile(input, JSON.stringify({ texts: scenes.map(scene => scene.speech), length_scale: pacing?.lengthScale || 1.02 }), "utf8");
   try {
     await runner(pythonPath, [driver, modelPath, input, directory], { timeout: 120000, maxBuffer: 1024 * 1024, env: { ...process.env, OMP_NUM_THREADS: "1" } });
   } catch { throw new Error("Falha ao gerar narracao local do KAEL. Nenhum video silencioso foi marcado como pronto."); }

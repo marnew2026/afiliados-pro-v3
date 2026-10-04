@@ -26,6 +26,7 @@ export async function prepareMovieScenes({ task, product, config = movieConfig()
     let row = movie.scenes[scene.index];
     if (!row) { row = { index: scene.index, state: 'pending' }; movie.scenes[scene.index] = row; await save(); }
     if (row.assetUrl) { clips.push(await fetchClip(row.assetUrl, [new URL(process.env.R2_PUBLIC_BASE_URL).origin])); continue; }
+    if (task.movieReuseOnly) throw new MovieError('Cena salva ausente. A reedição não solicita novas gerações.');
     if (row.state === 'submitting' && !row.externalId) throw new MovieError('A solicitação anterior pode ter sido aceita pelo motor. Confira o provedor antes de reenviar; geração duplicada foi bloqueada.', 'UNCERTAIN');
     if (!row.externalId) {
       const image = await fetchImage(scene.imageUrl);

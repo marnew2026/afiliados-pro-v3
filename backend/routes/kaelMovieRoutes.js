@@ -1,4 +1,5 @@
 import express from 'express';
+import { scheduleMovieReedit } from '../services/campaigns/MovieReeditService.js';
 import mongoose from 'mongoose';
 import { protect } from '../middlewares/authMiddleware.js';
 import CampaignVideoTask from '../models/CampaignVideoTask.js';
@@ -32,6 +33,15 @@ export function createMovieRouter({ auth = protect, tasks = CampaignVideoTask, s
       if (!results[0]?.accepted) return res.status(400).json({success:false,error:results[0]?.error || 'Link não aceito.'});
       res.status(202).json({success:true,task:await view(results[0].task,id=>queue.getJob(id))});
     } catch { res.status(400).json({success:false,error:'Não foi possível cadastrar o teste.'}); }
+  });
+  router.post('/tasks/:id/reedit', enabled, async (req,res) => {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({success:false,error:'Tarefa inválida.'});
+    try {
+      const source=await tasks.findOne({_id:req.params.id,userId:req.user._id,renderStyle:'movie_v1',previewOnly:true});
+      if(!source) return res.status(404).json({success:false,error:'Tarefa não encontrada.'});
+      const task=await scheduleMovieReedit({source,userId:req.user._id,tasks,enqueue,idFactory:()=>new mongoose.Types.ObjectId()});
+      res.status(202).json({success:true,task:await view(task,id=>queue.getJob(id))});
+    } catch { res.status(400).json({success:false,error:'Não foi possível reeditar. O vídeo original deve estar pronto e ter cenas salvas.'}); }
   });
   router.post('/tasks/:id/resume', enabled, async (req,res) => {
     if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({success:false,error:'Tarefa inválida.'});

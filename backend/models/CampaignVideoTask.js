@@ -11,6 +11,7 @@ const schema = new mongoose.Schema({
   movie: { type: mongoose.Schema.Types.Mixed },
   moviePhase: { type: String, default: "" },
   renderStyle: { type: String, default: "" },
+  movieReuseOnly: { type: Boolean, default: false },
   previewOnly: { type: Boolean, default: false },
   caption: { type: String, default: "", maxlength: 1800 },
   lastError: { type: String, default: "" },

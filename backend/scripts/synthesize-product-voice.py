@@ -19,11 +19,14 @@ options = onnxruntime.SessionOptions()
 options.intra_op_num_threads = 1
 options.inter_op_num_threads = 1
 voice = PiperVoice(config=PiperConfig.from_dict(config_data), session=onnxruntime.InferenceSession(str(model), sess_options=options, providers=["CPUExecutionProvider"]))
+length_scale = job.get("length_scale", 1.02)
+if not isinstance(length_scale, (int, float)) or not 0.9 <= length_scale <= 1.1:
+    raise ValueError("Invalid narration pacing")
 manifest = []
 for index, text in enumerate(texts):
     path = output_dir / f"voice-{index}.wav"
     with wave.open(str(path), "wb") as output:
-        voice.synthesize_wav(text, output, syn_config=SynthesisConfig(length_scale=1.02))
+        voice.synthesize_wav(text, output, syn_config=SynthesisConfig(length_scale=length_scale))
     with wave.open(str(path), "rb") as output:
         duration = output.getnframes() / output.getframerate()
     if not 0.2 <= duration <= 16:
