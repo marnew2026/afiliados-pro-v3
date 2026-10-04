@@ -1,10 +1,19 @@
 export class MovieError extends Error {
   constructor(message, code = 'ENGINE_ERROR') { super(message); this.code = code; this.noAutoRetry = true; }
 }
+const diagnosticCodes = new Set(['QUOTA','AUTH','UNAVAILABLE','INPUT_ERROR','PROVIDER_RUNTIME','SCENE_FAILED','NETWORK','HTTP_ERROR','ENGINE_ERROR','UNCERTAIN']);
+export function movieDiagnosticCode(error) {
+  return diagnosticCodes.has(error?.code) ? error.code : 'ENGINE_ERROR';
+}
 export function safeEngineError(value) {
-  const text = String(value || '');
-  if (/quota|zerogpu|daily.*limit|rate.limit|429/i.test(text)) return new MovieError('Cota do motor de vídeo esgotada. Aguarde a renovação; nenhum motor pago será acionado.', 'QUOTA');
-  return new MovieError('O motor de vídeo não concluiu a cena. Consulte o provedor antes de tentar novamente.', 'SCENE_FAILED');
+  // Classifica a resposta sem persistir texto bruto, URLs ou credenciais.
+  const text = (typeof value === 'string' ? value : JSON.stringify(value ?? null)).slice(0, 65536);
+  if (/quota|daily.{0,30}limit|rate.{0,10}limit|exceeded.{0,30}(?:gpu|usage)|429/i.test(text)) return new MovieError('Cota do motor de vídeo esgotada. Aguarde a renovação; nenhum motor pago será acionado.', 'QUOTA');
+  if (/unauthorized|forbidden|invalid.{0,15}token|authentication|sign in|log in/i.test(text)) return new MovieError('O provedor recusou a autenticação. Verifique a credencial no Render; não envie o token.', 'AUTH');
+  if (/sleeping|unavailable|overloaded|queue.{0,15}full|502|503|504/i.test(text)) return new MovieError('O motor está indisponível ou com a fila cheia. O progresso foi preservado.', 'UNAVAILABLE');
+  if (/out of memory|cuda|runtimeerror|gpu.{0,15}error/i.test(text)) return new MovieError('O provedor informou uma falha de execução na geração da cena.', 'PROVIDER_RUNTIME');
+  if (/validation|invalid.{0,15}(?:image|input|parameter)|unsupported.{0,15}(?:image|format)/i.test(text)) return new MovieError('O motor recusou a imagem ou os parâmetros desta cena.', 'INPUT_ERROR');
+  return new MovieError('O provedor encerrou a cena sem informar uma causa reconhecível. Confira o Space antes de retomar.', 'SCENE_FAILED');
 }
 export function checkedUrl(value, origins) {
   let u; try { u = new URL(value); } catch { throw new MovieError('Endereço de mídia inválido.'); }
@@ -25,7 +34,9 @@ export async function engineRequest(url, options = {}, fetcher = fetch, timeout 
   try {
     const response = await fetcher(url, { ...options, redirect: 'error', signal: AbortSignal.timeout(timeout) });
     if (!response.ok) {
+      if ([401,403].includes(response.status)) throw safeEngineError('unauthorized');
       if (response.status === 429) throw safeEngineError('HTTP 429');
+      if ([502,503,504].includes(response.status)) throw safeEngineError('unavailable');
       throw new MovieError('O motor recusou a consulta. O identificador salvo será preservado.', 'HTTP_ERROR');
     }
     return response;

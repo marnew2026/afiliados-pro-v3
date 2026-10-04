@@ -80,6 +80,6 @@ test('vídeo falso de HTML é recusado',async()=>{
 test('falha de consulta preserva identificador remoto para retomar sem outra geração', async () => {
  const row=task(); row.movie={provider:config.provider,origin:config.origin,plan:planMovie(product,1),scenes:[{state:'generating',externalId:'saved'}]};
  const engine=new HuggingFaceWanEngine(config,async()=>new Response('temporarily unavailable',{status:503}));
- await assert.rejects(prepareMovieScenes({task:row,product,config,engine,fetchImage:image}),error=>error.code==='HTTP_ERROR');
+ await assert.rejects(prepareMovieScenes({task:row,product,config,engine,fetchImage:image}),error=>error.code==='UNAVAILABLE');
  assert.equal(row.movie.scenes[0].externalId,'saved');
 });

@@ -1,3 +1,4 @@
+import { movieDiagnosticCode } from '../services/media/movie/MovieHttp.js';
 import { Worker, UnrecoverableError } from "bullmq";
 import { connection } from "../src/lib/bullmqConnection.js";
 import { buildCampaignVideo } from "../services/campaigns/CampaignVideoBuildService.js";
@@ -9,5 +10,5 @@ export const campaignVideoWorker = new Worker("kael-campaign-videos", async job 
     throw error;
   }
 }, { connection, concurrency: 1, lockDuration: 120000 });
-campaignVideoWorker.on("failed", job => console.warn("KAEL PRODUCT VIDEO: tarefa falhou", job?.id));
+campaignVideoWorker.on("failed", (job, error) => console.warn("KAEL PRODUCT VIDEO: tarefa falhou", job?.id, "diagnostico:", movieDiagnosticCode(error)));
 campaignVideoWorker.on("error", () => console.warn("KAEL PRODUCT VIDEO: falha de conexao com a fila."));

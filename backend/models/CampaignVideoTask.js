@@ -14,6 +14,7 @@ const schema = new mongoose.Schema({
   movieReuseOnly: { type: Boolean, default: false },
   previewOnly: { type: Boolean, default: false },
   caption: { type: String, default: "", maxlength: 1800 },
+  movieErrorCode: { type: String, default: "" },
   lastError: { type: String, default: "" },
 }, { timestamps: true });
 schema.index({ userId: 1, status: 1, createdAt: 1 });

@@ -1,3 +1,4 @@
+import { movieDiagnosticCode } from '../media/movie/MovieHttp.js';
 import MediaAsset from "../../models/MediaAsset.js";
 
 export async function campaignVideoTaskView(task, getJob, assetModel = MediaAsset) {
@@ -25,6 +26,7 @@ export async function campaignVideoTaskView(task, getJob, assetModel = MediaAsse
   const movie = task.movie?.plan ? { provider: task.movie.provider, phase: task.moviePhase || "",
     totalScenes: task.movie.plan.scenes.length,
     completedScenes: (task.movie.scenes || []).filter(row => row?.state === "ready").length,
+    errorCode: status === 'failed' ? (task.movieErrorCode ? movieDiagnosticCode({code:task.movieErrorCode}) : 'LEGACY_ERROR') : null,
     disclosure: task.movie.plan.disclosure } : null;
   return { canReedit: status === 'ready' && !!movie && !task.movieReuseOnly, movie, previewOnly: task.previewOnly === true, previewUrl, id: String(task._id), status, campaignId: String(task.campaignId),
     title: task.product?.title || null, mediaAssetId: task.mediaAssetId ? String(task.mediaAssetId) : null,

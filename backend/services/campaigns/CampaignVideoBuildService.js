@@ -1,3 +1,4 @@
+import { movieDiagnosticCode } from '../media/movie/MovieHttp.js';
 import { findProductFootage } from "../media/ProductFootageCatalog.js";
 import Campaign from "../../models/Campaign.js";
 import CampaignVideoTask from "../../models/CampaignVideoTask.js";
@@ -12,7 +13,7 @@ export async function buildCampaignVideo({ taskId, taskModel = CampaignVideoTask
   const task = await taskModel.findById(taskId);
   if (!task) throw new Error("Tarefa de campanha nao encontrada.");
   if (task.status === "ready") return { alreadyReady: true, campaignId: String(task.campaignId) };
-  task.status = "processing"; task.lastError = ""; await task.save();
+  task.status = "processing"; task.lastError = ""; task.movieErrorCode = ""; await task.save();
   try {
     const product = task.product?.title ? task.product : await resolver({ link: task.link });
     task.product = product; await task.save();
@@ -45,6 +46,7 @@ export async function buildCampaignVideo({ taskId, taskModel = CampaignVideoTask
     return { campaignId: String(task.campaignId), mediaAssetId: String(asset._id) };
   } catch (error) {
     task.status = "failed";
+    task.movieErrorCode = task.renderStyle === "movie_v1" ? movieDiagnosticCode(error) : "";
     // Nao registra resposta bruta, URL de autorizacao nem segredos do provedor.
     task.lastError = error.isAxiosError ? `Falha ao consultar produto/imagem (HTTP ${error.response?.status || "indisponivel"}).` : String(error.message || "Falha ao criar video.").slice(0, 500);
     await task.save(); throw error;
