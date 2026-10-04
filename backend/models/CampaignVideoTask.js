@@ -8,6 +8,10 @@ const schema = new mongoose.Schema({
   product: { title: String, provider: String, itemId: String, images: [String],
     resolvedUrl: String, fetchedAt: Date, attributes: [String] },
   mediaAssetId: { type: mongoose.Schema.Types.ObjectId, ref: "MediaAsset" },
+  movie: { type: mongoose.Schema.Types.Mixed },
+  moviePhase: { type: String, default: "" },
+  renderStyle: { type: String, default: "" },
+  previewOnly: { type: Boolean, default: false },
   caption: { type: String, default: "", maxlength: 1800 },
   lastError: { type: String, default: "" },
 }, { timestamps: true });

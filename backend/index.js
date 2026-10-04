@@ -9,6 +9,8 @@ import { connection } from "./src/lib/bullmqConnection.js";
 // import debugRoutes from "./routes/debug.js";
 import goRoutes from "./routes/go.js";
 import campaignsRoutes from "./routes/campaigns.js";
+import kaelMovieRoutes from "./routes/kaelMovieRoutes.js";
+import { fileURLToPath } from "node:url";
 import campaignVideoRoutes from "./routes/campaignVideoRoutes.js";
 // import userRoutes from "./routes/userRoutes.js";
 import withdrawRoutes from "./routes/withdrawRoutes.js";
@@ -61,6 +63,15 @@ app.use((req, res, next) => {
   console.log(req.method, req.path);
   next();
 });
+// KAEL Movie: interface própria; reutiliza autenticação, fila e armazenamento.
+app.use("/kael-movie/api", kaelMovieRoutes);
+app.use("/kael-movie", express.static(fileURLToPath(new URL("./public/kael-movie/", import.meta.url)), {
+  setHeaders: res => {
+    res.set("Cache-Control", "no-store");
+    res.set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; media-src https:; connect-src 'self'; img-src 'self'; frame-ancestors 'none'; base-uri 'none'");
+    res.set("X-Content-Type-Options", "nosniff");
+  }
+}));
 // ROTAS
 // app.use("/ledger", ledgerRoutes);
 app.use("/go", goRoutes);

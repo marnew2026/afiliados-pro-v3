@@ -17,21 +17,29 @@ export async function buildCampaignVideo({ taskId, taskModel = CampaignVideoTask
     const product = task.product?.title ? task.product : await resolver({ link: task.link });
     task.product = product; await task.save();
     // ID persistido na tarefa antes da criacao: uma retomada nao cria outra campanha.
-    const campaign = await campaignModel.findOneAndUpdate({ _id: task.campaignId, userId: task.userId },
+    const campaign = task.previewOnly ? { active: true, status: "active" } : await campaignModel.findOneAndUpdate({ _id: task.campaignId, userId: task.userId },
       { $setOnInsert: { nome: product.title, link: task.link, active: true } },
       { upsert: true, new: true, setDefaultsOnInsert: true });
     if (!campaign.active || campaign.status !== "active") throw new Error("Campanha pausada ou arquivada. Video nao gerado.");
-    let asset = await readyFinder({ userId: task.userId, campaignId: task.campaignId });
+    const movieMode = task.renderStyle === "movie_v1" || (!task.renderStyle && process.env.KAEL_PRODUCT_VIDEO_STYLE === "movie_v1");
+    let asset = movieMode ? null : await readyFinder({ userId: task.userId, campaignId: task.campaignId });
     if (!asset) {
       const footage = await footageFinder({ product });
-      const video = await renderer({ product, footage });
+      const ensureActive = async () => {
+        if (task.previewOnly) return;
+        const active = await campaignModel.findOne({ _id: task.campaignId, userId: task.userId, active: true, status: "active" });
+        if (!active) throw new Error("Campanha pausada ou arquivada durante a geração.");
+      };
+      const video = await renderer({ product, footage, task, ensureActive,
+        ...(task.renderStyle ? { style: task.renderStyle } : {}) });
       task.caption = String(video.caption || "").slice(0, 1800);
       await task.save();
       // Revalida antes do upload se o usuario arquivou a campanha durante a renderizacao.
-      const current = await campaignModel.findOne({ _id: task.campaignId, userId: task.userId, active: true, status: "active" });
+      const current = task.previewOnly ? true : await campaignModel.findOne({ _id: task.campaignId, userId: task.userId, active: true, status: "active" });
       if (!current) throw new Error("Campanha arquivada durante a montagem do video.");
       asset = await uploader({ userId: task.userId, campaignId: task.campaignId, type: "video", source: "kael",
-        extension: "mp4", body: video.body, contentType: "video/mp4" });
+        extension: "mp4", body: video.body, contentType: "video/mp4",
+        ...(movieMode ? { generationTaskId: task._id } : {}) });
     }
     task.mediaAssetId = asset._id; task.status = "ready"; task.lastError = ""; await task.save();
     return { campaignId: String(task.campaignId), mediaAssetId: String(asset._id) };

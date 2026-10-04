@@ -22,7 +22,11 @@ export async function campaignVideoTaskView(task, getJob, assetModel = MediaAsse
       } catch { /* Material sem URL valida nao oferece pre-visualizacao. */ }
     }
   }
-  return { previewUrl, id: String(task._id), status, campaignId: String(task.campaignId),
+  const movie = task.movie?.plan ? { provider: task.movie.provider, phase: task.moviePhase || "",
+    totalScenes: task.movie.plan.scenes.length,
+    completedScenes: (task.movie.scenes || []).filter(row => row?.state === "ready").length,
+    disclosure: task.movie.plan.disclosure } : null;
+  return { movie, previewOnly: task.previewOnly === true, previewUrl, id: String(task._id), status, campaignId: String(task.campaignId),
     title: task.product?.title || null, mediaAssetId: task.mediaAssetId ? String(task.mediaAssetId) : null,
     lastError, updatedAt: task.updatedAt };
 }

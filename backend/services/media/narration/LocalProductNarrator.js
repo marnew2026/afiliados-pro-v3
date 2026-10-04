@@ -6,12 +6,18 @@ import { join } from "node:path";
 const run = promisify(execFile);
 const backend = fileURLToPath(new URL("../../../", import.meta.url));
 const driver = fileURLToPath(new URL("../../../scripts/synthesize-product-voice.py", import.meta.url));
+export async function assertLocalVoiceInstalled({
+  pythonPath = process.env.KAEL_PIPER_PYTHON || join(backend, ".kael-runtime", "venv", "bin", "python"),
+  modelPath = process.env.KAEL_PIPER_MODEL || join(backend, ".kael-runtime", "voice", "pt_BR-jeff-medium.onnx")
+} = {}) {
+  try { await access(pythonPath); await access(modelPath); await access(`${modelPath}.json`); }
+  catch { throw new Error("Voz local do KAEL nao instalada. Execute a configuracao de narracao no servidor."); }
+}
 export async function narrateProductScenes({ scenes, directory, runner = run,
   pythonPath = process.env.KAEL_PIPER_PYTHON || join(backend, ".kael-runtime", "venv", "bin", "python"),
   modelPath = process.env.KAEL_PIPER_MODEL || join(backend, ".kael-runtime", "voice", "pt_BR-jeff-medium.onnx") }) {
   if (!Array.isArray(scenes) || !scenes.length || scenes.length > 6 || scenes.some(scene => !scene.speech || scene.speech.length > 400)) throw new Error("Roteiro de narracao invalido.");
-  try { await access(pythonPath); await access(modelPath); await access(`${modelPath}.json`); }
-  catch { throw new Error("Voz local do KAEL nao instalada. Execute a configuracao de narracao no servidor."); }
+  await assertLocalVoiceInstalled({ pythonPath, modelPath });
   const input = join(directory, "voice-input.json");
   await writeFile(input, JSON.stringify({ texts: scenes.map(scene => scene.speech) }), "utf8");
   try {

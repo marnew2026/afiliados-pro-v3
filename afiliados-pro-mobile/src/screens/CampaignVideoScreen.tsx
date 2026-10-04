@@ -137,6 +137,10 @@ export default function CampaignVideoScreen() {
     {tasks.map(task => <View key={task.id} style={styles.card}>
       <Text style={styles.white}>{task.title || "Identificando produto"}</Text>
       <Text style={styles.small}>{statuses[task.status]}</Text>
+      {task.movie && task.status !== "ready" && <Text style={styles.small}>
+        {task.movie.phase || "Preparando cenas"} • {task.movie.completedScenes}/{task.movie.totalScenes}
+      </Text>}
+      {task.movie && task.status === "ready" && <Text style={styles.small}>Cenas produzidas com IA</Text>}
       {task.status === "failed" && <Text style={styles.error}>{task.lastError}</Text>}
       {task.status === "ready" && <TouchableOpacity accessibilityRole="button" disabled={!!opening} onPress={() => void watch(task)} style={styles.secondary}>
         <Text style={styles.button}>{opening === task.id ? "Abrindo…" : "Assistir ao vídeo"}</Text>

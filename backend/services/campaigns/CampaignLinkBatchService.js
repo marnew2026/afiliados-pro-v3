@@ -12,22 +12,22 @@ export function normalizeCampaignLinks(links) {
   return [...new Set(links.map(link => validateProductLink(link).href))];
 }
 export async function scheduleCampaignLinks({ userId, links, enqueue,
-  taskModel = CampaignVideoTask, campaignModel = Campaign, idFactory = () => new mongoose.Types.ObjectId() }) {
+  namespace = "", renderStyle = "", previewOnly = false, taskModel = CampaignVideoTask, campaignModel = Campaign, idFactory = () => new mongoose.Types.ObjectId() }) {
   const normalized = normalizeCampaignLinks(links);
   await taskModel.init();
   const results = [];
   for (const link of normalized) {
     let task;
     try {
-      const linkHash = createHash("sha256").update(link).digest("hex");
+      const linkHash = createHash("sha256").update(namespace ? `${namespace}:${link}` : link).digest("hex");
       task = await taskModel.findOne({ userId, linkHash });
       if (!task) {
         if (await taskModel.countDocuments({ userId, status: { $in: ["queued", "processing"] } }) >= 30) {
           throw new Error("Sua fila tem 30 campanhas. Aguarde para adicionar mais links.");
         }
-        const campaign = await campaignModel.findOne({ userId, link });
+        const campaign = previewOnly ? null : await campaignModel.findOne({ userId, link });
         if (campaign && (!campaign.active || campaign.status !== "active")) throw new Error("Esta campanha esta pausada ou arquivada.");
-        try { task = await taskModel.create({ userId, linkHash, link, campaignId: campaign?._id || idFactory() }); }
+        try { task = await taskModel.create({ userId, linkHash, link, renderStyle, previewOnly, campaignId: campaign?._id || idFactory() }); }
         catch (error) {
           if (error.code !== 11000) throw error;
           task = await taskModel.findOne({ userId, linkHash });

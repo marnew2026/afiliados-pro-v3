@@ -34,8 +34,8 @@ router.get("/summary", async (req, res) => {
       AutopilotSettings.findOne({ userId }).lean(),
       Distribution.aggregate([{ $match: { userId, automationKey: { $exists: true }, publishedAt: { $gte: since }, status: "published" } },
         { $group: { _id: "$channel", count: { $sum: 1 } } }]),
-      CampaignVideoTask.distinct("campaignId", { userId }),
-      CampaignVideoTask.countDocuments({ userId, status: { $in: ["queued", "processing"] } }),
+      CampaignVideoTask.distinct("campaignId", { userId, previewOnly: { $ne: true } }),
+      CampaignVideoTask.countDocuments({ userId, previewOnly: { $ne: true }, status: { $in: ["queued", "processing"] } }),
       Distribution.countDocuments({ userId, automationKey: { $exists: true }, status: "failed" }),
     ]);
     const clicks = await Campaign.aggregate([{ $match: { userId, _id: { $in: campaigns } } }, { $group: { _id: null, count: { $sum: "$clicks" } } }]);
@@ -47,7 +47,7 @@ router.get("/summary", async (req, res) => {
 });
 router.get("/", async (req, res) => {
   try {
-    const tasks = await CampaignVideoTask.find({ userId: req.user._id }).sort({ createdAt: -1 }).limit(50).lean();
+    const tasks = await CampaignVideoTask.find({ userId: req.user._id, previewOnly: { $ne: true } }).sort({ createdAt: -1 }).limit(50).lean();
     const distributions = await Distribution.find({ userId: req.user._id, campaignId: { $in: tasks.map(task => task.campaignId) }, automationKey: { $exists: true } })
       .select("campaignId channel status lastError").lean();
     res.json({ success: true, tasks: await Promise.all(tasks.map(async task => ({ ...await view(task),

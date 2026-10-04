@@ -170,3 +170,17 @@ test("produto compartilhado destacado prevalece sobre recomendacao com mesmo tit
 test("sem destaque explicito permanece seguro diante de titulos iguais", () => {
   assert.throws(() => productFromPage(featuredPage.replace("/home/card-featured/element", "/home/affiliate-profile-recommendations/element"), "https://www.mercadolivre.com.br/social/feemdeus"));
 });
+
+
+test("previa Movie nao cria campanha, nao reutiliza video de fotos e reserva asset por tarefa", async () => {
+  let uploaded = false;
+  const { task, deps } = buildDependencies({
+    campaignModel: { findOneAndUpdate: async () => { throw new Error("previa nao cria campanha"); }, findOne: async () => { throw new Error("previa nao consulta campanha inexistente"); } },
+    readyFinder: async () => { throw new Error("Movie nao reutiliza asset de fotos"); },
+    renderer: async input => { assert.equal(input.style, "movie_v1"); await input.ensureActive(); return { body: Buffer.from("video") }; },
+    uploader: async input => { assert.equal(input.generationTaskId, "task"); uploaded = true; return { _id: "movie-asset" }; }
+  });
+  task.previewOnly = true; task.renderStyle = "movie_v1";
+  assert.equal((await buildCampaignVideo(deps)).mediaAssetId, "movie-asset");
+  assert.ok(uploaded); assert.equal(task.status, "ready");
+});

@@ -97,7 +97,7 @@ export async function runLinkAutomationUser(userId, {
         // Falhas ficam visiveis; nao cria outra publicacao para contornar uma falha de autorizacao.
         const used = await distributionModel.distinct("campaignId", { ...base, source: "autopilot" });
         const activeIds = await campaignModel.distinct("_id", { userId, active: true, status: "active" });
-        const task = await taskModel.findOne({ userId, status: "ready", campaignId: { $in: activeIds, $nin: used } }).sort({ createdAt: 1 }).lean();
+        const task = await taskModel.findOne({ userId, status: "ready", previewOnly: { $ne: true }, campaignId: { $in: activeIds, $nin: used } }).sort({ createdAt: 1 }).lean();
         if (!task) { results.push({ channel, reason: "waiting_for_links" }); continue; }
         const campaignFilter = { _id: task.campaignId, userId, active: true, status: "active" };
         const campaign = await campaignModel.findOne(campaignFilter).lean();
