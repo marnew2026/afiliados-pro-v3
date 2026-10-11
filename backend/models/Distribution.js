@@ -156,6 +156,13 @@ const DistributionSchema = new mongoose.Schema(
       default: null,
     },
 
+    instagramPublication: {
+      phase: { type: String, default: "" },
+      containerId: { type: String, default: "" },
+      externalId: { type: String, default: "" },
+    },
+    retryPending: { type: Boolean, default: false },
+
     attempts: {
       type: Number,
       default: 0,

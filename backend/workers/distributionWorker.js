@@ -1,4 +1,4 @@
-import { Worker } from "bullmq";
+import { Worker, UnrecoverableError } from "bullmq";
 import { connection } from "../src/lib/bullmqConnection.js";
 import { publishDistribution } from "../services/distribution/DistributionService.js";
 
@@ -18,9 +18,15 @@ export const distributionWorker = new Worker(
       distributionId
     );
 
-   const result = await publishDistribution(
-  distributionId
-);
+   let result;
+   try {
+     result = await publishDistribution(distributionId, {
+       retryAvailable: job.attemptsMade + 1 < Number(job.opts.attempts || 1),
+     });
+   } catch (error) {
+     if (error.retryable === false) throw new UnrecoverableError(error.message);
+     throw error;
+   }
 
 if (
   result.alreadyPublished === true ||

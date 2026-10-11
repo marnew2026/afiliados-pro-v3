@@ -5,7 +5,7 @@ import { parseInstagramCredential } from "../connections/InstagramConnectionServ
 const DEFAULT_API_BASE_URL =
   "https://graph.instagram.com";
 const DEFAULT_POLL_INTERVAL_MS = 5000;
-const DEFAULT_MAX_POLL_ATTEMPTS = 12;
+const DEFAULT_MAX_POLL_ATTEMPTS = 60;
 
 function buildInstagramCaption(content) {
   const hashtags = Array.isArray(content.hashtags)
@@ -45,6 +45,8 @@ function buildInstagramCaption(content) {
 
 export async function publishInstagram({
   credential,
+  publicationState = {},
+  checkpoint = async () => {},
   destinationId,
   content,
   apiVersion = process.env.META_GRAPH_API_VERSION,
@@ -88,7 +90,7 @@ export async function publishInstagram({
   if (
     !Number.isInteger(maxPollAttempts) ||
     maxPollAttempts < 1 ||
-    maxPollAttempts > 24
+    maxPollAttempts > 120
   ) {
     throw new Error(
       "Limite de consultas do container do Instagram invalido."
@@ -162,29 +164,28 @@ export async function publishInstagram({
     `${normalizedBaseUrl}/${cleanApiVersion}/` +
     instagramCredential.instagramUserId;
 
-  const containerResponse = await httpClient.post(
-    `${accountUrl}/media`,
-    null,
-    {
-      params: {
-        media_type: "REELS",
-        video_url: assetUrl,
-        caption,
-        share_to_feed: true,
-        access_token: instagramCredential.accessToken,
-      },
-      timeout: 30000,
-    }
-  );
-
-  const containerId = String(
-    containerResponse.data?.id || ""
-  ).trim();
-
+  const stop = (message, code) => {
+    const error = new Error(message);
+    error.code = code;
+    error.retryable = false;
+    throw error;
+  };
+  if (publicationState.phase === "published" && publicationState.externalId) {
+    return { success: true, externalId: publicationState.externalId, containerId: publicationState.containerId };
+  }
+  if (["creating", "publishing"].includes(publicationState.phase)) {
+    stop("Instagram publication outcome is uncertain. Check the connected profile before retrying.", "INSTAGRAM_OUTCOME_UNCERTAIN");
+  }
+  let containerId = String(publicationState.containerId || "").trim();
   if (!containerId) {
-    throw new Error(
-      "Instagram nao retornou o container da publicacao."
-    );
+    await checkpoint({ phase: "creating" });
+    const containerResponse = await httpClient.post(`${accountUrl}/media`, null, {
+      params: { media_type: "REELS", video_url: assetUrl, caption, share_to_feed: true,
+        access_token: instagramCredential.accessToken }, timeout: 30000,
+    });
+    containerId = String(containerResponse.data?.id || "").trim();
+    if (!containerId) stop("Instagram did not return a publication container.", "INSTAGRAM_OUTCOME_UNCERTAIN");
+    await checkpoint({ phase: "processing", containerId });
   }
 
   let containerReady = false;
@@ -222,18 +223,17 @@ export async function publishInstagram({
       statusCode === "ERROR" ||
       statusCode === "EXPIRED"
     ) {
-      throw new Error(
-        `Instagram encerrou o container com status ${statusCode}.`
-      );
+      stop(`Instagram ended video processing with status ${statusCode}.`, "INSTAGRAM_CONTAINER_FAILED");
     }
   }
 
   if (!containerReady) {
-    throw new Error(
-      "Instagram nao concluiu o processamento do container no prazo."
-    );
+    const error = new Error("Instagram is still processing the video. The same container will be checked again.");
+    error.code = "INSTAGRAM_PROCESSING_PENDING";
+    throw error;
   }
 
+  await checkpoint({ phase: "publishing", containerId });
   const publishResponse = await httpClient.post(
     `${accountUrl}/media_publish`,
     null,
@@ -251,11 +251,10 @@ export async function publishInstagram({
   ).trim();
 
   if (!externalId) {
-    throw new Error(
-      "Instagram nao retornou o id da publicacao."
-    );
+    stop("Instagram publication outcome is uncertain. Check the connected profile before retrying.", "INSTAGRAM_OUTCOME_UNCERTAIN");
   }
 
+  await checkpoint({ phase: "published", containerId, externalId });
   return {
     success: true,
     externalId,

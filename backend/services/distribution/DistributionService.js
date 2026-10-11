@@ -6,7 +6,7 @@ import { getChannelAdapter } from "./ChannelAdapterResolver.js";
 import { decryptCredential } from "../../utils/credentialCrypto.js";
 import { applyChannelPolicy } from "../policies/ChannelPolicyResolver.js";
 
-export async function publishDistribution(distributionId) {
+export async function publishDistribution(distributionId, { retryAvailable = false } = {}) {
   const distribution =
     await Distribution.findOneAndUpdate(
       {
@@ -19,6 +19,7 @@ export async function publishDistribution(distributionId) {
         $set: {
           status: "processing",
           lastError: null,
+          retryPending: false,
         },
         $inc: {
           attempts: 1,
@@ -124,12 +125,18 @@ export async function publishDistribution(distributionId) {
       credential,
       destinationId: distribution.destinationId,
       content: channelContent,
+      publicationState: distribution.instagramPublication?.toObject?.() || distribution.instagramPublication || {},
+      checkpoint: async (state) => {
+        distribution.instagramPublication = { ...(distribution.instagramPublication?.toObject?.() || distribution.instagramPublication || {}), ...state };
+        await distribution.save();
+      },
     });
 
     distribution.status = result.distributionStatus || "published";
     distribution.publishedAt = distribution.status === "published" ? new Date() : null;
     distribution.externalMessageId = result.externalId;
     distribution.lastError = null;
+    distribution.retryPending = false;
 
     await distribution.save();
 
@@ -142,6 +149,11 @@ export async function publishDistribution(distributionId) {
       providerResult: result,
     };
   } catch (error) {
+    if (distribution.channel === "instagram" && ["creating", "publishing"].includes(distribution.instagramPublication?.phase)) {
+      error.retryable = false;
+      error.message = "Instagram publication outcome is uncertain. Check the connected profile before retrying.";
+    }
+    distribution.retryPending = distribution.channel === "instagram" && retryAvailable && error.retryable !== false;
     distribution.status = error.code === "KAEL_AUTOMATION_PAUSED" ? "scheduled" : "failed";
     distribution.lastError = error.message;
 
