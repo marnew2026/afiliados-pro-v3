@@ -6,11 +6,37 @@ import {
   isTrustedEventRequest,
   registerTuaiEvent,
 } from "../services/tuai/TuaiEventService.js";
+import { importAffiliateProduct } from "../services/tuai/TuaiProductImportService.js";
 
 const router = express.Router();
 
 router.get("/health", (_req, res) => {
   res.json({ ok: true, service: "tuai-opportunity-engine", version: 2 });
+});
+
+router.post("/admin/products/import", async (req, res) => {
+  try {
+    const configuredSecret = String(process.env.TUAI_ADMIN_SECRET || "");
+    const suppliedSecret = String(req.get("x-tuai-admin-secret") || "");
+    if (!configuredSecret || suppliedSecret !== configuredSecret) {
+      return res.status(401).json({ ok: false, error: "Acesso administrativo negado" });
+    }
+    const product = await importAffiliateProduct(req.body?.affiliateUrl);
+    return res.status(201).json({
+      ok: true,
+      product: {
+        id: String(product._id),
+        title: product.title,
+        imageUrl: product.imageUrl,
+        sourcePlatform: product.sourcePlatform,
+        active: product.active,
+      },
+    });
+  } catch (error) {
+    const status = Number(error.statusCode) || 500;
+    if (status === 500) console.error("TUAÍ PRODUCT IMPORT ERROR:", error);
+    return res.status(status).json({ ok: false, error: error.message || "Falha ao importar produto" });
+  }
 });
 
 router.get("/feed", async (req, res) => {
