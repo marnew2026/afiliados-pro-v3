@@ -1,115 +1,159 @@
-import { useEffect, useState } from 'react'
-import './App.css'
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import "./App.css";
 
-const API = (import.meta.env.VITE_TUAI_API_URL || 'https://tuai-staging.onrender.com').replace(/\/$/, '')
+const API = (import.meta.env.VITE_TUAI_API_URL || "https://tuai-staging.onrender.com").replace(/\/$/, "");
+const SAVED_KEY = "tuai:saved-products";
+const SESSION_KEY = "tuai:session-id";
 
 function getSessionId() {
-  const key = 'tuai_session_id'
-  let value = localStorage.getItem(key)
-  if (!value) {
-    value = crypto.randomUUID()
-    localStorage.setItem(key, value)
+  let id = localStorage.getItem(SESSION_KEY);
+  if (!id) {
+    id = crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    localStorage.setItem(SESSION_KEY, id);
   }
-  return value
+  return id;
 }
 
-async function recordEvent(productId, type) {
+function readSaved() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(SAVED_KEY) || "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
+async function sendEvent(productId, type, sessionId) {
   const response = await fetch(`${API}/tuai/v1/events`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      productId,
-      type,
-      sessionId: getSessionId(),
-      source: 'tuai_web',
-      placement: 'vertical_feed',
-    }),
-  })
-  if (!response.ok) throw new Error('Falha ao registrar interação')
-  return response.json()
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ productId, type, sessionId, source: "tuai_web", placement: "vertical_feed" }),
+  });
+  if (!response.ok) throw new Error(`Evento recusado (${response.status})`);
+  return response.json();
 }
 
-function App() {
-  const [items, setItems] = useState([])
-  const [saved, setSaved] = useState(() => new Set())
-  const [status, setStatus] = useState('loading')
-  const product = items[0]
+function ProductCard({ item, sessionId, saved, onSave }) {
+  const cardRef = useRef(null);
+  const impressionSent = useRef(false);
 
   useEffect(() => {
-    let cancelled = false
-    fetch(`${API}/tuai/v1/feed`)
-      .then((response) => {
-        if (!response.ok) throw new Error('Feed indisponível')
-        return response.json()
-      })
-      .then((data) => {
-        if (cancelled) return
-        setItems(Array.isArray(data.items) ? data.items : [])
-        setStatus('ready')
-      })
-      .catch(() => !cancelled && setStatus('error'))
-    return () => { cancelled = true }
-  }, [])
+    const card = cardRef.current;
+    if (!card) return undefined;
 
-  useEffect(() => {
-    if (product?.id) recordEvent(product.id, 'impression').catch(() => {})
-  }, [product?.id])
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.65 && !impressionSent.current) {
+          impressionSent.current = true;
+          sendEvent(item.id, "impression", sessionId).catch(() => {
+            impressionSent.current = false;
+          });
+        }
+      },
+      { threshold: [0.65] },
+    );
 
-  const toggleSave = async () => {
-    if (!product || saved.has(product.id)) return
-    await recordEvent(product.id, 'save')
-    setSaved((current) => new Set(current).add(product.id))
-  }
+    observer.observe(card);
+    return () => observer.disconnect();
+  }, [item.id, sessionId]);
 
-  const openOffer = () => {
-    if (!product) return
-    const destination = `${API}${product.destinationUrl}?sessionId=${encodeURIComponent(getSessionId())}&placement=vertical_feed`
-    window.open(destination, '_blank', 'noopener,noreferrer')
-  }
+  const openProduct = () => {
+    const destination = `${API}${item.destinationUrl}?sessionId=${encodeURIComponent(sessionId)}&placement=vertical_feed`;
+    window.open(destination, "_blank", "noopener,noreferrer");
+  };
 
-  if (status === 'loading') return <main className="state"><span className="pulse" />Carregando oportunidades…</main>
-  if (status === 'error') return <main className="state"><strong>Não foi possível carregar o Tuaí.</strong><button onClick={() => location.reload()}>Tentar novamente</button></main>
-  if (!product) return <main className="state"><strong>Novas oportunidades em breve.</strong></main>
+  return (
+    <article className="feed-card" ref={cardRef}>
+      <div className="product-media">
+        <img src={item.imageUrl} alt={item.title} loading="lazy" />
+        <div className="media-shade" />
+        <div className="score-ring" aria-label={`Pontuação ${item.opportunity?.score ?? 0}`}>
+          <strong>{item.opportunity?.score ?? 0}</strong>
+          <span>score</span>
+        </div>
 
-  const score = product.opportunity?.score ?? 0
-  const isSaved = saved.has(product.id)
+        <div className="product-copy">
+          <span className="category">{item.category || "produto"}</span>
+          <h1>{item.title}</h1>
+          <div className="signals">
+            <span>{item.opportunity?.label || "em análise"}</span>
+            <span>•</span>
+            <span>{item.impressions || 0} visualizações</span>
+            <span>•</span>
+            <span>{item.clicks || 0} acessos</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="actions">
+        <button className={saved ? "save-button saved" : "save-button"} onClick={() => onSave(item)} disabled={saved}>
+          <span>{saved ? "✓" : "♡"}</span>
+          {saved ? "Salvo" : "Salvar"}
+        </button>
+        <button className="offer-button" onClick={openProduct}>
+          Ver produto com segurança <span>↗</span>
+        </button>
+      </div>
+      <p className="affiliate-note">Você será direcionado ao site oficial do vendedor.</p>
+    </article>
+  );
+}
+
+export default function App() {
+  const sessionId = useMemo(getSessionId, []);
+  const [items, setItems] = useState([]);
+  const [savedIds, setSavedIds] = useState(readSaved);
+  const [state, setState] = useState("loading");
+
+  const loadFeed = useCallback(async () => {
+    try {
+      setState("loading");
+      const response = await fetch(`${API}/tuai/v1/feed`, { cache: "no-store" });
+      if (!response.ok) throw new Error("Feed indisponível");
+      const data = await response.json();
+      setItems(Array.isArray(data.items) ? data.items : []);
+      setState("ready");
+    } catch {
+      setState("error");
+    }
+  }, []);
+
+  useEffect(() => { loadFeed(); }, [loadFeed]);
+
+  const saveProduct = async (item) => {
+    if (savedIds.has(item.id)) return;
+    const next = new Set(savedIds).add(item.id);
+    setSavedIds(next);
+    localStorage.setItem(SAVED_KEY, JSON.stringify([...next]));
+    try {
+      await sendEvent(item.id, "save", sessionId);
+    } catch {
+      next.delete(item.id);
+      setSavedIds(new Set(next));
+      localStorage.setItem(SAVED_KEY, JSON.stringify([...next]));
+    }
+  };
 
   return (
     <main className="app-shell">
       <header className="topbar">
-        <a className="brand" href="/" aria-label="Tuaí"><span>tu</span>aí</a>
+        <div className="brand"><b>tu</b><span>aí</span></div>
         <div className="live"><i /> oportunidades ao vivo</div>
       </header>
 
-      <section className="feed-card">
-        <div className="media">
-          <img src={product.imageUrl} alt={product.title} />
-          <div className="shade" />
-          <div className="score" aria-label={`Potencial ${score} de 100`}><b>{score}</b><small>/100</small></div>
-          <div className="copy">
-            <span className="category">{product.category || 'seleção tuaí'}</span>
-            <h1>{product.title}</h1>
-            <p>{product.opportunity?.label || 'Em análise'}</p>
-            <div className="signals"><span>{product.impressions} visualizações</span><span>{product.clicks} cliques</span></div>
-          </div>
-        </div>
-
-        <aside className="actions" aria-label="Ações do produto">
-          <button className={isSaved ? 'saved' : ''} onClick={toggleSave} aria-label="Salvar"><span>{isSaved ? '✓' : '♡'}</span><small>Salvar</small></button>
-          <button onClick={openOffer} aria-label="Ver oferta"><span>↗</span><small>Oferta</small></button>
-        </aside>
-
-        <button className="cta" onClick={openOffer}>Ver produto com segurança <span>→</span></button>
+      <section className="feed-stream">
+        {state === "loading" && <div className="message">Carregando oportunidades…</div>}
+        {state === "error" && <div className="message">Não foi possível carregar.<button onClick={loadFeed}>Tentar novamente</button></div>}
+        {state === "ready" && items.length === 0 && <div className="message">Novas oportunidades aparecerão aqui.</div>}
+        {items.map((item) => (
+          <ProductCard key={item.id} item={item} sessionId={sessionId} saved={savedIds.has(item.id)} onSave={saveProduct} />
+        ))}
       </section>
 
       <nav className="bottom-nav" aria-label="Navegação principal">
         <button className="active"><span>⌂</span>Descobrir</button>
-        <button><span>⌕</span>Buscar</button>
         <button><span>♡</span>Salvos</button>
-        <button><span>○</span>Perfil</button>
+        <button><span>◎</span>Perfil</button>
       </nav>
     </main>
-  )
+  );
 }
-
-export default App
